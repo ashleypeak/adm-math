@@ -1,8 +1,11 @@
 (function() {
 	var CURSOR_FLASHPERIOD	= 530;
 
-	var ERR_NOT_FOUND				=	1;
-	var ERR_UNMATCHED_PAREN	= 2;
+	var ERR_NOT_FOUND					=	1;
+	var ERR_UNMATCHED_PAREN		= 2;
+	var ERR_MALFORMED_NUMERAL	= 3;
+	var ERR_INVALID_ARGUMENTS = 4;
+	var ERR_EMPTY_EXPRESSION	= 5;
 
 	var app = angular.module("mathInputApp", []);
 
@@ -97,6 +100,7 @@
 					literal: {
 						nodeTypes: {
 							Expression: function(nodes) {			//takes children: Numeral, Letter, Operator, Division, Exponent
+								this.expressionType = "literal";
 								this.type = "expression";
 								this.nodes = typeof nodes !== "undefined" ? nodes : [];
 								
@@ -124,6 +128,10 @@
 
 								this.getLength = function() {
 									return this.nodes.length;
+								};
+
+								this.getNodes = function() {
+									return this.nodes;
 								};
 
 								this.getNode = function(index) {
@@ -246,16 +254,19 @@
 								};
 							},
 							Numeral: function(val) {					//takes children: none
+								this.expressionType = "literal";
 								this.type = "numeral";
 								this.value = val;
 								this.getVal = function() {	return this.value;	};
 							},
 							Letter: function(val) {						//takes children: none
+								this.expressionType = "literal";
 								this.type = "letter";
 								this.value = val;
 								this.getVal = function() {	return this.value;	};
 							},
 							Operator: function(op) {					//takes children: none
+								this.expressionType = "literal";
 								this.type = "operator";
 								this.operator = op;
 								this.getVal = function() {	return op;	};
@@ -282,6 +293,7 @@
 					semantic: {
 						nodeTypes: {
 							Numeral: function(val) {									//takes children: none
+								this.expressionType = "semantic";
 								this.type = "numeral";
 								this.value = val;
 
@@ -291,10 +303,28 @@
 									return "<OMI>"+this.value+"</OMI>";
 								};
 							},
+							Variable: function(name) {									//takes children: none
+								this.expressionType = "semantic";
+								this.type = "variable";
+								this.name = name;
+
+								this.getOpenMath = function() {
+									return "<OMV name='"+this.name+"'/>";
+								};
+							},
 							Operator: function(symbol, children) {			//takes children: Numeral, Operator
+								this.expressionType = "semantic";
 								this.type = "operator";
 								this.symbol = symbol;
 								this.children = children;
+
+								this.assertHasValidChildren = function() {
+									for(var i = 0; i < 2; i++) {
+										if(!this.children[i])																		throw ERR_INVALID_ARGUMENTS;
+										if(!this.children[i].hasOwnProperty("expressionType"))	throw ERR_INVALID_ARGUMENTS;
+										if(this.children[i].expressionType != "semantic")				throw ERR_INVALID_ARGUMENTS;
+									}
+								}
 
 								this.getOpenMath = function() {
 									var opName = (this.symbol == "+" ? "plus" : (this.symbol == "-" ? "minus" : "times"));
@@ -306,91 +336,140 @@
 								};
 							},
 							Error: function(message) {
+								this.expressionType = "semantic";
 								this.type = "error";
+								this.message = message;
 
 								this.getOpenMath = function() {
-									return "<OME>[FIND OUT HOW ERRORS ARE RECORDED]</OME>";
+									return "<OME>"+message+"[FIND OUT HOW ERRORS ARE RECORDED]</OME>";
 								};
 							}
 						},
 
 						/*******************************************************************
-						 * function:		buildOperator()
+						 * function:		assertNotEmpty()
 						 *
-						 * description:	if literalExpression contains an operator (outside
-						 *							of any parentheticals), parses and returns as a
-						 *							semantic expression
-						 *							NB success=true does not mean that there were no
-						 *							errors in OpenMath processing (i.e. it is possible
-						 *							for a successful run to return an OME), just that
-						 *							it succeeded in finding and processing an operator.
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							throws an exception if the collection is empty
 						 *
-						 * arguments:		literalExpression:	scope.expression.literal.nodeTypes.Expression
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
 						 *
-						 * return:			success:	BOOLEAN
-						 *							error:		UNDEFINED / INT
-						 *							node:			scope.expression.semantic.nodeTypes.[any]
+						 * return:			none
 						 ******************************************************************/
-						buildOperator: function(literalExpression) {
-							var context = scope.expression.semantic;
-							var operator = literalExpression.splitAtOperator();
-
-							if(!operator.success) {
-								switch(operator.error) {
-									case ERR_NOT_FOUND:		return {success: false, error: ERR_NOT_FOUND};
-								}
-							}
-							
-							var semanticExpressions	= context.buildMultiple(operator.parts).nodes;
-
-							for(var i = 0; i < semanticExpressions.length; i++)
-								if(semanticExpressions[i].type == "error")
-									return {success: true, node: semanticExpressions[i]};
-
-							var returnNode = new context.nodeTypes.Operator(operator.symbol, semanticExpressions);
-
-							return {success: true, node: returnNode};
+						assertNotEmpty: function(nodes) {
+							if(nodes.length == 0)	throw ERR_EMPTY_EXPRESSION;
 						},
 
 						/*******************************************************************
-						 * function:		buildParenthetical()
+						 * function:		assertParenthesesMatched()
 						 *
-						 * description:	if literalExpression contains a valid pair
-						 *							of parentheses, parses and returns as a
-						 *							semantic expression
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							throws an exception if there are any unmatched
+						 *							parentheses
 						 *
-						 * arguments:		literalExpression:	scope.expression.literal.nodeTypes.Expression
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
 						 *
-						 * return:			success:	BOOLEAN
-						 *							error:		UNDEFINED / INT
-						 *							node:			scope.expression.semantic.nodeTypes.[any]
+						 * return:			none
 						 ******************************************************************/
-						buildParenthetical: function(literalExpression) {
-							var context = scope.expression.semantic;
-							var parenthetical = literalExpression.splitAtParenthetical();
+						assertParenthesesMatched: function(nodes) {
+						},
 
-							if(!parenthetical.success) {
-								switch(parenthetical.error) {
-									case ERR_NOT_FOUND:					return {success: false, error: ERR_NOT_FOUND};
-									case ERR_UNMATCHED_PAREN:		return {success: true, node: new context.nodeTypes.Error("Unmatched parenthesis.")};
+						/*******************************************************************
+						 * function:		parseNumerals()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							replaces all literal.nodeTypes.Numeral
+						 *							with appropriate semantic nodes
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseNumerals: function(nodes) {
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType == "literal" && nodes[i].type == "numeral") {
+									var numeral = "";
+									
+									for(var j = i; nodes[j] && nodes[j].expressionType == "literal" && nodes[j].type == "numeral"; j++)
+											numeral += nodes[j].getVal();
+
+									if(numeral == "")																				throw ERR_NOT_FOUND;
+									if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw ERR_MALFORMED_NUMERAL;
+
+									nodes.splice(i, numeral.length, new this.nodeTypes.Numeral(numeral));
 								}
 							}
-							
-							var semanticExpressions	= context.buildMultiple(parenthetical.parts).parts;
+						},
+						
+						/*******************************************************************
+						 * function:		parseVariables()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							replaces all literal.nodeTypes.Letter
+						 *							with semantic.nodeTypes.Variable
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseVariables: function(nodes) {
+							for(var i = 0; i < nodes.length; i++)
+								if(nodes[i].expressionType == "literal" && nodes[i].type == "letter")
+									nodes.splice(i, 1, new this.nodeTypes.Variable(nodes[i].getVal()));
+						},
 
-							for(var i = 0; i < semanticExpressions.length; i++)
-								if(semanticExpressions[i].type == "error")
-									return semanticExpressions[i];
+						/*******************************************************************
+						 * function:		parseImpliedMultiplication()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and,
+						 *							wherever there are two semantic.nodeTypes.[any]
+						 *							side-by-side, replaces them with a multiplication
+						 *							semantic node
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:			[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseImpliedMultiplication: function(nodes) {
+							for(var i = 0; i < nodes.length-1; i++) {
+								if(nodes[i].expressionType == "semantic" && nodes[i+1].expressionType == "semantic") {
+									var opNode = new this.nodeTypes.Operator("*", [nodes[i], nodes[i+1]]);
+									opNode.assertHasValidChildren();
 
-							var returnNode = null;
-							switch(semanticExpressions.length) {
-								case 1:	returnNode = semanticExpressions[0];																						break;
-								case 2:	returnNode = new context.nodeTypes.Operator("*", semanticExpressions);					break;
-								case 3:	returnNode = new context.nodeTypes.Operator("*", semanticExpressions.pop(),
-																			new context.nodeTypes.Operator("*", semanticExpressions));				break;
+									nodes.splice(i, 2, opNode);
+									i--;	//necessary if there are two implied times in a row e.g. "2ab"
+								}
 							}
+						},
+						
+						/*******************************************************************
+						 * function:		parseOperators()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and replaces
+						 *							all literal.nodeTypes.Operator whose getVal() matches
+						 *							`condition` with appropriate semantic nodes
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:			[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *							condition:	REGEX
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseOperators: function(nodes, condition) {
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType == "literal" && condition.test(nodes[i].getVal())) {
+									if(i == 0 || i == nodes.length-1)	throw ERR_INVALID_ARGUMENTS;
 
-							return {success: true, node: returnNode};
+									var opNode = new this.nodeTypes.Operator(nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
+									opNode.assertHasValidChildren();
+
+									nodes.splice(i-1, 3, opNode);
+									i--;
+								}
+							}
 						},
 
 						/*******************************************************************
@@ -401,58 +480,38 @@
 						 *
 						 * arguments:		literalExpression:	scope.expression.literal.nodeTypes.Expression
 						 *
-						 * return:			success:	BOOLEAN
-						 *							error:		UNDEFINED / INT
-						 *							node:			scope.expression.semantic.nodeTypes.[any]
+						 * return:			scope.expression.semantic.nodeTypes.[any]
 						 ******************************************************************/
 						build: function(literalExpression) {
-							var semanticExpression = null;
+							var nodes = literalExpression.getNodes().slice(); //copy node array
 
-							semanticExpression = scope.expression.semantic.buildOperator(literalExpression);
-							if(semanticExpression.success)
-								return semanticExpression.node;
-
-							/*semanticExpression = scope.expression.semantic.buildParenthetical(literalExpression);
-							if(semanticExpression.success)
-								return semanticExpression.node;*/
-							
-							if(literalExpression.getLength() == 0)
-								return new scope.expression.semantic.nodeTypes.Error("Empty node.");
-
-							var curSemanticNodeContents = "";
-							for(var i = 0; i < literalExpression.getLength(); i++) {
-								var literalNode = literalExpression.getNode(i);
-								switch(literalNode.type) {
-									case "numeral":
-										curSemanticNodeContents += literalNode.getVal();
-										break;
+							try {
+								this.assertNotEmpty(nodes);
+								this.assertParenthesesMatched(nodes);
+								//parse division
+								//parse brackets
+								//parse exponents 1 (create node with empty base)
+								//parse multichar symbols 1 (sin, cos etc)
+								this.parseNumerals(nodes);						//numbers
+								this.parseVariables(nodes);						//variables
+								//
+								//parse exponents 2
+								//parse multichars 2
+								this.parseImpliedMultiplication(nodes);
+								this.parseOperators(nodes, /[*]/);		//explicit *
+								this.parseOperators(nodes, /[+\-]/);	//explicit +/-
+							} catch(e) {
+								switch(e) {
+									case ERR_NOT_FOUND:					return new this.nodeTypes.Error("Missing number.");
+									case ERR_MALFORMED_NUMERAL:	return new this.nodeTypes.Error("Malformed Number.");
+									case ERR_INVALID_ARGUMENTS:	return new this.nodeTypes.Error("Invalid arguments.");
+									case ERR_EMPTY_EXPRESSION:	return new this.nodeTypes.Error("Empty expression.");
 								}
 							}
 
-							return new scope.expression.semantic.nodeTypes.Numeral(curSemanticNodeContents);
+							if(nodes.length > 1)	return new this.nodeTypes.Error("Irreducible expression.");
+							return nodes[0];
 						},
-
-						/*******************************************************************
-						 * function:		buildMultiple()
-						 *
-						 * description:	takes `literalExpressions`, runs each element
-						 *							through build() and returns the array of semantic
-						 *							expressions
-						 *
-						 * arguments:		literalExpression:	scope.expression.literal.nodeTypes.Expression
-						 *
-						 * return:			success:	BOOLEAN
-						 *							error:		UNDEFINED / INT
-						 *							nodes:		[scope.expression.semantic.nodeTypes.[any]]
-						 ******************************************************************/
-						buildMultiple: function(literalExpressions) {
-							var semanticExpressions = [];
-
-							for(var i = 0; i < literalExpressions.length; i++)
-								semanticExpressions[i] = scope.expression.semantic.build(literalExpressions[i]);
-							
-							return {success: true, nodes: semanticExpressions};
-						}
 					}
 				};
 				scope.expression.literal.tree = new scope.expression.literal.nodeTypes.Expression();
