@@ -7,16 +7,33 @@
 	var ERR_INVALID_ARGUMENTS 		= 4;
 	var ERR_EMPTY_EXPRESSION			= 5;
 
-	var app = angular.module("mathInputApp", []);
+	var mathInput = angular.module("mathInput", []);
 
-	app.directive("admMathInput", ["$interval", function($interval) {
+	mathInput.run(["$templateCache", function($templateCache) {
+		var template = "";
+		template += "<div class=\"mathinput\" tabindex=\"0\" ng-keypress=\"control.keypress($event)\"";
+			template += "	ng-keydown=\"control.keydown($event)\"";
+			template += " ng-focus=\"control.focus()\" ng-blur=\"control.blur()\">";
+		template += "<span ng-class=\"{'cursor': (cursor.position === 0 && cursor.visible)}\">&nbsp;</span>";
+		template += "<span class=\"literal\" ng-repeat=\"node in expression.literal.tree.nodes track by $index\"";
+			template += " ng-class=\"{'cursor': (cursor.position === $index+1 && cursor.visible)}\"";
+			template += " ng-click=\"control.nodeClick($index)\">{{node.getVal()}}</span>";
+		template += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{value}}\" />";
+		template += "</div>";
+		
+		$templateCache.put("adm-math-input.htm", template);
+	}]);
+
+	mathInput.directive("admMathInput", ["$interval", function($interval) {
 		return {
 			restrict: "E",
 			replace: true,
 			scope: {
-				format: "=?",
-				name: "="
+				format: "=?admFormat",
+				name: "=?admName",
+				value: "=?admValue"
 			},
+			templateUrl: "adm-math-input.htm",
 			link: function(scope, element) {
 				scope.format = angular.isDefined(scope.format) ? scope.format : "openmath";
 
@@ -38,6 +55,8 @@
 								miSubmit();
 								break;
 						}*/
+
+						scope.output.write();
 					},
 					keydown: function(e) {
 						//key has been captured and processed, prevent default action
@@ -50,8 +69,10 @@
 							default:										captured = false;
 						}
 
-						if(captured)
+						if(captured) {
+							scope.output.write();
 							return false;
+						}
 					},
 					nodeClick: function(nodeIndex) {
 						scope.cursor.goToPos(nodeIndex+1);
@@ -298,7 +319,10 @@
 									for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
 										subExpressionNodes.push(nodes[j]);
 
-									nodes.splice(i, subExpressionNodes.length+2, this.build(subExpressionNodes));
+									var semanticNode = this.build(subExpressionNodes);
+									if(semanticNode.type == "error")	throw ERR_EMPTY_EXPRESSION;
+
+									nodes.splice(i, subExpressionNodes.length+2, semanticNode);
 								}
 							}
 						},
@@ -455,7 +479,7 @@
 					 *
 					 * return:			STRING
 					 ******************************************************************/
-					get: function() {
+					write: function() {
 						var literalTree = scope.expression.literal.getTree();
 						var literalTreeNodes = literalTree.getNodes().slice(); //use slice() to copy by value, not reference
 						var semanticTree = scope.expression.semantic.build(literalTreeNodes);
@@ -464,7 +488,7 @@
 						openMath += semanticTree.getOpenMath();
 						openMath += "</OMOBJ>";
 
-						return openMath;
+						scope.value = openMath;
 					}
 				};
 
@@ -472,11 +496,7 @@
 					//cancel the cursor flash interval
 					scope.cursor.hide();
 				});
-			},
-			templateUrl: "templates/adm-math-input.htm"
+			}
 		};
 	}]);
-
-	app.controller("TestFormController", function() {
-	});
 })();
