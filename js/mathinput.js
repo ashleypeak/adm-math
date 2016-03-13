@@ -1,11 +1,11 @@
 (function() {
 	var CURSOR_FLASHPERIOD	= 530;
 
-	var ERR_NOT_FOUND					=	1;
-	var ERR_UNMATCHED_PAREN		= 2;
-	var ERR_MALFORMED_NUMERAL	= 3;
-	var ERR_INVALID_ARGUMENTS = 4;
-	var ERR_EMPTY_EXPRESSION	= 5;
+	var ERR_NOT_FOUND							=	1;
+	var ERR_UNMATCHED_PARENTHESIS	= 2;
+	var ERR_MALFORMED_NUMERAL			= 3;
+	var ERR_INVALID_ARGUMENTS 		= 4;
+	var ERR_EMPTY_EXPRESSION			= 5;
 
 	var app = angular.module("mathInputApp", []);
 
@@ -30,7 +30,7 @@
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
 
-						if(/[a-zA-Z0-9.+\-*]/.test(character))
+						if(/[a-zA-Z0-9.+\-*()]/.test(character))
 							scope.expression.literal.insert(character);
 						
 						/*switch(e.keyCode) {
@@ -112,6 +112,7 @@
 									if(/[0-9.]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Numeral(nodeVal);
 									if(/[a-zA-Z]/.test(nodeVal))	node = new scope.expression.literal.nodeTypes.Letter(nodeVal);
 									if(/[+\-*]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Operator(nodeVal);
+									if(/[()]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Parenthesis(nodeVal);
 
 									return node;
 								};
@@ -137,121 +138,6 @@
 								this.getNode = function(index) {
 									return this.nodes[index];
 								};
-
-								/*******************************************************************
-								 * function:		find()
-								 *
-								 * description:	find the first node in `this` whose getVal()
-								 *							matches `nodeVal`
-								 *
-								 * arguments:		nodeVal:	STRING
-								 *
-								 * return:			success:	BOOLEAN
-								 *							error:		UNDEFINED / INT
-								 *							position:	INT
-								 ******************************************************************/
-								this.find = function(nodeVal) {
-									for(var i = 0; i < this.getLength(); i++)
-										if(this.getNode(i).getVal() == nodeVal)
-											return {success: true, position: i};
-									return {success: false, error: ERR_NOT_FOUND};
-								};
-
-								/*******************************************************************
-								 * function:		split()
-								 *
-								 * description:	splits `this` into an array of two parts at `pos`,
-								 *							removing `charsToDelete` characters after the split,
-								 *							e.g.:
-								 *							"1+2".split(1, 1)	=>	[1, 2]
-								 *							"(1)(2)".split(3)	=>	[(1), (2)]
-								 *
-								 * arguments:		pos:						INT
-								 *							charsToDelete:	INT
-								 *
-								 * return:			success:	BOOLEAN
-								 *							error:		UNDEFINED / INT
-								 *							parts:		[scope.expression.literal.nodeTypes.expression]
-								 ******************************************************************/
-								this.split = function(pos, charsToDelete) {
-									var charsToDelete = typeof charsToDelete !== "undefined" ? charsToDelete : 0;
-
-									var parts = [];
-									parts[0] = new scope.expression.literal.nodeTypes.Expression(this.nodes.slice(0, pos));
-									parts[1] = new scope.expression.literal.nodeTypes.Expression(this.nodes.slice(pos + charsToDelete));
-
-									return {success: true, parts: parts};
-								};
-
-								/*******************************************************************
-								 * function:		splitAtOperator()
-								 *
-								 * description:	if `this` contains an operator (outside
-								 *							of any parentheticals), splits into a pair of
-								 *							expressions around operator and returns, e.g.
-								 *							a*b		=>	[a, b]
-								 *							a+b		=>	[a, b]
-								 *
-								 * arguments:		none
-								 *
-								 * return:			success:	BOOLEAN
-								 *							error:		UNDEFINED / INT
-								 *							symbol:		"+" | "-" | "*"
-								 *							parts:		[scope.expression.literal.nodeTypes.expression]
-								 ******************************************************************/
-								this.splitAtOperator = function() {
-									var _this = this;
-									var opFind = null;
-
-									//this doesn't work because the `return` just returns the forEach
-									//function. find a way to return properly.
-									//also _this=this may not be needed. see if it can be removed
-									/*var operators = ["+", "-", "*"];
-									angular.forEach(operators, function(op) {
-										opFind = _this.find(op);
-										if(opFind.success) {
-											var splitExpression = _this.split(opFind.position, 1);
-											return {success: true, symbol: op, parts: splitExpression.parts};
-										}
-									});*/
-									opFind = this.find("+");
-									if(opFind.success) {
-										var splitExpression = this.split(opFind.position, 1);
-										return {success: true, symbol: "+", parts: splitExpression.parts};
-									}
-									opFind = this.find("-");
-									if(opFind.success) {
-										var splitExpression = this.split(opFind.position, 1);
-										return {success: true, symbol: "-", parts: splitExpression.parts};
-									}
-									opFind = this.find("*");
-									if(opFind.success) {
-										var splitExpression = this.split(opFind.position, 1);
-										return {success: true, symbol: "*", parts: splitExpression.parts};
-									}
-
-									return {success: false, error: ERR_NOT_FOUND};
-								};
-
-								/*******************************************************************
-								 * function:		splitAtParenthetical()
-								 *
-								 * description:	if `this` contains a valid pair of parentheses,
-								 *							splits into an array of expressions and returns,
-								 *							e.g.:
-								 *							a(b)c		=>	[a, b, c]
-								 *							a(b)		=>	[a, b]
-								 *							(a)b		=>	[a, b]
-								 *							if unmatched parentheses are found, returns error
-								 *
-								 * arguments:		none
-								 *
-								 * return:			success:	BOOLEAN
-								 *							error:		UNDEFINED / INT
-								 *							parts:		[scope.expression.semantic.nodeTypes.Expression]
-								 ******************************************************************/
-								this.splitAtParenthetical = function() {
-								};
 							},
 							Numeral: function(val) {					//takes children: none
 								this.expressionType = "literal";
@@ -265,11 +151,18 @@
 								this.value = val;
 								this.getVal = function() {	return this.value;	};
 							},
+							Parenthesis: function(paren) {		//takes children: none
+								this.expressionType = "literal";
+								this.type = "parenthesis";
+								this.isStart = (paren == "(" ? true : false);
+								this.isEnd = !this.isStart;
+								this.getVal = function() {	return (this.isStart ? "(" : ")");	};
+							},
 							Operator: function(op) {					//takes children: none
 								this.expressionType = "literal";
 								this.type = "operator";
 								this.operator = op;
-								this.getVal = function() {	return op;	};
+								this.getVal = function() {	return this.operator;	};
 							}
 						},
 						tree: null,
@@ -372,8 +265,44 @@
 						 * return:			none
 						 ******************************************************************/
 						assertParenthesesMatched: function(nodes) {
+							var depth = 0;
+
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType == "literal" && nodes[i].type == "parenthesis") {
+									depth += (nodes[i].isStart ? 1 : -1);
+
+									if(depth < 0)	throw ERR_UNMATCHED_PARENTHESIS;
+								}
+							}
+
+							if(depth > 0)	throw ERR_UNMATCHED_PARENTHESIS;
 						},
 
+						/*******************************************************************
+						 * function:		parseParentheses()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							replaces all literal subexpressions surrounded
+						 *							by parentheses with appropriate semantic nodes
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseParentheses: function(nodes) {
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType == "literal" && nodes[i].type == "parenthesis" && nodes[i].isStart) {
+									var subExpressionNodes = [];
+									
+									for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
+										subExpressionNodes.push(nodes[j]);
+
+									nodes.splice(i, subExpressionNodes.length+2, this.build(subExpressionNodes));
+								}
+							}
+						},
+						
 						/*******************************************************************
 						 * function:		parseNumerals()
 						 *
@@ -475,37 +404,36 @@
 						/*******************************************************************
 						 * function:		build()
 						 *
-						 * description:	takes `literalExpression`, parses fully and returns
-						 *							a semantic expression
+						 * description:	takes mixed collection of nodes `nodes` and parses
+						 *							into a single semantic node
 						 *
-						 * arguments:		literalExpression:	scope.expression.literal.nodeTypes.Expression
+						 * arguments:		nodes:	[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			scope.expression.semantic.nodeTypes.[any]
 						 ******************************************************************/
-						build: function(literalExpression) {
-							var nodes = literalExpression.getNodes().slice(); //copy node array
-
+						build: function(nodes) {
 							try {
 								this.assertNotEmpty(nodes);
 								this.assertParenthesesMatched(nodes);
 								//parse division
-								//parse brackets
+								this.parseParentheses(nodes);
 								//parse exponents 1 (create node with empty base)
 								//parse multichar symbols 1 (sin, cos etc)
-								this.parseNumerals(nodes);						//numbers
-								this.parseVariables(nodes);						//variables
-								//
+								this.parseNumerals(nodes);
+								this.parseVariables(nodes);
+
 								//parse exponents 2
 								//parse multichars 2
 								this.parseImpliedMultiplication(nodes);
-								this.parseOperators(nodes, /[*]/);		//explicit *
-								this.parseOperators(nodes, /[+\-]/);	//explicit +/-
+								this.parseOperators(nodes, /[*]/);
+								this.parseOperators(nodes, /[+\-]/);
 							} catch(e) {
 								switch(e) {
-									case ERR_NOT_FOUND:					return new this.nodeTypes.Error("Missing number.");
-									case ERR_MALFORMED_NUMERAL:	return new this.nodeTypes.Error("Malformed Number.");
-									case ERR_INVALID_ARGUMENTS:	return new this.nodeTypes.Error("Invalid arguments.");
-									case ERR_EMPTY_EXPRESSION:	return new this.nodeTypes.Error("Empty expression.");
+									case ERR_NOT_FOUND:							return new this.nodeTypes.Error("Missing number.");
+									case ERR_UNMATCHED_PARENTHESIS:	return new this.nodeTypes.Error("Unmatched parenthesis.");
+									case ERR_MALFORMED_NUMERAL:			return new this.nodeTypes.Error("Malformed Number.");
+									case ERR_INVALID_ARGUMENTS:			return new this.nodeTypes.Error("Invalid arguments.");
+									case ERR_EMPTY_EXPRESSION:			return new this.nodeTypes.Error("Empty expression.");
 								}
 							}
 
@@ -525,19 +453,18 @@
 					 *
 					 * arguments:		none
 					 *
-					 * return:			success:	BOOLEAN
-					 *							error:		UNDEFINED / INT
-					 *							openmath:	STRING
+					 * return:			STRING
 					 ******************************************************************/
 					get: function() {
 						var literalTree = scope.expression.literal.getTree();
-						var semanticTree = scope.expression.semantic.build(literalTree);
+						var literalTreeNodes = literalTree.getNodes().slice(); //use slice() to copy by value, not reference
+						var semanticTree = scope.expression.semantic.build(literalTreeNodes);
 
-						var outputStr = "<OMOBJ>";
-						outputStr += semanticTree.getOpenMath();
-						outputStr += "</OMOBJ>";
+						var openMath = "<OMOBJ>";
+						openMath += semanticTree.getOpenMath();
+						openMath += "</OMOBJ>";
 
-						return {success: true, openmath: outputStr};
+						return openMath;
 					}
 				};
 
