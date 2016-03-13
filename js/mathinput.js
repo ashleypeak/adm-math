@@ -319,10 +319,11 @@
 									for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
 										subExpressionNodes.push(nodes[j]);
 
+									var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
 									var semanticNode = this.build(subExpressionNodes);
 									if(semanticNode.type == "error")	throw ERR_EMPTY_EXPRESSION;
 
-									nodes.splice(i, subExpressionNodes.length+2, semanticNode);
+									nodes.splice(i, literalLength, semanticNode);
 								}
 							}
 						},
