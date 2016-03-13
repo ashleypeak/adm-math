@@ -1,0 +1,28 @@
+@font-face {
+	font-family: latin-modern-math;
+	src: url(resources/lmmath-regular.otf);
+}
+.mathinput {
+	border: 1px solid #000000;
+	width: 200px;
+	height: 50px;
+	font-family: latin-modern-math;
+	font-size: 20pt;
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	cursor: text;
+}
+.mathinput span {
+	display: inline-block;
+	vertical-align: middle;
+	padding: 0px 1px 0px 0px;
+	cursor: text;
+}
+.mathinput span.cursor {
+	padding: 0px;
+	border-right: 1px solid #000000;
+}
+.mathinput .highlight {
+	background-color: #c8e8ff;
+}

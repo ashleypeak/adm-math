@@ -1,0 +1,2 @@
+semantic.nodeTypes.Error should only be inserted if output mode is OpenMath, all LaTeX is valid
+ - also, like, build in Latex support
