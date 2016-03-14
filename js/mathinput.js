@@ -22,7 +22,7 @@
 		template += "<span";
 		template += " ng-switch-when=\"exponent\"";
 		template += " class=\"exponent\"";
-		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}";
+		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
 		template += " ng-click=\"control.nodeClick($index)\">";
 		template += "<adm-math-expression";
 		template += " cursor=\"cursor\"";
@@ -138,7 +138,8 @@
 						this.visible = true;
 						
 						this.flashInterval = $interval(function() {
-							this.visible = !this.visible;
+							//can't use `this.visible`, I expect because `this` refers to something else inside $interval
+							scope.cursor.visible = !scope.cursor.visible;
 						}, CURSOR_FLASHPERIOD);
 					},
 					hide: function() {
