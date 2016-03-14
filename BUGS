@@ -1,2 +1,7 @@
-semantic.nodeTypes.Error should only be inserted if output mode is OpenMath, all LaTeX is valid
- - also, like, build in Latex support
+	- semantic.nodeTypes.Error should only be inserted if output mode is OpenMath, all LaTeX is valid
+		- also, like, build in Latex support
+	- any type of error inside parentheses is reported as an empty expression
+	- cursor isn't linking properly in element adm-math-expression
+		- doesn't flash, logs an error when you type '^'
+	- exponent navigavtion (left/right arrows) and backspacing not yet implemented
+		- exponent node should probably also disappear if it loses focus while empty

@@ -26,3 +26,9 @@
 .mathinput .highlight {
 	background-color: #c8e8ff;
 }
+.mathinput .exponent {
+	position: relative;
+	left: -5px;
+	font-size: 70%;
+	vertical-align: 0.6em;
+}

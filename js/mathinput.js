@@ -6,18 +6,72 @@
 	var ERR_MALFORMED_NUMERAL			= 3;
 	var ERR_INVALID_ARGUMENTS 		= 4;
 	var ERR_EMPTY_EXPRESSION			= 5;
+	var ERR_MISSING_BASE					= 6;
 
-	var mathInput = angular.module("mathInput", []);
+	var mathExpression = angular.module("mathExpression", []);
+	mathExpression.run(["$templateCache", function($templateCache) {
+		var template = "";
+		template += "<span>";
+		template += "<span";
+		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === 0 && cursor.visible)}\"";
+		template += " ng-click=\"control.nodeClick(-1)\">&nbsp;</span>";
+		template += "<span";
+		template += " ng-repeat=\"node in expression.nodes track by $index\"";
+		template += " ng-switch on=\"node.type\">";
+
+		template += "<span";
+		template += " ng-switch-when=\"exponent\"";
+		template += " class=\"exponent\"";
+		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}";
+		template += " ng-click=\"control.nodeClick($index)\">";
+		template += "<adm-math-expression";
+		template += " cursor=\"cursor\"";
+		template += " expression=\"node.exponent\"";
+		template += " control=\"control\"></adm-math-expression>";
+		template += "</span>";
+
+		template += "<span";
+		template += " ng-switch-default";
+		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
+		template += "  'exponent': node.type == 'exponent'}\"";
+		template += " ng-click=\"control.nodeClick($index)\">{{node.getVal()}}</span>";
+
+		template += "</span>";
+		template += "</span>";
+
+		$templateCache.put("adm-math-expression.htm", template);
+	}]);
+
+	mathExpression.directive("admMathExpression", function() {
+		return {
+			restrict: "E",
+			replace: true,
+			scope: {
+				cursor: "=",
+				expression: "=",
+				control: "="
+			},
+			templateUrl: "adm-math-expression.htm",
+			link: function(scope) {
+			}
+		};
+	});
+
+	var mathInput = angular.module("mathInput", ["mathExpression"]);
 
 	mathInput.run(["$templateCache", function($templateCache) {
 		var template = "";
-		template += "<div class=\"mathinput\" tabindex=\"0\" ng-keypress=\"control.keypress($event)\"";
-			template += "	ng-keydown=\"control.keydown($event)\"";
-			template += " ng-focus=\"control.focus()\" ng-blur=\"control.blur()\">";
-		template += "<span ng-class=\"{'cursor': (cursor.position === 0 && cursor.visible)}\">&nbsp;</span>";
-		template += "<span class=\"literal\" ng-repeat=\"node in expression.literal.tree.nodes track by $index\"";
-			template += " ng-class=\"{'cursor': (cursor.position === $index+1 && cursor.visible)}\"";
-			template += " ng-click=\"control.nodeClick($index)\">{{node.getVal()}}</span>";
+		template += "<div";
+		template += "	class=\"mathinput\"";
+		template += " tabindex=\"0\"";
+		template += " ng-keypress=\"control.keypress($event)\"";
+		template += "	ng-keydown=\"control.keydown($event)\"";
+		template += " ng-focus=\"control.focus()\"";
+		template += " ng-blur=\"control.blur()\">";
+		template += "<adm-math-expression";
+		template += " cursor=\"cursor\"";
+		template += " expression=\"expression.literal.tree\"";
+		template += " control=\"control\"></adm-math-expression>";
 		template += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{value}}\" />";
 		template += "</div>";
 		
@@ -39,6 +93,7 @@
 
 				scope.control = {
 					focus: function() {
+						scope.cursor.expression = scope.expression.literal.tree;
 						scope.cursor.goToEnd();
 					},
 					blur: function() {
@@ -47,14 +102,8 @@
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
 
-						if(/[a-zA-Z0-9.+\-*()]/.test(character))
-							scope.expression.literal.insert(character);
-						
-						/*switch(e.keyCode) {
-							case $.ui.keyCode.ENTER:
-								miSubmit();
-								break;
-						}*/
+						if(/[a-zA-Z0-9.+\-*()\^]/.test(character))
+							scope.cursor.insert(character);
 
 						scope.output.write();
 					},
@@ -63,7 +112,7 @@
 						var captured = true;
 						
 						switch(e.keyCode) {
-							case 8:		/*backspace*/			scope.expression.literal.backspace();		break;
+							case 8:		/*backspace*/			scope.cursor.backspace();								break;
 							case 37:	/*left arrow*/		scope.cursor.moveLeft();								break;
 							case 39:	/*right arrow*/		scope.cursor.moveRight();								break;
 							default:										captured = false;
@@ -80,52 +129,70 @@
 				};
 
 				scope.cursor = {
+					expression: null,
 					position: null,
 					visible: false,
 					flashInterval: null,
 					show: function() {
-						scope.cursor.hide();
-						scope.cursor.visible = true;
+						this.hide();
+						this.visible = true;
 						
-						scope.cursor.flashInterval = $interval(function() {
-							scope.cursor.visible = !scope.cursor.visible;
+						this.flashInterval = $interval(function() {
+							this.visible = !this.visible;
 						}, CURSOR_FLASHPERIOD);
 					},
 					hide: function() {
-						scope.cursor.visible = false;
-						$interval.cancel(scope.cursor.flashInterval);
+						this.visible = false;
+						$interval.cancel(this.flashInterval);
+					},
+					insert: function(character) {
+						var node = this.expression.insert(this.position, character);
+						switch(character) {
+							case "^":
+								this.expression = node.exponent;
+								this.position = 0;
+								break;
+							default:
+								this.moveRight();
+						}
+					},
+					backspace: function() {
+						if(this.position > 0) {
+							this.expression.deleteAt(this.position - 1);
+							this.moveLeft();
+						}
 					},
 					moveLeft: function() {
-						scope.cursor.position = Math.max(scope.cursor.position - 1, 0);
-						scope.cursor.show();
+						this.position = Math.max(this.position - 1, 0);
+						this.show();
 					},
 					moveRight: function() {
-						scope.cursor.position = Math.min(scope.cursor.position + 1, scope.expression.literal.getLength());
-						scope.cursor.show();
+						this.position = Math.min(this.position + 1, this.expression.getLength());
+						this.show();
 					},
 					goToStart: function() {
-						scope.cursor.position = 0;
-						scope.cursor.show();
+						this.position = 0;
+						this.show();
 					},
 					goToPos: function(pos) {
-						scope.cursor.position = pos;
-						scope.cursor.show();
+						this.position = pos;
+						this.show();
 					},
 					goToEnd: function() {
-						scope.cursor.position = scope.expression.literal.getLength();
-						scope.cursor.show();
+						this.position = this.expression.getLength();
+						this.show();
 					}
 				};
 
 				scope.expression = {
 					literal: {
 						nodeTypes: {
-							Expression: function(nodes) {			//takes children: Numeral, Letter, Operator, Division, Exponent
+							Expression: function() {			//takes children: Numeral, Letter, Operator, Division, Exponent
 								this.expressionType = "literal";
 								this.type = "expression";
-								this.nodes = typeof nodes !== "undefined" ? nodes : [];
+								this.nodes = [];
 								
-								this.getVal = function() { return null; }
+								this.getVal = function() {	return null;	};
 
 								this.createNode = function(nodeVal) {
 									var node = null;
@@ -134,6 +201,7 @@
 									if(/[a-zA-Z]/.test(nodeVal))	node = new scope.expression.literal.nodeTypes.Letter(nodeVal);
 									if(/[+\-*]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Operator(nodeVal);
 									if(/[()]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Parenthesis(nodeVal);
+									if(/[\^]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Exponent();
 
 									return node;
 								};
@@ -142,6 +210,8 @@
 									var node = this.createNode(nodeVal);
 
 									this.nodes.splice(pos, 0, node);
+
+									return node;
 								};
 
 								this.deleteAt = function(pos) {
@@ -184,25 +254,15 @@
 								this.type = "operator";
 								this.operator = op;
 								this.getVal = function() {	return this.operator;	};
+							},
+							Exponent: function() {						//takes children: none
+								this.expressionType = "literal";
+								this.type = "exponent";
+								this.exponent = new scope.expression.literal.nodeTypes.Expression();
+								this.getVal = function() {	return "asdf";	};
 							}
 						},
-						tree: null,
-						insert: function(nodeVal) {
-							scope.expression.literal.tree.insert(scope.cursor.position, nodeVal);
-							scope.cursor.moveRight();
-						},
-						getLength: function() {
-							return scope.expression.literal.tree.getLength();
-						},
-						backspace: function() {
-							if(scope.cursor.position > 0) {
-								scope.expression.literal.tree.deleteAt(scope.cursor.position - 1);
-								scope.cursor.moveLeft();
-							}
-						},
-						getTree: function() {
-							return scope.expression.literal.tree;
-						}
+						tree: null
 					},
 					semantic: {
 						nodeTypes: {
@@ -246,6 +306,30 @@
 									return "<OMA><OMS cd='arith1' name='"+opName+"'/>"
 										+ this.children[0].getOpenMath()
 										+ this.children[1].getOpenMath()
+										+ "</OMA>";
+								};
+							},
+							Exponent: function(base, exponent) {
+								this.expressionType = "semantic";
+								this.type = "exponent";
+								this.base = typeof base !== "undefined" ? base : null;
+								this.exponent = typeof exponent !== "undefined" ? exponent : null;
+
+								this.assertHasValidChildren = function() {
+									console.log('a');
+										if(this.base == null || this.exponent == null)		throw ERR_INVALID_ARGUMENTS;
+										console.log('b');
+										if(this.base.type == "error")											throw ERR_INVALID_ARGUMENTS;
+										console.log('c');
+										console.log(this.exponent.type == "error");
+										if(this.exponent.type == "error")									throw ERR_INVALID_ARGUMENTS;
+										console.log('d');
+								}
+
+								this.getOpenMath = function() {
+									return "<OMA><OMS cd='arith1' name='power'>"
+										+ this.base.getOpenMath()
+										+ this.exponent.getOpenMath()
 										+ "</OMA>";
 								};
 							},
@@ -297,6 +381,54 @@
 							}
 
 							if(depth > 0)	throw ERR_UNMATCHED_PARENTHESIS;
+						},
+
+						/*******************************************************************
+						 * function:		parseExponents()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							replaces all literal.nodeTypes.Exponent
+						 *							with an equivalent semantic.nodeTypes.Exponent
+						 *							leaves the semantic node's `base` as null
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseExponents: function(nodes) {
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType == "literal" && nodes[i].type == "exponent") {
+									var semanticExponent = this.build(nodes[i].exponent.getNodes().slice());
+									if(semanticExponent.type == "error")	throw ERR_EMPTY_EXPRESSION;
+
+									nodes.splice(i, 1, new this.nodeTypes.Exponent(null, semanticExponent));
+								}
+							}
+						},
+
+						/*******************************************************************
+						 * function:		applyExponents()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and,
+						 *							wherever there is a semantic.nodeTypes.exponent,
+						 *							fills its `base` with the preceding node
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						applyExponents: function(nodes) {
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType == "semantic" && nodes[i].type == "exponent") {
+									if(i == 0)	throw ERR_MISSING_BASE;
+
+									nodes[i].base = nodes[i-1];
+
+									nodes.splice(i-1, 1);
+								}
+							}
 						},
 
 						/*******************************************************************
@@ -442,12 +574,12 @@
 								this.assertParenthesesMatched(nodes);
 								//parse division
 								this.parseParentheses(nodes);
-								//parse exponents 1 (create node with empty base)
+								this.parseExponents(nodes);		//create exponent semantic nodes, leave base empty for now
 								//parse multichar symbols 1 (sin, cos etc)
 								this.parseNumerals(nodes);
 								this.parseVariables(nodes);
 
-								//parse exponents 2
+								this.applyExponents(nodes);		//fill in bases of exponent semantic nodes
 								//parse multichars 2
 								this.parseImpliedMultiplication(nodes);
 								this.parseOperators(nodes, /[*]/);
@@ -459,6 +591,7 @@
 									case ERR_MALFORMED_NUMERAL:			return new this.nodeTypes.Error("Malformed Number.");
 									case ERR_INVALID_ARGUMENTS:			return new this.nodeTypes.Error("Invalid arguments.");
 									case ERR_EMPTY_EXPRESSION:			return new this.nodeTypes.Error("Empty expression.");
+									case ERR_MISSING_BASE:					return new this.nodeTypes.Error("Exponent has no base.");
 								}
 							}
 
@@ -481,7 +614,7 @@
 					 * return:			STRING
 					 ******************************************************************/
 					write: function() {
-						var literalTree = scope.expression.literal.getTree();
+						var literalTree = scope.expression.literal.tree;
 						var literalTreeNodes = literalTree.getNodes().slice(); //use slice() to copy by value, not reference
 						var semanticTree = scope.expression.semantic.build(literalTreeNodes);
 
