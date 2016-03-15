@@ -15,8 +15,8 @@ bower install https://github.com/wyattpeak/adm-math-input.git
 You'll first have to include the module files:
 
 ```html
-<link rel="stylesheet" href="bower_components/adm-math-input/adm-math-input.css">
-<script type="text/javascript" src="bower_components/adm-math-input/adm-math-input.js"></script>
+<link rel="stylesheet" href="bower_components/adm-math-input/css/adm-math-input.css">
+<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-input.js"></script>
 ```
 
 Then include the module in your Angular.js module:
