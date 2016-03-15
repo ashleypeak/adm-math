@@ -91,14 +91,67 @@
 			link: function(scope, element) {
 				scope.format = angular.isDefined(scope.format) ? scope.format : "openmath";
 
+				/*******************************************************************
+				 * object:			control{}
+				 *
+				 * description:	contains all functions used to handle user input
+				 *							and interaction with the math input field
+				 *
+				 * variables:		none
+				 * 
+				 * functions:		`focus`			returns none
+				 *							`blur`			returns none
+				 *							`keypress`	returns none
+				 *							`keydown`		returns BOOLEAN | none
+				 *							`nodeClick`	returns none
+				 ******************************************************************/
 				scope.control = {
+					/*******************************************************************
+					 * function:		focus()
+					 *
+					 * description:	run on ngFocus of math input field
+					 *							place cursor at end of field
+					 *							relevant when user tabs into field or clicks
+					 *							somewhere in field which is not on a node, otherwise
+					 *							overridden by nodeClick()
+					 *							THOUGHT:	How is it overridden? Doesn't the entire
+					 *												focus bubbling chain run after the entire
+					 *												click bubbling chain?
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					focus: function() {
 						scope.cursor.expression = scope.expression.literal.tree;
 						scope.cursor.goToEnd();
 					},
+
+					/*******************************************************************
+					 * function:		blur()
+					 *
+					 * description:	run on ngBlur of math input field
+					 *							hides the cursor
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					blur: function() {
 						scope.cursor.hide();
 					},
+
+					/*******************************************************************
+					 * function:		blur()
+					 *
+					 * description:	run on ngKeypress of math input field
+					 *							if `e`.which is a valid character, inserts it into
+					 *							expression
+					 *
+					 * arguments:		e:	Event
+					 *
+					 * return:			none
+					 ******************************************************************/
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
 
@@ -107,6 +160,18 @@
 
 						scope.output.write();
 					},
+
+					/*******************************************************************
+					 * function:		blur()
+					 *
+					 * description:	run on ngKeydown of math input field
+					 *							principally used because you can't preventDefault of
+					 *							backspace onKeyPress, I don't know why.
+					 *
+					 * arguments:		e:	Event
+					 *
+					 * return:			BOOLEAN | none
+					 ******************************************************************/
 					keydown: function(e) {
 						//key has been captured and processed, prevent default action
 						var captured = true;
@@ -123,62 +188,229 @@
 							return false;
 						}
 					},
+
+					/*******************************************************************
+					 * function:		nodeClick()
+					 *
+					 * description:	run when an individual node element is clicked
+					 *							moves cursor over the node at `nodeIndex` rather
+					 *							than at the end of the math input field
+					 *
+					 * arguments:		nodeIndex	INT
+					 *
+					 * return:			none
+					 ******************************************************************/
 					nodeClick: function(nodeIndex) {
+						//due to differing indices, position must be 1 higher than nodeIndex
+						var position = nodeIndex + 1;
 						scope.cursor.goToPos(nodeIndex+1);
 					}
 				};
 
+				/*******************************************************************
+				 * object:			cursor{}
+				 *
+				 * description:	contains all functions used to move the cursor
+				 *							around the math input field, and relevant state
+				 *							variables
+				 *
+				 * variables:		`expression`		scope.literal.nodeTypes.Expression
+				 *							`position`			INT
+				 *							`visible`				BOOL
+				 *							`flashInterval`	Angular `promise`
+				 * 
+				 * functions:		`show`								returns none
+				 *							`hide`								returns none
+				 *							`insert`							returns none
+				 *							`backspace`						returns none
+				 *							`tryMoveIntoExponent`	returns none
+				 *							`tryMoveIntoParent`		returns none
+				 *							`moveLeft`						returns none
+				 *							`moveRight`						returns none
+				 *							`goToPos`							returns none
+				 *							`goToEnd`							returns none
+				 ******************************************************************/
 				scope.cursor = {
-					expression: null,
-					position: null,
-					visible: false,
-					flashInterval: null,
+					expression: null,			//the scope.literal.nodeTypes.Expression which the cursor is currently in
+					position: null,				//the position of the cursor within `expression`
+					visible: false,				//flag for whether the cursor should be visible (alternates for cursor flash)
+					flashInterval: null,	//handler for cursor flashing interval
+
+					/*******************************************************************
+					 * function:		show()
+					 *
+					 * description:	show the cursor and start its flashing
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					show: function() {
 						this.hide();
 						this.visible = true;
 						
 						this.flashInterval = $interval(function() {
-							//can't use `this.visible`, I expect because `this` refers to something else inside $interval
 							scope.cursor.visible = !scope.cursor.visible;
 						}, CURSOR_FLASHPERIOD);
 					},
+
+					/*******************************************************************
+					 * function:		hide()
+					 *
+					 * description:	hide the cursor, and cancel flashing to avoid memory
+					 *							leak
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					hide: function() {
 						this.visible = false;
 						$interval.cancel(this.flashInterval);
 					},
+
+					/*******************************************************************
+					 * function:		insert()
+					 *
+					 * description:	insert character `character` after the node under
+					 *							the cursor
+					 *
+					 * arguments:		character CHAR
+					 *
+					 * return:			none
+					 ******************************************************************/
 					insert: function(character) {
-						var node = this.expression.insert(this.position, character);
-						switch(character) {
-							case "^":
-								this.expression = node.exponent;
-								this.position = 0;
-								break;
-							default:
-								this.moveRight();
-						}
+						this.expression.insert(this.position, character);
+						this.moveRight();
 					},
+
+					/*******************************************************************
+					 * function:		backspace()
+					 *
+					 * description:	delete node under cursor, if there is one
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					backspace: function() {
-						if(this.position > 0) {
-							this.expression.deleteAt(this.position - 1);
-							this.moveLeft();
-						}
+						//due to differing indices, this.position-1 is the node under the cursor
+						var nodeIndex = this.position - 1;
+						
+						if(this.position == 0)	return;
+
+						this.expression.deleteAt(nodeIndex);
+						this.moveLeft();
 					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoExponent()
+					 *
+					 * description:	if the cursor is over an Exponent node, moves the
+					 *							cursor inside the exponent expression, to the
+					 *							start or end according to `terminus`.
+					 *
+					 * arguments:		terminus: STRING ("start"|"end")
+					 *
+					 * return:			none
+					 ******************************************************************/
+					tryMoveIntoExponent: function(terminus) {
+						//due to differing indices, this.position-1 is the node under the cursor
+						var nodeIndex = this.position - 1;
+						
+						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return;
+						if(this.expression.getNode(nodeIndex).type != "exponent")	return;
+
+						this.expression = this.expression.getNode(nodeIndex).exponent;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoParent()
+					 *
+					 * description:	moves the cursor into the parent node, if it exists.
+					 *							used when the cursor is at one terminus of its
+					 *							current expression, and so can't move any further.
+					 *							moves into parent before or after the current node
+					 *							depending on `relativePosition`.
+					 *
+					 * arguments:		relativePosition: STRING ("before"|"after")
+					 *
+					 * return:			none
+					 ******************************************************************/
+					tryMoveIntoParent: function(relativePosition) {
+						if(this.expression.parentNode === null)	return;
+
+						//every expression except the root expression (scope.literal.tree)
+						//has a parentNode (exponent or division), while every node of course
+						//has a parent expression. we want to move into that expression
+						var parentNode = this.expression.parentNode;
+						var parentExpression = parentNode.parentNode;
+
+						this.expression = parentExpression;
+						this.position = this.expression.findNode(parentNode);
+						this.position += (relativePosition == "after" ? 1 : 0);
+					},
+					
+					/*******************************************************************
+					 * function:		moveLeft()
+					 *
+					 * description:	attempts to move the cursor one character to the
+					 *							left
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					moveLeft: function() {
-						this.position = Math.max(this.position - 1, 0);
+						if(this.position == 0)	return this.tryMoveIntoParent("before");
+
+						this.position--;
+						this.tryMoveIntoExponent("end");
 						this.show();
 					},
+					
+					/*******************************************************************
+					 * function:		moveRight()
+					 *
+					 * description:	attempts to move the cursor one character to the
+					 *							right
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					moveRight: function() {
-						this.position = Math.min(this.position + 1, this.expression.getLength());
+						if(this.position == this.expression.getLength())	return this.tryMoveIntoParent("after");
+						
+						this.position++;
+						this.tryMoveIntoExponent("start");
 						this.show();
 					},
-					goToStart: function() {
-						this.position = 0;
-						this.show();
-					},
+
+					/*******************************************************************
+					 * function:		goToPos()
+					 *
+					 * description:	place cursor at position `pos` in expression.
+					 *
+					 * arguments:		pos: INT
+					 *
+					 * return:			none
+					 ******************************************************************/
 					goToPos: function(pos) {
 						this.position = pos;
 						this.show();
 					},
+
+					/*******************************************************************
+					 * function:		goToEnd()
+					 *
+					 * description:	place cursor at end of expression
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
 					goToEnd: function() {
 						this.position = this.expression.getLength();
 						this.show();
@@ -188,7 +420,9 @@
 				scope.expression = {
 					literal: {
 						nodeTypes: {
-							Expression: function() {			//takes children: Numeral, Letter, Operator, Division, Exponent
+							Expression: function(parentNode) {			//takes children: Numeral, Letter, Operator, Division, Exponent
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = typeof parentNode !== "undefined" ? parentNode : null;
 								this.expressionType = "literal";
 								this.type = "expression";
 								this.nodes = [];
@@ -198,11 +432,11 @@
 								this.createNode = function(nodeVal) {
 									var node = null;
 
-									if(/[0-9.]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Numeral(nodeVal);
-									if(/[a-zA-Z]/.test(nodeVal))	node = new scope.expression.literal.nodeTypes.Letter(nodeVal);
-									if(/[+\-*]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Operator(nodeVal);
-									if(/[()]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Parenthesis(nodeVal);
-									if(/[\^]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Exponent();
+									if(/[0-9.]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Numeral(this, nodeVal);
+									if(/[a-zA-Z]/.test(nodeVal))	node = new scope.expression.literal.nodeTypes.Letter(this, nodeVal);
+									if(/[+\-*]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Operator(this, nodeVal);
+									if(/[()]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Parenthesis(this, nodeVal);
+									if(/[\^]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Exponent(this);
 
 									return node;
 								};
@@ -230,39 +464,56 @@
 								this.getNode = function(index) {
 									return this.nodes[index];
 								};
+
+								this.findNode = function(node) {
+									for(var i = 0; i < this.nodes.length; i++)
+										if(this.nodes[i].id == node.id)
+											return i;
+								};
 							},
-							Numeral: function(val) {					//takes children: none
+							Numeral: function(parentNode, val) {					//takes children: none
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = parentNode;
 								this.expressionType = "literal";
 								this.type = "numeral";
 								this.value = val;
 								this.getVal = function() {	return this.value;	};
 							},
-							Letter: function(val) {						//takes children: none
+							Letter: function(parentNode, val) {						//takes children: none
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = parentNode;
 								this.expressionType = "literal";
 								this.type = "letter";
 								this.value = val;
 								this.getVal = function() {	return this.value;	};
 							},
-							Parenthesis: function(paren) {		//takes children: none
+							Parenthesis: function(parentNode, paren) {		//takes children: none
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = parentNode;
 								this.expressionType = "literal";
 								this.type = "parenthesis";
 								this.isStart = (paren == "(" ? true : false);
 								this.isEnd = !this.isStart;
 								this.getVal = function() {	return (this.isStart ? "(" : ")");	};
 							},
-							Operator: function(op) {					//takes children: none
+							Operator: function(parentNode, op) {					//takes children: none
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = parentNode;
 								this.expressionType = "literal";
 								this.type = "operator";
 								this.operator = op;
 								this.getVal = function() {	return this.operator;	};
 							},
-							Exponent: function() {						//takes children: none
+							Exponent: function(parentNode) {						//takes children: none
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = parentNode;
 								this.expressionType = "literal";
 								this.type = "exponent";
-								this.exponent = new scope.expression.literal.nodeTypes.Expression();
-								this.getVal = function() {	return "asdf";	};
+								this.exponent = new scope.expression.literal.nodeTypes.Expression(this);
+								this.getVal = function() {	return null;	};
 							}
 						},
+						nodeNextId: 1,
 						tree: null
 					},
 					semantic: {
