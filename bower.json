@@ -13,7 +13,9 @@
   "ignore": [
     "**/.*",
     "bower_components",
-    "tests"
+    "tests",
+    "BUGS",
+    "README.md"
   ],
   "dependencies": {
     "angular": "~1.5.0"
