@@ -5,11 +5,12 @@
     "Wyatt Peak <wyattpeak@gmail.com>"
   ],
   "description": "An Angular.js-based mathematical expression input field",
-  "main": "js/adm-math-input.js",
-  "moduleType": [],
+  "main": [
+    "js/adm-math-input.js",
+    "css/adm-math-input.css"
+  ],
   "license": "MIT",
-  "homepage": "",
-  "private": true,
+  "homepage": "https://github.com/wyattpeak/adm-math-input",
   "ignore": [
     "**/.*",
     "bower_components",
