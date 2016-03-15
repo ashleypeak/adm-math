@@ -1,0 +1,21 @@
+{
+  "name": "adm-math-input",
+  "version": "0.1.0",
+  "authors": [
+    "Wyatt Peak <wyattpeak@gmail.com>"
+  ],
+  "description": "An Angular.js-based mathematical expression input field",
+  "main": "js/adm-math-input.js",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.5.0"
+  }
+}
