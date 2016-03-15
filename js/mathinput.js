@@ -31,6 +31,25 @@
 		template += "</span>";
 
 		template += "<span";
+		template += " ng-switch-when=\"division\"";
+		template += " class=\"division\"";
+		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		template += " ng-click=\"control.nodeClick($index)\">";
+		template += "<span class=\"numerator\">";
+		template += "<adm-math-expression";
+		template += " cursor=\"cursor\"";
+		template += " expression=\"node.numerator\"";
+		template += " control=\"control\"></adm-math-expression>";
+		template += "</span>";
+		template += "<span class=\"denominator\">";
+		template += "<adm-math-expression";
+		template += " cursor=\"cursor\"";
+		template += " expression=\"node.denominator\"";
+		template += " control=\"control\"></adm-math-expression>";
+		template += "</span>";
+		template += "</span>";
+
+		template += "<span";
 		template += " ng-switch-default";
 		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
 		template += "  'exponent': node.type == 'exponent'}\"";
@@ -154,7 +173,6 @@
 					 ******************************************************************/
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
-
 						if(/[a-zA-Z0-9.+\-*()\^]/.test(character))
 							scope.cursor.insert(character);
 
@@ -165,8 +183,8 @@
 					 * function:		blur()
 					 *
 					 * description:	run on ngKeydown of math input field
-					 *							principally used because you can't preventDefault of
-					 *							backspace onKeyPress, I don't know why.
+					 *							principally used when preventDefault is needed
+					 *							i.e. on backspace and '/' (quickfind in firefox)
 					 *
 					 * arguments:		e:	Event
 					 *
@@ -177,14 +195,19 @@
 						var captured = true;
 						
 						switch(e.keyCode) {
-							case 8:		/*backspace*/			scope.cursor.backspace();								break;
-							case 37:	/*left arrow*/		scope.cursor.moveLeft();								break;
-							case 39:	/*right arrow*/		scope.cursor.moveRight();								break;
-							default:										captured = false;
+							case 8:		/*backspace*/				scope.cursor.backspace();								break;
+							case 37:	/*left arrow*/			scope.cursor.moveLeft();								break;
+							case 38:	/*up arrow*/				scope.cursor.moveUp();									break;
+							case 39:	/*right arrow*/			scope.cursor.moveRight();								break;
+							case 40:	/*down arrow*/			scope.cursor.moveDown();								break;
+							case 191:	/*forward slash*/		scope.cursor.insert("/");								break;
+							default:											captured = false;
 						}
 
 						if(captured) {
 							scope.output.write();
+
+							e.preventDefault();
 							return false;
 						}
 					},
@@ -219,16 +242,21 @@
 				 *							`visible`				BOOL
 				 *							`flashInterval`	Angular `promise`
 				 * 
-				 * functions:		`show`								returns none
-				 *							`hide`								returns none
-				 *							`insert`							returns none
-				 *							`backspace`						returns none
-				 *							`tryMoveIntoExponent`	returns none
-				 *							`tryMoveIntoParent`		returns none
-				 *							`moveLeft`						returns none
-				 *							`moveRight`						returns none
-				 *							`goToPos`							returns none
-				 *							`goToEnd`							returns none
+				 * functions:		`show`										returns none
+				 *							`hide`										returns none
+				 *							`insert`									returns none
+				 *							`backspace`								returns none
+				 *							`tryMoveIntoParent`				returns none
+				 *							`tryMoveIntoExponent`			returns none
+				 *							`tryMoveIntoDivision`			returns none
+				 *							`tryMoveIntoNumerator`		returns none
+				 *							`tryMoveIntoDenominator`	returns none
+				 *							`moveLeft`								returns none
+				 *							`moveUp`									returns none
+				 *							`moveRight`								returns none
+				 *							`moveDown`								returns none
+				 *							`goToPos`									returns none
+				 *							`goToEnd`									returns none
 				 ******************************************************************/
 				scope.cursor = {
 					expression: null,			//the scope.literal.nodeTypes.Expression which the cursor is currently in
@@ -304,28 +332,6 @@
 					},
 					
 					/*******************************************************************
-					 * function:		tryMoveIntoExponent()
-					 *
-					 * description:	if the cursor is over an Exponent node, moves the
-					 *							cursor inside the exponent expression, to the
-					 *							start or end according to `terminus`.
-					 *
-					 * arguments:		terminus: STRING ("start"|"end")
-					 *
-					 * return:			none
-					 ******************************************************************/
-					tryMoveIntoExponent: function(terminus) {
-						//due to differing indices, this.position-1 is the node under the cursor
-						var nodeIndex = this.position - 1;
-						
-						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return;
-						if(this.expression.getNode(nodeIndex).type != "exponent")	return;
-
-						this.expression = this.expression.getNode(nodeIndex).exponent;
-						this.position = (terminus == "start" ? 0 : this.expression.getLength());
-					},
-					
-					/*******************************************************************
 					 * function:		tryMoveIntoParent()
 					 *
 					 * description:	moves the cursor into the parent node, if it exists.
@@ -336,10 +342,10 @@
 					 *
 					 * arguments:		relativePosition: STRING ("before"|"after")
 					 *
-					 * return:			none
+					 * return:			BOOLEAN
 					 ******************************************************************/
 					tryMoveIntoParent: function(relativePosition) {
-						if(this.expression.parentNode === null)	return;
+						if(this.expression.parentNode === null)	return false;
 
 						//every expression except the root expression (scope.literal.tree)
 						//has a parentNode (exponent or division), while every node of course
@@ -350,6 +356,112 @@
 						this.expression = parentExpression;
 						this.position = this.expression.findNode(parentNode);
 						this.position += (relativePosition == "after" ? 1 : 0);
+						return true;
+					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoExponent()
+					 *
+					 * description:	if the cursor is over an Exponent node, moves the
+					 *							cursor inside the exponent expression, to the
+					 *							start or end according to `terminus`.
+					 *
+					 * arguments:		terminus: STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoExponent: function(terminus) {
+						//due to differing indices, this.position-1 is the node under the cursor
+						var nodeIndex = this.position - 1;
+						
+						//otherwise you can't scroll left to the space directly after the node
+						if(terminus == "end")	nodeIndex++;
+
+						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return false;
+						if(this.expression.getNode(nodeIndex).type != "exponent")	return false;
+
+						this.expression = this.expression.getNode(nodeIndex).exponent;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+
+						return true;
+					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoDivision()
+					 *
+					 * description:	if the cursor is over a Division node, moves the
+					 *							cursor inside the numerator or denominator expression,
+					 *							depending on `expression`, and to the start or end
+					 *							of that expression according to `terminus`.
+					 *
+					 * arguments:		expression:	STRING ("numerator"|"denominator")
+					 *							terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoDivision: function(expression, terminus) {
+						//due to differing indices, this.position-1 is the node under the cursor
+						var nodeIndex = this.position - 1;
+
+						//if moving left, only try to enter node after scrolling PAST it
+						//otherwise you can't scroll left to the space directly after the node
+						if(terminus == "end")	nodeIndex++;
+						
+						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return false;
+						if(this.expression.getNode(nodeIndex).type != "division")	return false;
+
+						var divisionNode = this.expression.getNode(nodeIndex);
+						switch(expression) {
+							case "numerator":			this.expression = divisionNode.numerator;			break;
+							case "denominator":		this.expression = divisionNode.denominator;		break;
+						}
+
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
+					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoNumerator()
+					 *
+					 * description:	if the cursor is in a denominator, moves the cursor
+					 *							up to the corresponding numerator
+					 *
+					 * arguments:		terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoNumerator: function(terminus) {
+						if(this.expression.parentNode == null)									return false;
+						if(this.expression.parentNode.type != "division")				return false;
+
+						var divisionNode = this.expression.parentNode;
+						if(this.expression.id !== divisionNode.denominator.id)	return false;
+
+						this.expression = divisionNode.numerator;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
+					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoDenominator()
+					 *
+					 * description:	if the cursor is in a numerator, moves the cursor
+					 *							up to the corresponding denominator
+					 *
+					 * arguments:		terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoDenominator: function(terminus) {
+						if(this.expression.parentNode == null)								return false;
+						if(this.expression.parentNode.type != "division")			return false;
+
+						var divisionNode = this.expression.parentNode;
+						if(this.expression.id !== divisionNode.numerator.id)	return false;
+
+						this.expression = divisionNode.denominator;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
 					},
 					
 					/*******************************************************************
@@ -366,7 +478,23 @@
 						if(this.position == 0)	return this.tryMoveIntoParent("before");
 
 						this.position--;
-						this.tryMoveIntoExponent("end");
+						this.tryMoveIntoExponent("end") || this.tryMoveIntoDivision("numerator", "end");
+						this.show();
+					},
+					
+					/*******************************************************************
+					 * function:		moveUp()
+					 *
+					 * description:	attempts to move the cursor one *logical movement
+					 *							unit* up. (currently just moves from denominator
+					 *							of fraction to numerator)
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					moveUp: function() {
+						this.tryMoveIntoNumerator("end");
 						this.show();
 					},
 					
@@ -384,7 +512,23 @@
 						if(this.position == this.expression.getLength())	return this.tryMoveIntoParent("after");
 						
 						this.position++;
-						this.tryMoveIntoExponent("start");
+						this.tryMoveIntoExponent("start") || this.tryMoveIntoDivision("numerator", "start");
+						this.show();
+					},
+
+					/*******************************************************************
+					 * function:		moveDown()
+					 *
+					 * description:	attempts to move the cursor one *logical movement
+					 *							unit* down. (currently just moves from numerator
+					 *							of fraction to denominator)
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					moveDown: function() {
+						this.tryMoveIntoDenominator("end");
 						this.show();
 					},
 
@@ -437,6 +581,7 @@
 									if(/[+\-*]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Operator(this, nodeVal);
 									if(/[()]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Parenthesis(this, nodeVal);
 									if(/[\^]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Exponent(this);
+									if(/[\/]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Division(this);
 
 									return node;
 								};
@@ -511,6 +656,15 @@
 								this.type = "exponent";
 								this.exponent = new scope.expression.literal.nodeTypes.Expression(this);
 								this.getVal = function() {	return null;	};
+							},
+							Division: function(parentNode) {						//takes children: none
+								this.id = scope.expression.literal.nodeNextId++;
+								this.parentNode = parentNode;
+								this.expressionType = "literal";
+								this.type = "division";
+								this.numerator = new scope.expression.literal.nodeTypes.Expression(this);
+								this.denominator = new scope.expression.literal.nodeTypes.Expression(this);
+								this.getVal = function() {	return null;	};
 							}
 						},
 						nodeNextId: 1,
@@ -568,20 +722,34 @@
 								this.exponent = typeof exponent !== "undefined" ? exponent : null;
 
 								this.assertHasValidChildren = function() {
-									console.log('a');
 										if(this.base == null || this.exponent == null)		throw ERR_INVALID_ARGUMENTS;
-										console.log('b');
 										if(this.base.type == "error")											throw ERR_INVALID_ARGUMENTS;
-										console.log('c');
-										console.log(this.exponent.type == "error");
 										if(this.exponent.type == "error")									throw ERR_INVALID_ARGUMENTS;
-										console.log('d');
 								}
 
 								this.getOpenMath = function() {
 									return "<OMA><OMS cd='arith1' name='power'>"
 										+ this.base.getOpenMath()
 										+ this.exponent.getOpenMath()
+										+ "</OMA>";
+								};
+							},
+							Division: function(numerator, denominator) {
+								this.expressionType = "semantic";
+								this.type = "division";
+								this.numerator = typeof numerator !== "undefined" ? numerator : null;
+								this.denominator = typeof denominator !== "undefined" ? denominator : null;
+
+								this.assertHasValidChildren = function() {
+										if(this.numerator == null || this.denominator == null)	throw ERR_INVALID_ARGUMENTS;
+										if(this.numerator.type == "error")											throw ERR_INVALID_ARGUMENTS;
+										if(this.denominator.type == "error")										throw ERR_INVALID_ARGUMENTS;
+								}
+
+								this.getOpenMath = function() {
+									return "<OMA><OMS cd='arith1' name='divide'>"
+										+ this.numerator.getOpenMath()
+										+ this.denominator.getOpenMath()
 										+ "</OMA>";
 								};
 							},
@@ -625,11 +793,11 @@
 							var depth = 0;
 
 							for(var i = 0; i < nodes.length; i++) {
-								if(nodes[i].expressionType == "literal" && nodes[i].type == "parenthesis") {
-									depth += (nodes[i].isStart ? 1 : -1);
-
-									if(depth < 0)	throw ERR_UNMATCHED_PARENTHESIS;
-								}
+								if(nodes[i].expressionType != "literal")	continue;
+								if(nodes[i].type != "parenthesis")				continue;
+								
+								depth += (nodes[i].isStart ? 1 : -1);
+								if(depth < 0)	throw ERR_UNMATCHED_PARENTHESIS;
 							}
 
 							if(depth > 0)	throw ERR_UNMATCHED_PARENTHESIS;
@@ -650,12 +818,11 @@
 						 ******************************************************************/
 						parseExponents: function(nodes) {
 							for(var i = 0; i < nodes.length; i++) {
-								if(nodes[i].expressionType == "literal" && nodes[i].type == "exponent") {
-									var semanticExponent = this.build(nodes[i].exponent.getNodes().slice());
-									if(semanticExponent.type == "error")	throw ERR_EMPTY_EXPRESSION;
-
-									nodes.splice(i, 1, new this.nodeTypes.Exponent(null, semanticExponent));
-								}
+								if(nodes[i].expressionType != "literal")	continue;
+								if(nodes[i].type != "exponent")						continue;
+								
+								var semanticExponent = this.build(nodes[i].exponent.getNodes().slice());
+								nodes.splice(i, 1, new this.nodeTypes.Exponent(null, semanticExponent));
 							}
 						},
 
@@ -673,13 +840,14 @@
 						 ******************************************************************/
 						applyExponents: function(nodes) {
 							for(var i = 0; i < nodes.length; i++) {
-								if(nodes[i].expressionType == "semantic" && nodes[i].type == "exponent") {
-									if(i == 0)	throw ERR_MISSING_BASE;
+								if(nodes[i].expressionType != "semantic")	continue;
+								if(nodes[i].type != "exponent")						continue;
 
-									nodes[i].base = nodes[i-1];
+								if(i == 0)	throw ERR_MISSING_BASE;
 
-									nodes.splice(i-1, 1);
-								}
+								nodes[i].base = nodes[i-1];
+								nodes[i].assertHasValidChildren();
+								nodes.splice(i-1, 1);
 							}
 						},
 
@@ -697,18 +865,47 @@
 						 ******************************************************************/
 						parseParentheses: function(nodes) {
 							for(var i = 0; i < nodes.length; i++) {
-								if(nodes[i].expressionType == "literal" && nodes[i].type == "parenthesis" && nodes[i].isStart) {
-									var subExpressionNodes = [];
-									
-									for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
-										subExpressionNodes.push(nodes[j]);
+								if(nodes[i].expressionType != "literal")	continue;
+								if(nodes[i].type != "parenthesis")				continue;
+								if(!nodes[i].isStart)											continue;
 
-									var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
-									var semanticNode = this.build(subExpressionNodes);
-									if(semanticNode.type == "error")	throw ERR_EMPTY_EXPRESSION;
+								var subExpressionNodes = [];
+								for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
+									subExpressionNodes.push(nodes[j]);
 
-									nodes.splice(i, literalLength, semanticNode);
-								}
+								var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
+								var semanticNode = this.build(subExpressionNodes);
+								if(semanticNode.type == "error")	throw ERR_EMPTY_EXPRESSION;
+
+								nodes.splice(i, literalLength, semanticNode);
+							}
+						},
+
+						/*******************************************************************
+						 * function:		parseDivision()
+						 *
+						 * description:	takes mixed collection of nodes `nodes` and
+						 *							replaces all literal.nodeTypes.Exponent
+						 *							with an equivalent semantic.nodeTypes.Exponent
+						 *							leaves the semantic node's `base` as null
+						 *							WARNING: mutates `nodes`
+						 *
+						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 *
+						 * return:			none
+						 ******************************************************************/
+						parseDivision: function(nodes) {
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType != "literal")	continue;
+								if(nodes[i].type != "division")						continue;
+
+								var semanticNumerator = this.build(nodes[i].numerator.getNodes().slice());
+								var semanticDenominator = this.build(nodes[i].denominator.getNodes().slice());
+
+								var semanticDivision = new this.nodeTypes.Division(semanticNumerator, semanticDenominator);
+								semanticDivision.assertHasValidChildren();
+
+								nodes.splice(i, 1, semanticDivision);
 							}
 						},
 						
@@ -726,17 +923,18 @@
 						 ******************************************************************/
 						parseNumerals: function(nodes) {
 							for(var i = 0; i < nodes.length; i++) {
-								if(nodes[i].expressionType == "literal" && nodes[i].type == "numeral") {
-									var numeral = "";
-									
-									for(var j = i; nodes[j] && nodes[j].expressionType == "literal" && nodes[j].type == "numeral"; j++)
-											numeral += nodes[j].getVal();
+								if(nodes[i].expressionType != "literal")	continue;
+								if(nodes[i].type != "numeral")						continue;
 
-									if(numeral == "")																				throw ERR_NOT_FOUND;
-									if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw ERR_MALFORMED_NUMERAL;
+								var numeral = "";
+								for(var j = i; nodes[j] && nodes[j].expressionType == "literal" && nodes[j].type == "numeral"; j++)
+										numeral += nodes[j].getVal();
 
-									nodes.splice(i, numeral.length, new this.nodeTypes.Numeral(numeral));
-								}
+								if(numeral == "")																				throw ERR_NOT_FOUND;
+								if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw ERR_MALFORMED_NUMERAL;
+
+								var semanticNumeral = new this.nodeTypes.Numeral(numeral);
+								nodes.splice(i, numeral.length, semanticNumeral);
 							}
 						},
 						
@@ -753,9 +951,13 @@
 						 * return:			none
 						 ******************************************************************/
 						parseVariables: function(nodes) {
-							for(var i = 0; i < nodes.length; i++)
-								if(nodes[i].expressionType == "literal" && nodes[i].type == "letter")
-									nodes.splice(i, 1, new this.nodeTypes.Variable(nodes[i].getVal()));
+							for(var i = 0; i < nodes.length; i++) {
+								if(nodes[i].expressionType != "literal")	continue;
+								if(nodes[i].type != "letter")							continue;
+
+								var semanticVariable = new this.nodeTypes.Variable(nodes[i].getVal()); 
+								nodes.splice(i, 1, semanticVariable);
+							}
 						},
 
 						/*******************************************************************
@@ -773,13 +975,14 @@
 						 ******************************************************************/
 						parseImpliedMultiplication: function(nodes) {
 							for(var i = 0; i < nodes.length-1; i++) {
-								if(nodes[i].expressionType == "semantic" && nodes[i+1].expressionType == "semantic") {
-									var opNode = new this.nodeTypes.Operator("*", [nodes[i], nodes[i+1]]);
-									opNode.assertHasValidChildren();
+								if(nodes[i].expressionType != "semantic")		continue;
+								if(nodes[i+1].expressionType != "semantic")	continue;
 
-									nodes.splice(i, 2, opNode);
-									i--;	//necessary if there are two implied times in a row e.g. "2ab"
-								}
+								var opNode = new this.nodeTypes.Operator("*", [nodes[i], nodes[i+1]]);
+								opNode.assertHasValidChildren();
+
+								nodes.splice(i, 2, opNode);
+								i--;	//necessary if there are two implied times in a row e.g. "2ab"
 							}
 						},
 						
@@ -798,15 +1001,16 @@
 						 ******************************************************************/
 						parseOperators: function(nodes, condition) {
 							for(var i = 0; i < nodes.length; i++) {
-								if(nodes[i].expressionType == "literal" && condition.test(nodes[i].getVal())) {
-									if(i == 0 || i == nodes.length-1)	throw ERR_INVALID_ARGUMENTS;
+								if(nodes[i].expressionType != "literal")	continue;
+								if(!condition.test(nodes[i].getVal()))		continue;
 
-									var opNode = new this.nodeTypes.Operator(nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
-									opNode.assertHasValidChildren();
+								if(i == 0 || i == nodes.length-1)	throw ERR_INVALID_ARGUMENTS;
 
-									nodes.splice(i-1, 3, opNode);
-									i--;
-								}
+								var opNode = new this.nodeTypes.Operator(nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
+								opNode.assertHasValidChildren();
+
+								nodes.splice(i-1, 3, opNode);
+								i--;
 							}
 						},
 
@@ -824,8 +1028,8 @@
 							try {
 								this.assertNotEmpty(nodes);
 								this.assertParenthesesMatched(nodes);
-								//parse division
 								this.parseParentheses(nodes);
+								this.parseDivision(nodes);
 								this.parseExponents(nodes);		//create exponent semantic nodes, leave base empty for now
 								//parse multichar symbols 1 (sin, cos etc)
 								this.parseNumerals(nodes);

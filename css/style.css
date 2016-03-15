@@ -1,13 +1,8 @@
-@font-face {
-	font-family: latin-modern-math;
-	src: url(resources/lmmath-regular.otf);
-}
 .mathinput {
 	border: 1px solid #000000;
 	width: 200px;
-	height: 50px;
-	font-family: latin-modern-math;
 	font-size: 20pt;
+	line-height: 50px;
 	text-align: center;
 	white-space: nowrap;
 	overflow: hidden;
@@ -31,4 +26,18 @@
 	left: -5px;
 	font-size: 70%;
 	vertical-align: 0.6em;
+}
+.mathinput .division, .mathinput .numerator, .mathinput .denominator {
+	padding: 0px 5px;    
+}
+.mathinput .division {
+	text-align: center;
+	vertical-align: -20px;
+}
+.mathinput .division.cursor {
+	padding: 0px 4px 0px 5px;
+}
+.mathinput .denominator {
+	border-top: 1px solid #000;
+	display: block;
 }
