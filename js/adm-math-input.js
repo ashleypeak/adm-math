@@ -8,60 +8,77 @@
 	var ERR_EMPTY_EXPRESSION			= 5;
 	var ERR_MISSING_BASE					= 6;
 
-	var mathExpression = angular.module("mathExpression", []);
-	mathExpression.run(["$templateCache", function($templateCache) {
-		var template = "";
-		template += "<span>";
-		template += "<span";
-		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === 0 && cursor.visible)}\"";
-		template += " ng-click=\"control.nodeClick(-1)\">&nbsp;</span>";
-		template += "<span";
-		template += " ng-repeat=\"node in expression.nodes track by $index\"";
-		template += " ng-switch on=\"node.type\">";
+	var mathInput = angular.module("admMathInput", []);
 
-		template += "<span";
-		template += " ng-switch-when=\"exponent\"";
-		template += " class=\"exponent\"";
-		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		template += " ng-click=\"control.nodeClick($index)\">";
-		template += "<adm-math-expression";
-		template += " cursor=\"cursor\"";
-		template += " expression=\"node.exponent\"";
-		template += " control=\"control\"></adm-math-expression>";
-		template += "</span>";
+	mathInput.run(["$templateCache", function($templateCache) {
+		var expressionTemplate = "";
+		expressionTemplate += "<span>";
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === 0 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick(-1)\">&nbsp;</span>";
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-repeat=\"node in expression.nodes track by $index\"";
+		expressionTemplate += " ng-switch on=\"node.type\">";
 
-		template += "<span";
-		template += " ng-switch-when=\"division\"";
-		template += " class=\"division\"";
-		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		template += " ng-click=\"control.nodeClick($index)\">";
-		template += "<span class=\"numerator\">";
-		template += "<adm-math-expression";
-		template += " cursor=\"cursor\"";
-		template += " expression=\"node.numerator\"";
-		template += " control=\"control\"></adm-math-expression>";
-		template += "</span>";
-		template += "<span class=\"denominator\">";
-		template += "<adm-math-expression";
-		template += " cursor=\"cursor\"";
-		template += " expression=\"node.denominator\"";
-		template += " control=\"control\"></adm-math-expression>";
-		template += "</span>";
-		template += "</span>";
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-when=\"exponent\"";
+		expressionTemplate += " class=\"exponent\"";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.exponent\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "</span>";
 
-		template += "<span";
-		template += " ng-switch-default";
-		template += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
-		template += "  'exponent': node.type == 'exponent'}\"";
-		template += " ng-click=\"control.nodeClick($index)\">{{node.getVal()}}</span>";
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-when=\"division\"";
+		expressionTemplate += " class=\"division\"";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += "<span class=\"numerator\">";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.numerator\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "</span>";
+		expressionTemplate += "<span class=\"denominator\">";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.denominator\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "</span>";
+		expressionTemplate += "</span>";
 
-		template += "</span>";
-		template += "</span>";
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-default";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
+		expressionTemplate += "  'exponent': node.type == 'exponent'}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">{{node.getVal()}}</span>";
 
-		$templateCache.put("adm-math-expression.htm", template);
+		expressionTemplate += "</span>";
+		expressionTemplate += "</span>";
+
+		var inputTemplate = "";
+		inputTemplate += "<div";
+		inputTemplate += "	class=\"mathinput\"";
+		inputTemplate += " tabindex=\"0\"";
+		inputTemplate += " ng-keypress=\"control.keypress($event)\"";
+		inputTemplate += "	ng-keydown=\"control.keydown($event)\"";
+		inputTemplate += " ng-focus=\"control.focus()\"";
+		inputTemplate += " ng-blur=\"control.blur()\">";
+		inputTemplate += "<adm-math-expression";
+		inputTemplate += " cursor=\"cursor\"";
+		inputTemplate += " expression=\"expression.literal.tree\"";
+		inputTemplate += " control=\"control\"></adm-math-expression>";
+		inputTemplate += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{value}}\" />";
+		inputTemplate += "</div>";
+		
+		$templateCache.put("adm-math-expression.htm", expressionTemplate);
+		$templateCache.put("adm-math-input.htm", inputTemplate);
 	}]);
 
-	mathExpression.directive("admMathExpression", function() {
+	mathInput.directive("admMathExpression", function() {
 		return {
 			restrict: "E",
 			replace: true,
@@ -75,27 +92,6 @@
 			}
 		};
 	});
-
-	var mathInput = angular.module("mathInput", ["mathExpression"]);
-
-	mathInput.run(["$templateCache", function($templateCache) {
-		var template = "";
-		template += "<div";
-		template += "	class=\"mathinput\"";
-		template += " tabindex=\"0\"";
-		template += " ng-keypress=\"control.keypress($event)\"";
-		template += "	ng-keydown=\"control.keydown($event)\"";
-		template += " ng-focus=\"control.focus()\"";
-		template += " ng-blur=\"control.blur()\">";
-		template += "<adm-math-expression";
-		template += " cursor=\"cursor\"";
-		template += " expression=\"expression.literal.tree\"";
-		template += " control=\"control\"></adm-math-expression>";
-		template += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{value}}\" />";
-		template += "</div>";
-		
-		$templateCache.put("adm-math-input.htm", template);
-	}]);
 
 	mathInput.directive("admMathInput", ["$interval", function($interval) {
 		return {
