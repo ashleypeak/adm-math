@@ -12,7 +12,7 @@ bower install https://github.com/wyattpeak/adm-math-input.git
 
 ## Usage
 
-You'll first have to include the module files:
+First include the module files:
 
 ```html
 <link rel="stylesheet" href="bower_components/adm-math-input/css/adm-math-input.css">
@@ -28,10 +28,10 @@ var myApp = angular.module("myApp", ["admMathInput"]);
 And wherever you want a math input, add
 
 ```html
-<adm-math-input adm-format="'latex'" adm-name="" adm-value="mathval"></adm-math-input>
+<adm-math-input></adm-math-input>
 ```
 
-## Parameters
+## Attributes
 > **NB** All parameters are interpolated by Angular.js, so strings must be enclosed in quotation marks, e.g.
 > `<adm-math-input adm-format="'latex'"></adm-math-input>`
 
@@ -41,7 +41,7 @@ _Optional_
 
 Type: `String`
 
-Defines output format
+Defines output format.
 
 Values:
 * 'openmath' - _(default)_ Use [OpenMath](http://openmath.org/) format
@@ -53,7 +53,7 @@ _Optional_
 
 Type: `String`
 
-The name of the form element containing output
+The name of the form element containing output.
 
 
 #### adm-value

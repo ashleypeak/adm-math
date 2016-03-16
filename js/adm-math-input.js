@@ -235,18 +235,18 @@
 				 *
 				 * variables:		`expression`		scope.literal.nodeTypes.Expression
 				 *							`position`			INT
-				 *							`visible`				BOOL
+				 *							`visible`				BOOLEAN
 				 *							`flashInterval`	Angular `promise`
 				 * 
 				 * functions:		`show`										returns none
 				 *							`hide`										returns none
 				 *							`insert`									returns none
 				 *							`backspace`								returns none
-				 *							`tryMoveIntoParent`				returns none
-				 *							`tryMoveIntoExponent`			returns none
-				 *							`tryMoveIntoDivision`			returns none
-				 *							`tryMoveIntoNumerator`		returns none
-				 *							`tryMoveIntoDenominator`	returns none
+				 *							`tryMoveIntoParent`				returns BOOLEAN
+				 *							`tryMoveIntoExponent`			returns BOOLEAN
+				 *							`tryMoveIntoDivision`			returns BOOLEAN
+				 *							`tryMoveIntoNumerator`		returns BOOLEAN
+				 *							`tryMoveIntoDenominator`	returns BOOLEAN
 				 *							`moveLeft`								returns none
 				 *							`moveUp`									returns none
 				 *							`moveRight`								returns none
