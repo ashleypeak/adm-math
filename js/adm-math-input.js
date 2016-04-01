@@ -253,7 +253,142 @@
 		};
 	}]);
 
-	mathInput.directive("admMathInput", ["$interval", "literalNode", function($interval, literalNode) {
+	mathInput.service("semanticNumeral", function() {
+		this.build = function(value) {
+			return {
+				expressionType: "semantic",
+				type: "numeral",
+				value: value,
+
+				getOpenMath: function() {
+					if(this.value.indexOf('.') != -1)
+						return "<OMF dec='"+this.value+"'/>";
+					return "<OMI>"+this.value+"</OMI>";
+				}
+			};
+		}
+	});
+
+	mathInput.service("semanticVariable", function() {
+		this.build = function(name) {
+			return {
+				expressionType: "semantic",
+				type: "variable",
+				name: name,
+
+				getOpenMath: function() {
+					return "<OMV name='"+this.name+"'/>";
+				}
+			};
+		}
+	});
+
+	mathInput.service("semanticOperator", function() {
+		this.build = function(symbol, children) {
+			return {
+				expressionType: "semantic",
+				type: "operator",
+				symbol: symbol,
+				children: children,
+
+				assertHasValidChildren: function() {
+					for(var i = 0; i < 2; i++) {
+						if(!this.children[i])																		throw ERR_INVALID_ARGUMENTS;
+						if(!this.children[i].hasOwnProperty("expressionType"))	throw ERR_INVALID_ARGUMENTS;
+						if(this.children[i].expressionType != "semantic")				throw ERR_INVALID_ARGUMENTS;
+					}
+				},
+
+				getOpenMath: function() {
+					var opName = (this.symbol == "+" ? "plus" : (this.symbol == "-" ? "minus" : "times"));
+
+					return "<OMA><OMS cd='arith1' name='"+opName+"'/>"
+						+ this.children[0].getOpenMath()
+						+ this.children[1].getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		}
+	});
+
+	mathInput.service("semanticExponent", function() {
+		this.build = function(base, exponent) {
+			return {
+				expressionType: "semantic",
+				type: "exponent",
+				base: typeof base !== "undefined" ? base : null,
+				exponent: typeof exponent !== "undefined" ? exponent : null,
+
+				assertHasValidChildren: function() {
+						if(this.base == null || this.exponent == null)		throw ERR_INVALID_ARGUMENTS;
+						if(this.base.type == "error")											throw ERR_INVALID_ARGUMENTS;
+						if(this.exponent.type == "error")									throw ERR_INVALID_ARGUMENTS;
+				},
+
+				getOpenMath: function() {
+					return "<OMA><OMS cd='arith1' name='power'>"
+						+ this.base.getOpenMath()
+						+ this.exponent.getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		}
+	});
+
+	mathInput.service("semanticDivision", function() {
+		this.build = function(numerator, denominator) {
+			return {
+				expressionType: "semantic",
+				type: "division",
+				numerator: typeof numerator !== "undefined" ? numerator : null,
+				denominator: typeof denominator !== "undefined" ? denominator : null,
+
+				assertHasValidChildren: function() {
+						if(this.numerator == null || this.denominator == null)	throw ERR_INVALID_ARGUMENTS;
+						if(this.numerator.type == "error")											throw ERR_INVALID_ARGUMENTS;
+						if(this.denominator.type == "error")										throw ERR_INVALID_ARGUMENTS;
+				},
+
+				getOpenMath: function() {
+					return "<OMA><OMS cd='arith1' name='divide'>"
+						+ this.numerator.getOpenMath()
+						+ this.denominator.getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		}
+	});
+
+	mathInput.service("semanticError", function() {
+		this.build = function(message) {
+			return {
+				expressionType: "semantic",
+				type: "error",
+				message: message,
+
+				getOpenMath: function() {
+					return "<OME>"+message+"[FIND OUT HOW ERRORS ARE RECORDED]</OME>";
+				}
+			};
+		}
+	});
+
+	mathInput.service("semanticNode", ["semanticNumeral", "semanticVariable", "semanticOperator", "semanticExponent",
+		 "semanticDivision", "semanticError",
+		 function(semanticNumeral, semanticVariable, semanticOperator, semanticExponent, semanticDivision, semanticError) {
+		this.build = function(type) {
+			switch(type) {
+				case "numeral":		return semanticNumeral.build(arguments[1]);										break;
+				case "variable":	return semanticVariable.build(arguments[1]);									break;
+				case "operator":	return semanticOperator.build(arguments[1], arguments[2]);		break;
+				case "exponent":	return semanticExponent.build(arguments[1], arguments[2]);		break;
+				case "division":	return semanticDivision.build(arguments[1], arguments[2]);		break;
+				case "error":			return semanticError.build(arguments[1]);											break;
+			}
+		}
+	}]);
+	
+	mathInput.directive("admMathInput", ["$interval", "literalNode", "semanticNode", function($interval, literalNode, semanticNode) {
 		return {
 			restrict: "E",
 			replace: true,
@@ -735,99 +870,6 @@
 				scope.expression = {
 					literalTree: null,
 					semantic: {
-						nodeTypes: {
-							Numeral: function(val) {									//takes children: none
-								this.expressionType = "semantic";
-								this.type = "numeral";
-								this.value = val;
-
-								this.getOpenMath = function() {
-									if(this.value.indexOf('.') != -1)
-										return "<OMF dec='"+this.value+"'/>";
-									return "<OMI>"+this.value+"</OMI>";
-								};
-							},
-							Variable: function(name) {									//takes children: none
-								this.expressionType = "semantic";
-								this.type = "variable";
-								this.name = name;
-
-								this.getOpenMath = function() {
-									return "<OMV name='"+this.name+"'/>";
-								};
-							},
-							Operator: function(symbol, children) {			//takes children: Numeral, Operator
-								this.expressionType = "semantic";
-								this.type = "operator";
-								this.symbol = symbol;
-								this.children = children;
-
-								this.assertHasValidChildren = function() {
-									for(var i = 0; i < 2; i++) {
-										if(!this.children[i])																		throw ERR_INVALID_ARGUMENTS;
-										if(!this.children[i].hasOwnProperty("expressionType"))	throw ERR_INVALID_ARGUMENTS;
-										if(this.children[i].expressionType != "semantic")				throw ERR_INVALID_ARGUMENTS;
-									}
-								}
-
-								this.getOpenMath = function() {
-									var opName = (this.symbol == "+" ? "plus" : (this.symbol == "-" ? "minus" : "times"));
-
-									return "<OMA><OMS cd='arith1' name='"+opName+"'/>"
-										+ this.children[0].getOpenMath()
-										+ this.children[1].getOpenMath()
-										+ "</OMA>";
-								};
-							},
-							Exponent: function(base, exponent) {
-								this.expressionType = "semantic";
-								this.type = "exponent";
-								this.base = typeof base !== "undefined" ? base : null;
-								this.exponent = typeof exponent !== "undefined" ? exponent : null;
-
-								this.assertHasValidChildren = function() {
-										if(this.base == null || this.exponent == null)		throw ERR_INVALID_ARGUMENTS;
-										if(this.base.type == "error")											throw ERR_INVALID_ARGUMENTS;
-										if(this.exponent.type == "error")									throw ERR_INVALID_ARGUMENTS;
-								}
-
-								this.getOpenMath = function() {
-									return "<OMA><OMS cd='arith1' name='power'>"
-										+ this.base.getOpenMath()
-										+ this.exponent.getOpenMath()
-										+ "</OMA>";
-								};
-							},
-							Division: function(numerator, denominator) {
-								this.expressionType = "semantic";
-								this.type = "division";
-								this.numerator = typeof numerator !== "undefined" ? numerator : null;
-								this.denominator = typeof denominator !== "undefined" ? denominator : null;
-
-								this.assertHasValidChildren = function() {
-										if(this.numerator == null || this.denominator == null)	throw ERR_INVALID_ARGUMENTS;
-										if(this.numerator.type == "error")											throw ERR_INVALID_ARGUMENTS;
-										if(this.denominator.type == "error")										throw ERR_INVALID_ARGUMENTS;
-								}
-
-								this.getOpenMath = function() {
-									return "<OMA><OMS cd='arith1' name='divide'>"
-										+ this.numerator.getOpenMath()
-										+ this.denominator.getOpenMath()
-										+ "</OMA>";
-								};
-							},
-							Error: function(message) {
-								this.expressionType = "semantic";
-								this.type = "error";
-								this.message = message;
-
-								this.getOpenMath = function() {
-									return "<OME>"+message+"[FIND OUT HOW ERRORS ARE RECORDED]</OME>";
-								};
-							}
-						},
-
 						/*******************************************************************
 						 * function:		assertNotEmpty()
 						 *
@@ -885,8 +927,8 @@
 								if(nodes[i].expressionType != "literal")	continue;
 								if(nodes[i].type != "exponent")						continue;
 								
-								var semanticExponent = this.build(nodes[i].exponent.getNodes().slice());
-								nodes.splice(i, 1, new this.nodeTypes.Exponent(null, semanticExponent));
+								var semanticExp = this.build(nodes[i].exponent.getNodes().slice());
+								nodes.splice(i, 1, semanticNode.build("exponent", null, semanticExp));
 							}
 						},
 
@@ -966,10 +1008,10 @@
 								var semanticNumerator = this.build(nodes[i].numerator.getNodes().slice());
 								var semanticDenominator = this.build(nodes[i].denominator.getNodes().slice());
 
-								var semanticDivision = new this.nodeTypes.Division(semanticNumerator, semanticDenominator);
-								semanticDivision.assertHasValidChildren();
+								var semanticDiv = semanticNode.build("division", semanticNumerator, semanticDenominator);
+								semanticDiv.assertHasValidChildren();
 
-								nodes.splice(i, 1, semanticDivision);
+								nodes.splice(i, 1, semanticDiv);
 							}
 						},
 						
@@ -997,8 +1039,8 @@
 								if(numeral == "")																				throw ERR_NOT_FOUND;
 								if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw ERR_MALFORMED_NUMERAL;
 
-								var semanticNumeral = new this.nodeTypes.Numeral(numeral);
-								nodes.splice(i, numeral.length, semanticNumeral);
+								var semanticNum = semanticNode.build("numeral", numeral);
+								nodes.splice(i, numeral.length, semanticNum);
 							}
 						},
 						
@@ -1019,8 +1061,8 @@
 								if(nodes[i].expressionType != "literal")	continue;
 								if(nodes[i].type != "letter")							continue;
 
-								var semanticVariable = new this.nodeTypes.Variable(nodes[i].getVal()); 
-								nodes.splice(i, 1, semanticVariable);
+								var semanticVar = semanticNode.build("variable", nodes[i].getVal()); 
+								nodes.splice(i, 1, semanticVar);
 							}
 						},
 
@@ -1042,7 +1084,7 @@
 								if(nodes[i].expressionType != "semantic")		continue;
 								if(nodes[i+1].expressionType != "semantic")	continue;
 
-								var opNode = new this.nodeTypes.Operator("*", [nodes[i], nodes[i+1]]);
+								var opNode = semanticNode.build("operator", "*", [nodes[i], nodes[i+1]]);
 								opNode.assertHasValidChildren();
 
 								nodes.splice(i, 2, opNode);
@@ -1070,7 +1112,7 @@
 
 								if(i == 0 || i == nodes.length-1)	throw ERR_INVALID_ARGUMENTS;
 
-								var opNode = new this.nodeTypes.Operator(nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
+								var opNode = semanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
 								opNode.assertHasValidChildren();
 
 								nodes.splice(i-1, 3, opNode);
@@ -1106,16 +1148,17 @@
 								this.parseOperators(nodes, /[+\-]/);
 							} catch(e) {
 								switch(e) {
-									case ERR_NOT_FOUND:							return new this.nodeTypes.Error("Missing number.");
-									case ERR_UNMATCHED_PARENTHESIS:	return new this.nodeTypes.Error("Unmatched parenthesis.");
-									case ERR_MALFORMED_NUMERAL:			return new this.nodeTypes.Error("Malformed Number.");
-									case ERR_INVALID_ARGUMENTS:			return new this.nodeTypes.Error("Invalid arguments.");
-									case ERR_EMPTY_EXPRESSION:			return new this.nodeTypes.Error("Empty expression.");
-									case ERR_MISSING_BASE:					return new this.nodeTypes.Error("Exponent has no base.");
+									case ERR_NOT_FOUND:							return semanticNode.build("error", "Missing number.");
+									case ERR_UNMATCHED_PARENTHESIS:	return semanticNode.build("error", "Unmatched parenthesis.");
+									case ERR_MALFORMED_NUMERAL:			return semanticNode.build("error", "Malformed Number.");
+									case ERR_INVALID_ARGUMENTS:			return semanticNode.build("error", "Invalid arguments.");
+									case ERR_EMPTY_EXPRESSION:			return semanticNode.build("error", "Empty expression.");
+									case ERR_MISSING_BASE:					return semanticNode.build("error", "Exponent has no base.");
+									default:												return semanticNode.build("error", "Unidentified error.");
 								}
 							}
 
-							if(nodes.length > 1)	return new this.nodeTypes.Error("Irreducible expression.");
+							if(nodes.length > 1)	semanticNode.build("error", "Irreducible expression.");
 							return nodes[0];
 						},
 					}
