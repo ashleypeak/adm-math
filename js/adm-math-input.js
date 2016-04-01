@@ -69,7 +69,7 @@
 		inputTemplate += " ng-blur=\"control.blur()\">";
 		inputTemplate += "<adm-math-expression";
 		inputTemplate += " cursor=\"cursor\"";
-		inputTemplate += " expression=\"expression.literal.tree\"";
+		inputTemplate += " expression=\"expression.literalTree\"";
 		inputTemplate += " control=\"control\"></adm-math-expression>";
 		inputTemplate += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{value}}\" />";
 		inputTemplate += "</div>";
@@ -93,18 +93,188 @@
 		};
 	});
 
-	mathInput.directive("admMathInput", ["$interval", function($interval) {
+	mathInput.service("literalExpression", function() {
+		this.build = function(id, parentNode) {
+			return {
+				id: id,
+				parentNode: (typeof parentNode !== "undefined") ? parentNode : null,
+				expressionType: "literal",
+				type: "expression",
+				nodes: [],
+				
+				getVal: function() {	return null;	},
+
+				insert: function(pos, node) {
+					this.nodes.splice(pos, 0, node);
+
+					return node;
+				},
+
+				deleteAt: function(pos) {
+					this.nodes.splice(pos, 1);
+				},
+
+				getLength: function() {
+					return this.nodes.length;
+				},
+
+				getNodes: function() {
+					return this.nodes;
+				},
+
+				getNode: function(index) {
+					return this.nodes[index];
+				},
+
+				findNode: function(node) {
+					for(var i = 0; i < this.nodes.length; i++)
+						if(this.nodes[i].id == node.id)
+							return i;
+				}
+			};
+		}
+	});
+
+	mathInput.service("literalNumeral", function() {
+		this.build = function(id, parentNode, value) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "numeral",
+				value: value,
+				getVal: function() {	return this.value;	}
+			};
+		}
+	});
+
+	mathInput.service("literalLetter", function() {
+		this.build = function(id, parentNode, value) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "letter",
+				value: value,
+				getVal: function() {	return this.value;	}
+			};
+		}
+	});
+
+	mathInput.service("literalParenthesis", function() {
+		this.build = function(id, parentNode, paren) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "parenthesis",
+				isStart: (paren == "(" ? true : false),
+				isEnd: !this.isStart,
+				getVal: function() {	return (this.isStart ? "(" : ")");	}
+			};
+		}
+	});
+
+	mathInput.service("literalOperator", function() {
+		this.build = function(id, parentNode, operator) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "operator",
+				operator: operator,
+				getVal: function() {	return this.operator;	}
+			};
+		}
+	});
+
+	mathInput.service("literalExponent", function() {
+		this.build = function(id, parentNode, exponentNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "exponent",
+				exponent: exponentNode,
+				getVal: function() {	return null;	}
+			};
+		}
+	});
+
+	mathInput.service("literalDivision", function() {
+		this.build = function(id, parentNode, numeratorNode, denominatorNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "division",
+				numerator: numeratorNode,
+				denominator: denominatorNode,
+				getVal: function() {	return null;	}
+			};
+		}
+	});
+
+	mathInput.factory("literalNode", ["literalExpression", "literalNumeral", "literalLetter", "literalParenthesis",
+		 "literalOperator", "literalExponent", "literalDivision",
+		 function(literalExpression, literalNumeral, literalLetter, literalParenthesis, literalOperator, literalExponent, literalDivision) {
+		var id = 0;
+
+		return {
+			buildBlankExpression: function(parentNode) {
+				return literalExpression.build(id++, parentNode);
+			},
+			build: function(parentNode, nodeVal) {
+
+				if(/[0-9.]/.test(nodeVal))		return literalNumeral.build(id++, parentNode, nodeVal);
+				if(/[a-zA-Z]/.test(nodeVal))	return literalLetter.build(id++, parentNode, nodeVal);
+				if(/[+\-*]/.test(nodeVal))		return literalOperator.build(id++, parentNode, nodeVal);
+				if(/[()]/.test(nodeVal))			return literalParenthesis.build(id++, parentNode, nodeVal);
+
+				if(/[\^]/.test(nodeVal)) {
+					var exponent = literalExpression.build(id++, null);
+					
+					var node = literalExponent.build(id++, parentNode, exponent);
+					node.exponent.parentNode = node;
+
+					return node;
+				}
+				if(/[\/]/.test(nodeVal)) {
+					var numerator = literalExpression.build(id++, null);
+					var denominator = literalExpression.build(id++, null);
+
+					var node = literalDivision.build(id++, parentNode, numerator, denominator);
+					node.numerator.parentNode = node;
+					node.denominator.parentNode = node;
+
+					return node;
+				}
+			}
+		};
+	}]);
+
+	mathInput.directive("admMathInput", ["$interval", "literalNode", function($interval, literalNode) {
 		return {
 			restrict: "E",
 			replace: true,
 			scope: {
 				format: "=?admFormat",
 				name: "=?admName",
-				value: "=?admValue"
+				value: "=?ngModel"
 			},
 			templateUrl: "adm-math-input.htm",
 			link: function(scope, element) {
 				scope.format = angular.isDefined(scope.format) ? scope.format : "openmath";
+
+				scope.$watch('value', function(newValue, oldValue) {
+					if(newValue == scope.output.lastValue) return;
+
+					/*scope.expression.literal.tree = new scope.expression.literal.nodeTypes.Expression();
+					scope.expression.literal.tree.insert(0, "1");
+					scope.expression.literal.tree.insert(1, "2");
+
+					scope.output.write();*/
+				});
 
 				/*******************************************************************
 				 * object:			control{}
@@ -138,7 +308,7 @@
 					 * return:			none
 					 ******************************************************************/
 					focus: function() {
-						scope.cursor.expression = scope.expression.literal.tree;
+						scope.cursor.expression = scope.expression.literalTree;
 						scope.cursor.goToEnd();
 					},
 
@@ -255,7 +425,7 @@
 				 *							`goToEnd`									returns none
 				 ******************************************************************/
 				scope.cursor = {
-					expression: null,			//the scope.literal.nodeTypes.Expression which the cursor is currently in
+					expression: null,			//the literalExpression which the cursor is currently in
 					position: null,				//the position of the cursor within `expression`
 					visible: false,				//flag for whether the cursor should be visible (alternates for cursor flash)
 					flashInterval: null,	//handler for cursor flashing interval
@@ -304,7 +474,9 @@
 					 * return:			none
 					 ******************************************************************/
 					insert: function(character) {
-						this.expression.insert(this.position, character);
+						var node = literalNode.build(this.expression, character);
+
+						this.expression.insert(this.position, node);
 						this.moveRight();
 					},
 
@@ -370,10 +542,12 @@
 						//due to differing indices, this.position-1 is the node under the cursor
 						var nodeIndex = this.position - 1;
 						
+						//if moving left, only try to enter node after scrolling PAST it
 						//otherwise you can't scroll left to the space directly after the node
 						if(terminus == "end")	nodeIndex++;
 
 						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return false;
+						if(nodeIndex >= this.expression.getLength())							return false;
 						if(this.expression.getNode(nodeIndex).type != "exponent")	return false;
 
 						this.expression = this.expression.getNode(nodeIndex).exponent;
@@ -404,6 +578,7 @@
 						if(terminus == "end")	nodeIndex++;
 						
 						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return false;
+						if(nodeIndex >= this.expression.getLength())							return false;
 						if(this.expression.getNode(nodeIndex).type != "division")	return false;
 
 						var divisionNode = this.expression.getNode(nodeIndex);
@@ -558,114 +733,7 @@
 				};
 
 				scope.expression = {
-					literal: {
-						nodeTypes: {
-							Expression: function(parentNode) {			//takes children: Numeral, Letter, Operator, Division, Exponent
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = typeof parentNode !== "undefined" ? parentNode : null;
-								this.expressionType = "literal";
-								this.type = "expression";
-								this.nodes = [];
-								
-								this.getVal = function() {	return null;	};
-
-								this.createNode = function(nodeVal) {
-									var node = null;
-
-									if(/[0-9.]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Numeral(this, nodeVal);
-									if(/[a-zA-Z]/.test(nodeVal))	node = new scope.expression.literal.nodeTypes.Letter(this, nodeVal);
-									if(/[+\-*]/.test(nodeVal))		node = new scope.expression.literal.nodeTypes.Operator(this, nodeVal);
-									if(/[()]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Parenthesis(this, nodeVal);
-									if(/[\^]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Exponent(this);
-									if(/[\/]/.test(nodeVal))			node = new scope.expression.literal.nodeTypes.Division(this);
-
-									return node;
-								};
-								
-								this.insert = function(pos, nodeVal) {
-									var node = this.createNode(nodeVal);
-
-									this.nodes.splice(pos, 0, node);
-
-									return node;
-								};
-
-								this.deleteAt = function(pos) {
-									this.nodes.splice(pos, 1);
-								};
-
-								this.getLength = function() {
-									return this.nodes.length;
-								};
-
-								this.getNodes = function() {
-									return this.nodes;
-								};
-
-								this.getNode = function(index) {
-									return this.nodes[index];
-								};
-
-								this.findNode = function(node) {
-									for(var i = 0; i < this.nodes.length; i++)
-										if(this.nodes[i].id == node.id)
-											return i;
-								};
-							},
-							Numeral: function(parentNode, val) {					//takes children: none
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = parentNode;
-								this.expressionType = "literal";
-								this.type = "numeral";
-								this.value = val;
-								this.getVal = function() {	return this.value;	};
-							},
-							Letter: function(parentNode, val) {						//takes children: none
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = parentNode;
-								this.expressionType = "literal";
-								this.type = "letter";
-								this.value = val;
-								this.getVal = function() {	return this.value;	};
-							},
-							Parenthesis: function(parentNode, paren) {		//takes children: none
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = parentNode;
-								this.expressionType = "literal";
-								this.type = "parenthesis";
-								this.isStart = (paren == "(" ? true : false);
-								this.isEnd = !this.isStart;
-								this.getVal = function() {	return (this.isStart ? "(" : ")");	};
-							},
-							Operator: function(parentNode, op) {					//takes children: none
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = parentNode;
-								this.expressionType = "literal";
-								this.type = "operator";
-								this.operator = op;
-								this.getVal = function() {	return this.operator;	};
-							},
-							Exponent: function(parentNode) {						//takes children: none
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = parentNode;
-								this.expressionType = "literal";
-								this.type = "exponent";
-								this.exponent = new scope.expression.literal.nodeTypes.Expression(this);
-								this.getVal = function() {	return null;	};
-							},
-							Division: function(parentNode) {						//takes children: none
-								this.id = scope.expression.literal.nodeNextId++;
-								this.parentNode = parentNode;
-								this.expressionType = "literal";
-								this.type = "division";
-								this.numerator = new scope.expression.literal.nodeTypes.Expression(this);
-								this.denominator = new scope.expression.literal.nodeTypes.Expression(this);
-								this.getVal = function() {	return null;	};
-							}
-						},
-						nodeNextId: 1,
-						tree: null
-					},
+					literalTree: null,
 					semantic: {
 						nodeTypes: {
 							Numeral: function(val) {									//takes children: none
@@ -766,7 +834,7 @@
 						 * description:	takes mixed collection of nodes `nodes` and
 						 *							throws an exception if the collection is empty
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -781,7 +849,7 @@
 						 *							throws an exception if there are any unmatched
 						 *							parentheses
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -808,7 +876,7 @@
 						 *							leaves the semantic node's `base` as null
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -830,7 +898,7 @@
 						 *							fills its `base` with the preceding node
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -855,7 +923,7 @@
 						 *							by parentheses with appropriate semantic nodes
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -886,7 +954,7 @@
 						 *							leaves the semantic node's `base` as null
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -913,7 +981,7 @@
 						 *							with appropriate semantic nodes
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -942,7 +1010,7 @@
 						 *							with semantic.nodeTypes.Variable
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:		[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:		[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -965,7 +1033,7 @@
 						 *							semantic node
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:			[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:			[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			none
 						 ******************************************************************/
@@ -990,7 +1058,7 @@
 						 *							`condition` with appropriate semantic nodes
 						 *							WARNING: mutates `nodes`
 						 *
-						 * arguments:		nodes:			[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:			[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *							condition:	REGEX
 						 *
 						 * return:			none
@@ -1016,7 +1084,7 @@
 						 * description:	takes mixed collection of nodes `nodes` and parses
 						 *							into a single semantic node
 						 *
-						 * arguments:		nodes:	[scope.expression.literal.nodeTypes.[any] | scope.expression.semantic.nodeTypes.[any]]
+						 * arguments:		nodes:	[literalNode | scope.expression.semantic.nodeTypes.[any]]
 						 *
 						 * return:			scope.expression.semantic.nodeTypes.[any]
 						 ******************************************************************/
@@ -1052,9 +1120,11 @@
 						},
 					}
 				};
-				scope.expression.literal.tree = new scope.expression.literal.nodeTypes.Expression();
+				scope.expression.literalTree = literalNode.buildBlankExpression(null);
 
 				scope.output = {
+					lastValue: null, //used by $watch('value') to determine if ngModel was altered by this class or from outside
+
 					/*******************************************************************
 					 * function:		get()
 					 *
@@ -1066,7 +1136,7 @@
 					 * return:			STRING
 					 ******************************************************************/
 					write: function() {
-						var literalTree = scope.expression.literal.tree;
+						var literalTree = scope.expression.literalTree;
 						var literalTreeNodes = literalTree.getNodes().slice(); //use slice() to copy by value, not reference
 						var semanticTree = scope.expression.semantic.build(literalTreeNodes);
 
@@ -1074,7 +1144,7 @@
 						openMath += semanticTree.getOpenMath();
 						openMath += "</OMOBJ>";
 
-						scope.value = openMath;
+						scope.value = this.lastValue = openMath;
 					}
 				};
 
