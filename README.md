@@ -70,6 +70,7 @@ A two-way-bound variable containing a representation of the mathematical express
 
 `admFormat='adm'` is the only format which will give a perfect two-way model, the others are approximations, however it is not suitable for storage.
 
+---
 
 ### adm-math-bind
 
@@ -110,6 +111,7 @@ Type: `Variable`
 
 Bind an ADM literal equation representation for display
 
+---
 
 ### adm-math-openmath-converter
 
