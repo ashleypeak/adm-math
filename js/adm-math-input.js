@@ -1,14 +1,7 @@
 (function() {
 	var CURSOR_FLASHPERIOD	= 530;
 
-	var ERR_NOT_FOUND							=	1;
-	var ERR_UNMATCHED_PARENTHESIS	= 2;
-	var ERR_MALFORMED_NUMERAL			= 3;
-	var ERR_INVALID_ARGUMENTS 		= 4;
-	var ERR_EMPTY_EXPRESSION			= 5;
-	var ERR_MISSING_BASE					= 6;
-
-	var mathInput = angular.module("admMathInput", []);
+	var mathInput = angular.module("admMathInput", ["admMathCore", "admMathOpenmathConverter"]);
 
 	mathInput.run(["$templateCache", function($templateCache) {
 		var expressionTemplate = "";
@@ -78,182 +71,7 @@
 		$templateCache.put("adm-math-input.htm", inputTemplate);
 	}]);
 
-	mathInput.directive("admMathExpression", function() {
-		return {
-			restrict: "E",
-			replace: true,
-			scope: {
-				cursor: "=",
-				expression: "=",
-				control: "="
-			},
-			templateUrl: "adm-math-expression.htm",
-			link: function(scope) {
-			}
-		};
-	});
-
-	mathInput.service("literalExpression", function() {
-		this.build = function(id, parentNode) {
-			return {
-				id: id,
-				parentNode: (typeof parentNode !== "undefined") ? parentNode : null,
-				expressionType: "literal",
-				type: "expression",
-				nodes: [],
-				
-				getVal: function() {	return null;	},
-
-				insert: function(pos, node) {
-					this.nodes.splice(pos, 0, node);
-
-					return node;
-				},
-
-				deleteAt: function(pos) {
-					this.nodes.splice(pos, 1);
-				},
-
-				getLength: function() {
-					return this.nodes.length;
-				},
-
-				getNodes: function() {
-					return this.nodes;
-				},
-
-				getNode: function(index) {
-					return this.nodes[index];
-				},
-
-				findNode: function(node) {
-					for(var i = 0; i < this.nodes.length; i++)
-						if(this.nodes[i].id == node.id)
-							return i;
-				}
-			};
-		}
-	});
-
-	mathInput.service("literalNumeral", function() {
-		this.build = function(id, parentNode, value) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "numeral",
-				value: value,
-				getVal: function() {	return this.value;	}
-			};
-		}
-	});
-
-	mathInput.service("literalLetter", function() {
-		this.build = function(id, parentNode, value) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "letter",
-				value: value,
-				getVal: function() {	return this.value;	}
-			};
-		}
-	});
-
-	mathInput.service("literalParenthesis", function() {
-		this.build = function(id, parentNode, paren) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "parenthesis",
-				isStart: (paren == "(" ? true : false),
-				isEnd: !this.isStart,
-				getVal: function() {	return (this.isStart ? "(" : ")");	}
-			};
-		}
-	});
-
-	mathInput.service("literalOperator", function() {
-		this.build = function(id, parentNode, operator) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "operator",
-				operator: operator,
-				getVal: function() {	return this.operator;	}
-			};
-		}
-	});
-
-	mathInput.service("literalExponent", function() {
-		this.build = function(id, parentNode, exponentNode) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "exponent",
-				exponent: exponentNode,
-				getVal: function() {	return null;	}
-			};
-		}
-	});
-
-	mathInput.service("literalDivision", function() {
-		this.build = function(id, parentNode, numeratorNode, denominatorNode) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "division",
-				numerator: numeratorNode,
-				denominator: denominatorNode,
-				getVal: function() {	return null;	}
-			};
-		}
-	});
-
-	mathInput.factory("literalNode", ["literalExpression", "literalNumeral", "literalLetter", "literalParenthesis",
-		 "literalOperator", "literalExponent", "literalDivision",
-		 function(literalExpression, literalNumeral, literalLetter, literalParenthesis, literalOperator, literalExponent, literalDivision) {
-		var id = 0;
-
-		return {
-			buildBlankExpression: function(parentNode) {
-				return literalExpression.build(id++, parentNode);
-			},
-			build: function(parentNode, nodeVal) {
-
-				if(/[0-9.]/.test(nodeVal))		return literalNumeral.build(id++, parentNode, nodeVal);
-				if(/[a-zA-Z]/.test(nodeVal))	return literalLetter.build(id++, parentNode, nodeVal);
-				if(/[+\-*]/.test(nodeVal))		return literalOperator.build(id++, parentNode, nodeVal);
-				if(/[()]/.test(nodeVal))			return literalParenthesis.build(id++, parentNode, nodeVal);
-
-				if(/[\^]/.test(nodeVal)) {
-					var exponent = literalExpression.build(id++, null);
-					
-					var node = literalExponent.build(id++, parentNode, exponent);
-					node.exponent.parentNode = node;
-
-					return node;
-				}
-				if(/[\/]/.test(nodeVal)) {
-					var numerator = literalExpression.build(id++, null);
-					var denominator = literalExpression.build(id++, null);
-
-					var node = literalDivision.build(id++, parentNode, numerator, denominator);
-					node.numerator.parentNode = node;
-					node.denominator.parentNode = node;
-
-					return node;
-				}
-			}
-		};
-	}]);
-
-	mathInput.service("semanticNumeral", function() {
+	mathInput.service("admSemanticNumeral", function() {
 		this.build = function(value) {
 			return {
 				expressionType: "semantic",
@@ -269,7 +87,7 @@
 		}
 	});
 
-	mathInput.service("semanticVariable", function() {
+	mathInput.service("admSemanticVariable", function() {
 		this.build = function(name) {
 			return {
 				expressionType: "semantic",
@@ -283,7 +101,7 @@
 		}
 	});
 
-	mathInput.service("semanticOperator", function() {
+	mathInput.service("admSemanticOperator", function() {
 		this.build = function(symbol, children) {
 			return {
 				expressionType: "semantic",
@@ -293,9 +111,9 @@
 
 				assertHasValidChildren: function() {
 					for(var i = 0; i < 2; i++) {
-						if(!this.children[i])																		throw ERR_INVALID_ARGUMENTS;
-						if(!this.children[i].hasOwnProperty("expressionType"))	throw ERR_INVALID_ARGUMENTS;
-						if(this.children[i].expressionType != "semantic")				throw ERR_INVALID_ARGUMENTS;
+						if(!this.children[i])																		throw "errInvalidArguments";
+						if(!this.children[i].hasOwnProperty("expressionType"))	throw "errInvalidArguments";
+						if(this.children[i].expressionType != "semantic")				throw "errInvalidArguments";
 					}
 				},
 
@@ -311,7 +129,7 @@
 		}
 	});
 
-	mathInput.service("semanticExponent", function() {
+	mathInput.service("admSemanticExponent", function() {
 		this.build = function(base, exponent) {
 			return {
 				expressionType: "semantic",
@@ -320,13 +138,13 @@
 				exponent: typeof exponent !== "undefined" ? exponent : null,
 
 				assertHasValidChildren: function() {
-						if(this.base == null || this.exponent == null)		throw ERR_INVALID_ARGUMENTS;
-						if(this.base.type == "error")											throw ERR_INVALID_ARGUMENTS;
-						if(this.exponent.type == "error")									throw ERR_INVALID_ARGUMENTS;
+						if(this.base == null || this.exponent == null)		throw "errInvalidArguments";
+						if(this.base.type == "error")											throw "errInvalidArguments";
+						if(this.exponent.type == "error")									throw "errInvalidArguments";
 				},
 
 				getOpenMath: function() {
-					return "<OMA><OMS cd='arith1' name='power'>"
+					return "<OMA><OMS cd='arith1' name='power'/>"
 						+ this.base.getOpenMath()
 						+ this.exponent.getOpenMath()
 						+ "</OMA>";
@@ -335,7 +153,7 @@
 		}
 	});
 
-	mathInput.service("semanticDivision", function() {
+	mathInput.service("admSemanticDivision", function() {
 		this.build = function(numerator, denominator) {
 			return {
 				expressionType: "semantic",
@@ -344,13 +162,13 @@
 				denominator: typeof denominator !== "undefined" ? denominator : null,
 
 				assertHasValidChildren: function() {
-						if(this.numerator == null || this.denominator == null)	throw ERR_INVALID_ARGUMENTS;
-						if(this.numerator.type == "error")											throw ERR_INVALID_ARGUMENTS;
-						if(this.denominator.type == "error")										throw ERR_INVALID_ARGUMENTS;
+						if(this.numerator == null || this.denominator == null)	throw "errInvalidArguments";
+						if(this.numerator.type == "error")											throw "errInvalidArguments";
+						if(this.denominator.type == "error")										throw "errInvalidArguments";
 				},
 
 				getOpenMath: function() {
-					return "<OMA><OMS cd='arith1' name='divide'>"
+					return "<OMA><OMS cd='arith1' name='divide'/>"
 						+ this.numerator.getOpenMath()
 						+ this.denominator.getOpenMath()
 						+ "</OMA>";
@@ -359,7 +177,7 @@
 		}
 	});
 
-	mathInput.service("semanticError", function() {
+	mathInput.service("admSemanticError", function() {
 		this.build = function(message) {
 			return {
 				expressionType: "semantic",
@@ -373,34 +191,34 @@
 		}
 	});
 
-	mathInput.service("semanticNode", ["semanticNumeral", "semanticVariable", "semanticOperator", "semanticExponent",
-		 "semanticDivision", "semanticError",
-		 function(semanticNumeral, semanticVariable, semanticOperator, semanticExponent, semanticDivision, semanticError) {
+	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticExponent",
+		 "admSemanticDivision", "admSemanticError",
+		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticExponent, admSemanticDivision, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
-				case "numeral":		return semanticNumeral.build(arguments[1]);										break;
-				case "variable":	return semanticVariable.build(arguments[1]);									break;
-				case "operator":	return semanticOperator.build(arguments[1], arguments[2]);		break;
-				case "exponent":	return semanticExponent.build(arguments[1], arguments[2]);		break;
-				case "division":	return semanticDivision.build(arguments[1], arguments[2]);		break;
-				case "error":			return semanticError.build(arguments[1]);											break;
+				case "numeral":		return admSemanticNumeral.build(arguments[1]);									break;
+				case "variable":	return admSemanticVariable.build(arguments[1]);									break;
+				case "operator":	return admSemanticOperator.build(arguments[1], arguments[2]);		break;
+				case "exponent":	return admSemanticExponent.build(arguments[1], arguments[2]);		break;
+				case "division":	return admSemanticDivision.build(arguments[1], arguments[2]);		break;
+				case "error":			return admSemanticError.build(arguments[1]);											break;
 			}
 		}
 	}]);
 
-	mathInput.factory("semanticParser", ["semanticNode", function(semanticNode) {
+	mathInput.factory("admSemanticParser", ["admSemanticNode", function(admSemanticNode) {
 		/*******************************************************************
 		 * function:		assertNotEmpty()
 		 *
 		 * description:	takes mixed collection of nodes `nodes` and
 		 *							throws an exception if the collection is empty
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
 		function assertNotEmpty(nodes) {
-			if(nodes.length == 0)	throw ERR_EMPTY_EXPRESSION;
+			if(nodes.length == 0)	throw "errEmptyExpression";
 		}
 
 		/*******************************************************************
@@ -410,7 +228,7 @@
 		 *							throws an exception if there are any unmatched
 		 *							parentheses
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -422,10 +240,10 @@
 				if(nodes[i].type != "parenthesis")				continue;
 				
 				depth += (nodes[i].isStart ? 1 : -1);
-				if(depth < 0)	throw ERR_UNMATCHED_PARENTHESIS;
+				if(depth < 0)	throw "errUnmatchedParenthesis";
 			}
 
-			if(depth > 0)	throw ERR_UNMATCHED_PARENTHESIS;
+			if(depth > 0)	throw "errUnmatchedParenthesis";
 		}
 
 		/*******************************************************************
@@ -437,7 +255,7 @@
 		 *							leaves the semantic node's `base` as null
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -447,7 +265,7 @@
 				if(nodes[i].type != "exponent")						continue;
 				
 				var semanticExp = build(nodes[i].exponent.getNodes().slice());
-				nodes.splice(i, 1, semanticNode.build("exponent", null, semanticExp));
+				nodes.splice(i, 1, admSemanticNode.build("exponent", null, semanticExp));
 			}
 		}
 
@@ -459,7 +277,7 @@
 		 *							fills its `base` with the preceding node
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -468,7 +286,7 @@
 				if(nodes[i].expressionType != "semantic")	continue;
 				if(nodes[i].type != "exponent")						continue;
 
-				if(i == 0)	throw ERR_MISSING_BASE;
+				if(i == 0)	throw "errMissingBase";
 
 				nodes[i].base = nodes[i-1];
 				nodes[i].assertHasValidChildren();
@@ -484,7 +302,7 @@
 		 *							by parentheses with appropriate semantic nodes
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -500,7 +318,7 @@
 
 				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
 				var semanticNode = build(subExpressionNodes);
-				if(semanticNode.type == "error")	throw ERR_EMPTY_EXPRESSION;
+				if(semanticNode.type == "error")	throw "errEmptyExpression";
 
 				nodes.splice(i, literalLength, semanticNode);
 			}
@@ -515,7 +333,7 @@
 		 *							leaves the semantic node's `base` as null
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -527,7 +345,7 @@
 				var semanticNumerator = build(nodes[i].numerator.getNodes().slice());
 				var semanticDenominator = build(nodes[i].denominator.getNodes().slice());
 
-				var semanticDiv = semanticNode.build("division", semanticNumerator, semanticDenominator);
+				var semanticDiv = admSemanticNode.build("division", semanticNumerator, semanticDenominator);
 				semanticDiv.assertHasValidChildren();
 
 				nodes.splice(i, 1, semanticDiv);
@@ -542,7 +360,7 @@
 		 *							with appropriate semantic nodes
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -555,10 +373,10 @@
 				for(var j = i; nodes[j] && nodes[j].expressionType == "literal" && nodes[j].type == "numeral"; j++)
 						numeral += nodes[j].getVal();
 
-				if(numeral == "")																				throw ERR_NOT_FOUND;
-				if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw ERR_MALFORMED_NUMERAL;
+				if(numeral == "")																				throw "errNotFound";
+				if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw "errMalformedNumeral";
 
-				var semanticNum = semanticNode.build("numeral", numeral);
+				var semanticNum = admSemanticNode.build("numeral", numeral);
 				nodes.splice(i, numeral.length, semanticNum);
 			}
 		}
@@ -571,7 +389,7 @@
 		 *							with semantic.nodeTypes.Variable
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[literalNode | semanticNode]
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -580,7 +398,7 @@
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "letter")							continue;
 
-				var semanticVar = semanticNode.build("variable", nodes[i].getVal()); 
+				var semanticVar = admSemanticNode.build("variable", nodes[i].getVal()); 
 				nodes.splice(i, 1, semanticVar);
 			}
 		}
@@ -594,7 +412,7 @@
 		 *							semantic node
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:			[literalNode | semanticNode]
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
 		 *
 		 * return:			none
 		 ******************************************************************/
@@ -603,7 +421,7 @@
 				if(nodes[i].expressionType != "semantic")		continue;
 				if(nodes[i+1].expressionType != "semantic")	continue;
 
-				var opNode = semanticNode.build("operator", "*", [nodes[i], nodes[i+1]]);
+				var opNode = admSemanticNode.build("operator", "*", [nodes[i], nodes[i+1]]);
 				opNode.assertHasValidChildren();
 
 				nodes.splice(i, 2, opNode);
@@ -619,7 +437,7 @@
 		 *							`condition` with appropriate semantic nodes
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:			[literalNode | semanticNode]
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
 		 *							condition:	REGEX
 		 *
 		 * return:			none
@@ -629,9 +447,9 @@
 				if(nodes[i].expressionType != "literal")	continue;
 				if(!condition.test(nodes[i].getVal()))		continue;
 
-				if(i == 0 || i == nodes.length-1)	throw ERR_INVALID_ARGUMENTS;
+				if(i == 0 || i == nodes.length-1)	throw "errInvalidArguments";
 
-				var opNode = semanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
+				var opNode = admSemanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
 				opNode.assertHasValidChildren();
 
 				nodes.splice(i-1, 3, opNode);
@@ -645,9 +463,9 @@
 		 * description:	takes mixed collection of nodes `nodes` and parses
 		 *							into a single semantic node
 		 *
-		 * arguments:		nodes:	[literalNode | semanticNode]
+		 * arguments:		nodes:	[admLiteralNode | admSemanticNode]
 		 *
-		 * return:			semanticNode
+		 * return:			admSemanticNode
 		 ******************************************************************/
 		function build(nodes) {
 			try {
@@ -667,17 +485,17 @@
 				parseOperators(nodes, /[+\-]/);
 			} catch(e) {
 				switch(e) {
-					case ERR_NOT_FOUND:							return semanticNode.build("error", "Missing number.");
-					case ERR_UNMATCHED_PARENTHESIS:	return semanticNode.build("error", "Unmatched parenthesis.");
-					case ERR_MALFORMED_NUMERAL:			return semanticNode.build("error", "Malformed Number.");
-					case ERR_INVALID_ARGUMENTS:			return semanticNode.build("error", "Invalid arguments.");
-					case ERR_EMPTY_EXPRESSION:			return semanticNode.build("error", "Empty expression.");
-					case ERR_MISSING_BASE:					return semanticNode.build("error", "Exponent has no base.");
-					default:												return semanticNode.build("error", "Unidentified error.");
+					case "errNotFound":							return admSemanticNode.build("error", "Missing number.");
+					case "errUnmatchedParenthesis":	return admSemanticNode.build("error", "Unmatched parenthesis.");
+					case "errMalformedNumeral":			return admSemanticNode.build("error", "Malformed Number.");
+					case "errInvalidArguments":			return admSemanticNode.build("error", "Invalid arguments.");
+					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
+					case "errMissingBase":					return admSemanticNode.build("error", "Exponent has no base.");
+					default:												return admSemanticNode.build("error", "Unidentified error.");
 				}
 			}
 
-			if(nodes.length > 1)	semanticNode.build("error", "Irreducible expression.");
+			if(nodes.length > 1)	admSemanticNode.build("error", "Irreducible expression.");
 			return nodes[0];
 		}
 
@@ -687,29 +505,45 @@
 			}
 		};
 	}]);
-	
-	mathInput.directive("admMathInput", ["$interval", "literalNode", "semanticParser", function($interval, literalNode, semanticParser) {
+
+	mathInput.directive("admMathExpression", function() {
 		return {
 			restrict: "E",
 			replace: true,
 			scope: {
-				format: "=?admFormat",
-				name: "=?admName",
-				value: "=?ngModel"
+				cursor: "=",
+				expression: "=",
+				control: "="
+			},
+			templateUrl: "adm-math-expression.htm",
+			link: function(scope) {
+			}
+		};
+	});
+	
+	mathInput.directive("admMathInput", ["$interval", "admLiteralNode", "admSemanticParser", "admOpenmathLiteralConverter",
+			function($interval, admLiteralNode, admSemanticParser, admOpenmathLiteralConverter) {
+		return {
+			restrict: "E",
+			replace: true,
+			scope: {
+				model: "=?ngModel"
 			},
 			templateUrl: "adm-math-input.htm",
-			link: function(scope, element) {
-				scope.format = angular.isDefined(scope.format) ? scope.format : "openmath";
-				scope.literalTree = literalNode.buildBlankExpression(null); //the parent literalExpression of the admMathInput
+			link: function(scope, element, attrs) {
+				scope.format = angular.isDefined(attrs.admFormat) ? attrs.admFormat : "openmath";
+				scope.name = angular.isDefined(attrs.admName) ? attrs.admName : null;
+				scope.literalTree = admLiteralNode.buildBlankExpression(null); //the parent admLiteralExpression of the admMathInput
 
-				scope.$watch('value', function(newValue, oldValue) {
-					if(newValue == scope.output.lastValue) return;
+				scope.$watch('model', function(newModel, oldModel) {
+					if(newModel == scope.output.lastModel) return;
 
-					/*scope.expression.literal.tree = new scope.expression.literal.nodeTypes.Expression();
-					scope.expression.literal.tree.insert(0, "1");
-					scope.expression.literal.tree.insert(1, "2");
-
-					scope.output.write();*/
+					try {
+						scope.literalTree = admOpenmathLiteralConverter.convert(newModel);
+						scope.output.write();
+					} catch(e) {
+						//just suppress any errors, user can't do anything about them
+					}
 				});
 
 				/*******************************************************************
@@ -861,7 +695,7 @@
 				 *							`goToEnd`									returns none
 				 ******************************************************************/
 				scope.cursor = {
-					expression: null,			//the literalExpression which the cursor is currently in
+					expression: null,			//the admLiteralExpression which the cursor is currently in
 					position: null,				//the position of the cursor within `expression`
 					visible: false,				//flag for whether the cursor should be visible (alternates for cursor flash)
 					flashInterval: null,	//handler for cursor flashing interval
@@ -910,7 +744,7 @@
 					 * return:			none
 					 ******************************************************************/
 					insert: function(character) {
-						var node = literalNode.build(this.expression, character);
+						var node = admLiteralNode.build(this.expression, character);
 
 						this.expression.insert(this.position, node);
 						this.moveRight();
@@ -1169,7 +1003,7 @@
 				};
 
 				scope.output = {
-					lastValue: null, //used by $watch('value') to determine if ngModel was altered by this class or from outside
+					lastModel: null, //used by $watch('value') to determine if ngModel was altered by this class or from outside
 
 					/*******************************************************************
 					 * function:		get()
@@ -1183,13 +1017,13 @@
 					 ******************************************************************/
 					write: function() {
 						var literalTreeNodes = scope.literalTree.getNodes().slice(); //use slice() to copy by value, not reference
-						var semanticTree = semanticParser.buildTree(literalTreeNodes);
+						var semanticTree = admSemanticParser.buildTree(literalTreeNodes);
 
 						var openMath = "<OMOBJ>";
 						openMath += semanticTree.getOpenMath();
 						openMath += "</OMOBJ>";
 
-						scope.value = this.lastValue = openMath;
+						scope.model = this.lastModel = openMath;
 					}
 				};
 

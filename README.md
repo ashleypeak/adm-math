@@ -32,9 +32,6 @@ And wherever you want a math input, add
 ```
 
 ## Attributes
-> **NB** All parameters are interpolated by Angular.js, so strings must be enclosed in quotation marks, e.g.
-> `<adm-math-input adm-format="'latex'"></adm-math-input>`
-
 
 #### adm-format
 _Optional_
@@ -45,8 +42,8 @@ Defines output format.
 
 Values:
 * 'openmath' - _(default)_ Use [OpenMath](http://openmath.org/) format
-* 'latex' - Use [LaTeX](https://www.latex-project.org/) math mode format
-
+* 'latex' - _(unimplemented)_ Use [LaTeX](https://www.latex-project.org/) math mode format
+* 'adm' - _(unimplemented)_ Use [ADM](http://github.com/wyattpeak/adm-math) literal format (suitable only for display, not for storage)
 
 #### adm-name
 _Optional_
@@ -55,10 +52,11 @@ Type: `String`
 
 The name of the form element containing output.
 
-
-#### adm-value
+#### ng-model
 _Optional_
 
 Type: `Variable`
 
-A variable bound to the form element output, useful if you want to access the output without submitting the form.
+A two-way-bound variable containing a representation of the mathematical expression in the format defined by admFormat.
+
+`admFormat='adm'` is the only format which will give a perfect two-way model, the others are approximations, however it is not suitable for storage.
