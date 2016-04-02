@@ -7,7 +7,7 @@ An Angular.js library for manipulating mathematical expressions
 To install using bower:
 
 ```
-bower install https://github.com/wyattpeak/adm-math-input.git
+bower install https://github.com/wyattpeak/adm-math.git
 ```
 
 ## Components
@@ -22,10 +22,10 @@ A mathematical expression input field
 First include the module files:
 
 ```html
-<link rel="stylesheet" href="bower_components/adm-math-input/css/adm-math.css">
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-openmath-converter.js"></script>
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-input.js"></script>
+<link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-input.js"></script>
 ```
 
 Then include the module in your Angular.js module:
@@ -81,10 +81,10 @@ A binding to display OpenMath and ADM formatted equations
 First include the module files:
 
 ```html
-<link rel="stylesheet" href="bower_components/adm-math-input/css/adm-math.css">
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-openmath-converter.js"></script>
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-bind.js"></script>
+<link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-bind.js"></script>
 ```
 
 Then include the module in your Angular.js module:
@@ -122,8 +122,8 @@ A set of services for converting OpenMath into other formats
 First include the module files:
 
 ```html
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math-input/js/adm-math-openmath-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 ```
 
 Then include the module in your Angular.js module:

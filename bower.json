@@ -1,5 +1,5 @@
 {
-  "name": "adm-math-input",
+  "name": "adm-math",
   "authors": [
     "Wyatt Peak <wyattpeak@gmail.com>"
   ],
@@ -12,7 +12,7 @@
     "css/adm-math.css"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/wyattpeak/adm-math-input",
+  "homepage": "https://github.com/wyattpeak/adm-math",
   "ignore": [
     "**/.*",
     "bower_components",
