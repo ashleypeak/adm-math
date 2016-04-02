@@ -31,7 +31,7 @@
 
 .mathinput span.cursor {
 	padding: 0px;
-	border-right: 1px solid #000000;
+	border-right: 1px solid;
 }
 
 .mathinput .highlight {
@@ -60,6 +60,6 @@
 }
 
 .mathinput .denominator, .mathoutput .denominator {
-	border-top: 1px solid #000;
+	border-top: 1px solid;
 	display: block;
 }
