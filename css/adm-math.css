@@ -11,6 +11,17 @@
 	cursor: text;
 }
 
+/*this is what I'm using for integration with bootstrap
+.mathinput {
+	display: inline-block;
+	background-color: #ffffff;
+	height: auto;
+	text-align: left;
+	white-space: nowrap;
+	overflow: hidden;
+	cursor: text;
+}*/
+
 .mathinput span, .mathoutput span {
 	display: inline-block;
 	vertical-align: middle;

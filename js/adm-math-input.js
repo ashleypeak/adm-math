@@ -539,7 +539,9 @@
 					if(newModel == scope.output.lastModel) return;
 
 					try {
-						scope.literalTree = admOpenmathLiteralConverter.convert(newModel);
+						if(!!newModel)	scope.literalTree = admOpenmathLiteralConverter.convert(newModel);
+						else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
+
 						scope.output.write();
 					} catch(e) {
 						//just suppress any errors, user can't do anything about them
