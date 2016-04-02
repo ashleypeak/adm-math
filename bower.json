@@ -3,10 +3,13 @@
   "authors": [
     "Wyatt Peak <wyattpeak@gmail.com>"
   ],
-  "description": "An Angular.js-based mathematical expression input field",
+  "description": "An Angular.js library for manipulating mathematical expressions",
   "main": [
+    "js/adm-math-core.js",
+    "js/adm-math-openmath-converter.js",
     "js/adm-math-input.js",
-    "css/adm-math-input.css"
+    "js/adm-math-bind.js",
+    "css/adm-math.css"
   ],
   "license": "MIT",
   "homepage": "https://github.com/wyattpeak/adm-math-input",

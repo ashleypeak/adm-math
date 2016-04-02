@@ -10,36 +10,45 @@
 	overflow: hidden;
 	cursor: text;
 }
-.mathinput span {
+
+.mathinput span, .mathoutput span {
 	display: inline-block;
 	vertical-align: middle;
 	padding: 0px 1px 0px 0px;
 	cursor: text;
 }
+
 .mathinput span.cursor {
 	padding: 0px;
 	border-right: 1px solid #000000;
 }
+
 .mathinput .highlight {
 	background-color: #c8e8ff;
 }
-.mathinput .exponent {
+
+.mathinput .exponent, .mathoutput .exponent {
 	position: relative;
 	left: -5px;
 	font-size: 70%;
 	vertical-align: 0.6em;
 }
-.mathinput .division, .mathinput .numerator, .mathinput .denominator {
+
+.mathinput .division, .mathinput .numerator, .mathinput .denominator,
+.mathoutput .division, .mathoutput .numerator, .mathoutput .denominator {
 	padding: 0px 5px;    
 }
-.mathinput .division {
+
+.mathinput .division, .mathoutput .division {
 	text-align: center;
 	vertical-align: -20px;
 }
+
 .mathinput .division.cursor {
 	padding: 0px 4px 0px 5px;
 }
-.mathinput .denominator {
+
+.mathinput .denominator, .mathoutput .denominator {
 	border-top: 1px solid #000;
 	display: block;
 }

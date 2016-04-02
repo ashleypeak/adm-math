@@ -211,10 +211,27 @@
 		 * return:			STRING
 		 ******************************************************************/
 		function convertOMF(node) {
-			if(node.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
+			if(node.childNodes.length !== 0)							throw new Error("Node has incorrect number of children.");
 			if(typeof node.attributes.dec == "undefined")	throw new Error("OMF must have attribute `dec`.");
 
 			return node.attributes.dec.nodeValue;
+		}
+
+		/*******************************************************************
+		 * function:		convertOMV()
+		 *
+		 * description:	takes an OMV node `node`, converts to LaTeX
+		 *							and returns
+		 *
+		 * arguments:		`node` DOM Element
+		 *
+		 * return:			STRING
+		 ******************************************************************/
+		function convertOMF(node) {
+			if(node.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
+			if(typeof node.attributes.name == "undefined")	throw new Error("OMV must have attribute `name`.");
+
+			return node.attributes.name.nodeValue;
 		}
 
 		/*******************************************************************
@@ -278,6 +295,7 @@
 				case "OMOBJ":	return convertOMOBJ(node);
 				case "OMI":		return convertOMI(node);
 				case "OMF":		return convertOMF(node);
+				case "OMV":		return convertOMV(node);
 				case "OMA":		return convertOMA(node);
 				case "OMS":		return convertOMS(node);
 			}
@@ -537,6 +555,26 @@
 		}
 
 		/*******************************************************************
+		 * function:		convertOMV()
+		 *
+		 * description:	takes an OMV node `xmlNode`, converts to an
+		 *							array of admLiteralNode and returns
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`xmlNode` DOM Element
+		 *
+		 * return:			[admLiteralNode]
+		 ******************************************************************/
+		function convertOMV(parentLiteralNode, xmlNode) {
+			if(xmlNode.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
+			if(typeof xmlNode.attributes.name == "undefined")	throw new Error("OMV must have attribute `name`.");
+
+			var literalNode = admLiteralNode.build(parentLiteralNode, xmlNode.attributes.name.nodeValue);
+
+			return [literalNode];
+		}
+
+		/*******************************************************************
 		 * function:		convertOMA()
 		 *
 		 * description:	takes an OMF node `xmlNode`, converts to an
@@ -603,6 +641,7 @@
 				case "OMOBJ":	return convertOMOBJ(parentLiteralNode, xmlNode);
 				case "OMI":		return convertOMI(parentLiteralNode, xmlNode);
 				case "OMF":		return convertOMF(parentLiteralNode, xmlNode);
+				case "OMV":		return convertOMV(parentLiteralNode, xmlNode);
 				case "OMA":		return convertOMA(parentLiteralNode, xmlNode);
 				case "OMS":		return convertOMS(parentLiteralNode, xmlNode);
 			}
