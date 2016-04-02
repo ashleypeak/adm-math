@@ -211,8 +211,8 @@
 		 * return:			STRING
 		 ******************************************************************/
 		function convertOMF(node) {
-			if(node.childNodes.length != 0)									throw new Error("Node has incorrect number of children.");
-			if(typeof node.attributes.dec === "undefined")	throw new Error("OMF must have attribute `dec`.");
+			if(node.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
+			if(typeof node.attributes.dec == "undefined")	throw new Error("OMF must have attribute `dec`.");
 
 			return node.attributes.dec.nodeValue;
 		}
@@ -228,11 +228,11 @@
 		 * return:			STRING
 		 ******************************************************************/
 		function convertOMA(node) {
-			if(node.childNodes.length == 0)											throw new Error("OMA requires at least one child.");
+			if(node.childNodes.length === 0)										throw new Error("OMA requires at least one child.");
 			omsNode = node.childNodes[0];
-			if(omsNode.nodeName !== "OMS")											throw new Error("OMA must have OMS as first child.");
-			if(typeof omsNode.attributes.cd === "undefined")		throw new Error("OMS must define a content dictionary.");
-			if(typeof omsNode.attributes.name === "undefined")	throw new Error("OMS must define a name.");
+			if(omsNode.nodeName != "OMS")												throw new Error("OMA must have OMS as first child.");
+			if(typeof omsNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
+			if(typeof omsNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(omsNode.attributes.cd.nodeValue) {
 				case "arith1":	return convertArith1(node);
@@ -253,8 +253,8 @@
 		 * return:			STRING
 		 ******************************************************************/
 		function convertOMS(node) {
-			if(typeof node.attributes.cd === "undefined")		throw new Error("OMS must define a content dictionary.");
-			if(typeof node.attributes.name === "undefined")	throw new Error("OMS must define a name.");
+			if(typeof node.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
+			if(typeof node.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(node.attributes.cd.nodeValue) {
 				case "nums1":	return convertNums1(node);
@@ -521,8 +521,8 @@
 		 * return:			[admLiteralNode]
 		 ******************************************************************/
 		function convertOMF(parentLiteralNode, xmlNode) {
-			if(xmlNode.childNodes.length != 0)								throw new Error("Node has incorrect number of children.");
-			if(typeof xmlNode.attributes.dec === "undefined")	throw new Error("OMF must have attribute `dec`.");
+			if(xmlNode.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
+			if(typeof xmlNode.attributes.dec == "undefined")	throw new Error("OMF must have attribute `dec`.");
 
 			var chars = xmlNode.attributes.dec.nodeValue;
 			var literalNodes = [];
@@ -548,12 +548,12 @@
 		 * return:			[admLiteralNode]
 		 ******************************************************************/
 		function convertOMA(parentLiteralNode, xmlNode) {
-			if(xmlNode.childNodes.length == 0)											throw new Error("OMA requires at least one child.");
+			if(xmlNode.childNodes.length === 0) throw new Error("OMA requires at least one child.");
 
 			omsNode = xmlNode.childNodes[0];
 			if(omsNode.nodeName !== "OMS")											throw new Error("OMA must have OMS as first child.");
-			if(typeof omsNode.attributes.cd === "undefined")		throw new Error("OMS must define a content dictionary.");
-			if(typeof omsNode.attributes.name === "undefined")	throw new Error("OMS must define a name.");
+			if(typeof omsNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
+			if(typeof omsNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(omsNode.attributes.cd.nodeValue) {
 				case "arith1":	return convertArith1(parentLiteralNode, xmlNode);
@@ -576,8 +576,8 @@
 		 * return:			[admLiteralNode]
 		 ******************************************************************/
 		function convertOMS(parentLiteralNode, xmlNode) {
-			if(typeof xmlNode.attributes.cd === "undefined")		throw new Error("OMS must define a content dictionary.");
-			if(typeof xmlNode.attributes.name === "undefined")	throw new Error("OMS must define a name.");
+			if(typeof xmlNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
+			if(typeof xmlNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(xmlNode.attributes.cd.nodeValue) {
 				case "nums1":	return convertNums1(parentLiteralNode, xmlNode);

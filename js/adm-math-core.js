@@ -40,7 +40,7 @@
 							return i;
 				}
 			};
-		}
+		};
 	});
 
 	mathCore.service("admLiteralNumeral", function() {
@@ -53,7 +53,7 @@
 				value: value,
 				getVal: function() {	return this.value;	}
 			};
-		}
+		};
 	});
 
 	mathCore.service("admLiteralLetter", function() {
@@ -66,7 +66,7 @@
 				value: value,
 				getVal: function() {	return this.value;	}
 			};
-		}
+		};
 	});
 
 	mathCore.service("admLiteralParenthesis", function() {
@@ -80,7 +80,7 @@
 				isEnd: !this.isStart,
 				getVal: function() {	return (this.isStart ? "(" : ")");	}
 			};
-		}
+		};
 	});
 
 	mathCore.service("admLiteralOperator", function() {
@@ -93,7 +93,7 @@
 				operator: operator,
 				getVal: function() {	return this.operator;	}
 			};
-		}
+		};
 	});
 
 	mathCore.service("admLiteralExponent", function() {
@@ -106,7 +106,7 @@
 				exponent: exponentNode,
 				getVal: function() {	return null;	}
 			};
-		}
+		};
 	});
 
 	mathCore.service("admLiteralDivision", function() {
@@ -120,7 +120,7 @@
 				denominator: denominatorNode,
 				getVal: function() {	return null;	}
 			};
-		}
+		};
 	});
 
 	mathCore.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralParenthesis",
@@ -134,12 +134,11 @@
 			},
 			build: function(parentNode, nodeVal) {
 
-				if(/[0-9.]/.test(nodeVal))		return admLiteralNumeral.build(id++, parentNode, nodeVal);
-				if(/[a-zA-Z]/.test(nodeVal))	return admLiteralLetter.build(id++, parentNode, nodeVal);
-				if(/[+\-*]/.test(nodeVal))		return admLiteralOperator.build(id++, parentNode, nodeVal);
-				if(/[()]/.test(nodeVal))			return admLiteralParenthesis.build(id++, parentNode, nodeVal);
-
-				if(/[\^]/.test(nodeVal)) {
+				if(/[0-9.]/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
+				else if(/[a-zA-Z]/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
+				else if(/[+\-*]/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
+				else if(/[()]/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
+				else if(/[\^]/.test(nodeVal)) {
 					var exponent = admLiteralExpression.build(id++, null);
 					
 					var node = admLiteralExponent.build(id++, parentNode, exponent);
@@ -147,7 +146,7 @@
 
 					return node;
 				}
-				if(/[\/]/.test(nodeVal)) {
+				else if(/[\/]/.test(nodeVal)) {
 					var numerator = admLiteralExpression.build(id++, null);
 					var denominator = admLiteralExpression.build(id++, null);
 

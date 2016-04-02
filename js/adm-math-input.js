@@ -84,7 +84,7 @@
 					return "<OMI>"+this.value+"</OMI>";
 				}
 			};
-		}
+		};
 	});
 
 	mathInput.service("admSemanticVariable", function() {
@@ -98,7 +98,7 @@
 					return "<OMV name='"+this.name+"'/>";
 				}
 			};
-		}
+		};
 	});
 
 	mathInput.service("admSemanticOperator", function() {
@@ -126,7 +126,7 @@
 						+ "</OMA>";
 				}
 			};
-		}
+		};
 	});
 
 	mathInput.service("admSemanticExponent", function() {
@@ -138,7 +138,7 @@
 				exponent: typeof exponent !== "undefined" ? exponent : null,
 
 				assertHasValidChildren: function() {
-						if(this.base == null || this.exponent == null)		throw "errInvalidArguments";
+						if(this.base === null || this.exponent === null)	throw "errInvalidArguments";
 						if(this.base.type == "error")											throw "errInvalidArguments";
 						if(this.exponent.type == "error")									throw "errInvalidArguments";
 				},
@@ -150,7 +150,7 @@
 						+ "</OMA>";
 				}
 			};
-		}
+		};
 	});
 
 	mathInput.service("admSemanticDivision", function() {
@@ -162,9 +162,9 @@
 				denominator: typeof denominator !== "undefined" ? denominator : null,
 
 				assertHasValidChildren: function() {
-						if(this.numerator == null || this.denominator == null)	throw "errInvalidArguments";
-						if(this.numerator.type == "error")											throw "errInvalidArguments";
-						if(this.denominator.type == "error")										throw "errInvalidArguments";
+						if(this.numerator === null || this.denominator === null)	throw "errInvalidArguments";
+						if(this.numerator.type == "error")												throw "errInvalidArguments";
+						if(this.denominator.type == "error")											throw "errInvalidArguments";
 				},
 
 				getOpenMath: function() {
@@ -174,7 +174,7 @@
 						+ "</OMA>";
 				}
 			};
-		}
+		};
 	});
 
 	mathInput.service("admSemanticError", function() {
@@ -188,7 +188,7 @@
 					return "<OME>"+message+"[FIND OUT HOW ERRORS ARE RECORDED]</OME>";
 				}
 			};
-		}
+		};
 	});
 
 	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticExponent",
@@ -196,14 +196,14 @@
 		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticExponent, admSemanticDivision, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
-				case "numeral":		return admSemanticNumeral.build(arguments[1]);									break;
-				case "variable":	return admSemanticVariable.build(arguments[1]);									break;
-				case "operator":	return admSemanticOperator.build(arguments[1], arguments[2]);		break;
-				case "exponent":	return admSemanticExponent.build(arguments[1], arguments[2]);		break;
-				case "division":	return admSemanticDivision.build(arguments[1], arguments[2]);		break;
-				case "error":			return admSemanticError.build(arguments[1]);											break;
+				case "numeral":		return admSemanticNumeral.build(arguments[1]);
+				case "variable":	return admSemanticVariable.build(arguments[1]);
+				case "operator":	return admSemanticOperator.build(arguments[1], arguments[2]);
+				case "exponent":	return admSemanticExponent.build(arguments[1], arguments[2]);
+				case "division":	return admSemanticDivision.build(arguments[1], arguments[2]);
+				case "error":			return admSemanticError.build(arguments[1]);
 			}
-		}
+		};
 	}]);
 
 	mathInput.factory("admSemanticParser", ["admSemanticNode", function(admSemanticNode) {
@@ -218,7 +218,7 @@
 		 * return:			none
 		 ******************************************************************/
 		function assertNotEmpty(nodes) {
-			if(nodes.length == 0)	throw "errEmptyExpression";
+			if(nodes.length === 0) throw "errEmptyExpression";
 		}
 
 		/*******************************************************************
@@ -286,7 +286,7 @@
 				if(nodes[i].expressionType != "semantic")	continue;
 				if(nodes[i].type != "exponent")						continue;
 
-				if(i == 0)	throw "errMissingBase";
+				if(i === 0) throw "errMissingBase";
 
 				nodes[i].base = nodes[i-1];
 				nodes[i].assertHasValidChildren();
@@ -373,7 +373,7 @@
 				for(var j = i; nodes[j] && nodes[j].expressionType == "literal" && nodes[j].type == "numeral"; j++)
 						numeral += nodes[j].getVal();
 
-				if(numeral == "")																				throw "errNotFound";
+				if(numeral === "")																			throw "errNotFound";
 				if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw "errMalformedNumeral";
 
 				var semanticNum = admSemanticNode.build("numeral", numeral);
@@ -447,7 +447,7 @@
 				if(nodes[i].expressionType != "literal")	continue;
 				if(!condition.test(nodes[i].getVal()))		continue;
 
-				if(i == 0 || i == nodes.length-1)	throw "errInvalidArguments";
+				if(i === 0 || i == nodes.length-1) throw "errInvalidArguments";
 
 				var opNode = admSemanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
 				opNode.assertHasValidChildren();
@@ -662,7 +662,8 @@
 					nodeClick: function(nodeIndex) {
 						//due to differing indices, position must be 1 higher than nodeIndex
 						var position = nodeIndex + 1;
-						scope.cursor.goToPos(nodeIndex+1);
+
+						scope.cursor.goToPos(position);
 					}
 				};
 
@@ -763,7 +764,7 @@
 						//due to differing indices, this.position-1 is the node under the cursor
 						var nodeIndex = this.position - 1;
 						
-						if(this.position == 0)	return;
+						if(this.position === 0)	return;
 
 						this.expression.deleteAt(nodeIndex);
 						this.moveLeft();
@@ -872,7 +873,7 @@
 					 * return:			BOOLEAN
 					 ******************************************************************/
 					tryMoveIntoNumerator: function(terminus) {
-						if(this.expression.parentNode == null)									return false;
+						if(this.expression.parentNode === null)									return false;
 						if(this.expression.parentNode.type != "division")				return false;
 
 						var divisionNode = this.expression.parentNode;
@@ -894,7 +895,7 @@
 					 * return:			BOOLEAN
 					 ******************************************************************/
 					tryMoveIntoDenominator: function(terminus) {
-						if(this.expression.parentNode == null)								return false;
+						if(this.expression.parentNode === null)								return false;
 						if(this.expression.parentNode.type != "division")			return false;
 
 						var divisionNode = this.expression.parentNode;
@@ -916,7 +917,7 @@
 					 * return:			none
 					 ******************************************************************/
 					moveLeft: function() {
-						if(this.position == 0)	return this.tryMoveIntoParent("before");
+						if(this.position === 0) return this.tryMoveIntoParent("before");
 
 						this.position--;
 						this.tryMoveIntoExponent("end") || this.tryMoveIntoDivision("numerator", "end");

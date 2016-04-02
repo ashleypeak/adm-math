@@ -1,9 +1,11 @@
 .mathinput {
+	display: inline-block;
 	border: 1px solid #000000;
-	width: 200px;
-	font-size: 20pt;
-	line-height: 50px;
-	text-align: center;
+	background-color:#ffffff;
+	min-width: 200px;
+	font-size: 12pt;
+	line-height: 30px;
+	text-align: left;
 	white-space: nowrap;
 	overflow: hidden;
 	cursor: text;
