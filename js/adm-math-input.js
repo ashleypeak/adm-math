@@ -521,19 +521,45 @@
 		};
 	});
 	
+	mathInput.directive("admInputControl", function() {
+		return {
+			restrict: "A",
+			scope: {
+				target: "=admTarget",
+				symbol: "@admSymbol"
+			},
+			link: function(scope, element, attrs) {
+				element.bind("click", function(e) {
+					scope.target.addSymbol(scope.symbol);
+				});
+			}
+		};
+	});
+
 	mathInput.directive("admMathInput", ["$interval", "admLiteralNode", "admSemanticParser", "admOpenmathLiteralConverter",
 			function($interval, admLiteralNode, admSemanticParser, admOpenmathLiteralConverter) {
 		return {
 			restrict: "E",
 			replace: true,
 			scope: {
-				model: "=?ngModel"
+				model: "=?ngModel",
+				hook: "=?admHook"
 			},
 			templateUrl: "adm-math-input.htm",
 			link: function(scope, element, attrs) {
 				scope.format = angular.isDefined(attrs.admFormat) ? attrs.admFormat : "openmath";
 				scope.name = angular.isDefined(attrs.name) ? attrs.name : null;
 				scope.literalTree = admLiteralNode.buildBlankExpression(null); //the parent admLiteralExpression of the admMathInput
+
+				scope.hook = {
+					addSymbol: function(symbol) {
+						switch(symbol) {
+							case "division":	scope.cursor.insert('/');	break;
+						}
+						
+						element[0].focus();
+					}
+				};
 
 				scope.$watch('model', function(newModel, oldModel) {
 					if(newModel == scope.output.lastModel) return;
