@@ -532,7 +532,7 @@
 			templateUrl: "adm-math-input.htm",
 			link: function(scope, element, attrs) {
 				scope.format = angular.isDefined(attrs.admFormat) ? attrs.admFormat : "openmath";
-				scope.name = angular.isDefined(attrs.admName) ? attrs.admName : null;
+				scope.name = angular.isDefined(attrs.name) ? attrs.name : null;
 				scope.literalTree = admLiteralNode.buildBlankExpression(null); //the parent admLiteralExpression of the admMathInput
 
 				scope.$watch('model', function(newModel, oldModel) {

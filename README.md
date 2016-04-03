@@ -54,7 +54,7 @@ Values:
 * 'latex' - _(unimplemented)_ Use [LaTeX](https://www.latex-project.org/) math mode format
 * 'adm' - _(unimplemented)_ Use [ADM](http://github.com/wyattpeak/adm-math) literal format (suitable only for display, not for storage)
 
-##### adm-name
+##### name
 _Optional_
 
 Type: `String`
