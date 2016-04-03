@@ -11,6 +11,7 @@
 				nodes: [],
 				
 				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	},
 
 				insert: function(pos, node) {
 					this.nodes.splice(pos, 0, node);
@@ -51,7 +52,8 @@
 				expressionType: "literal",
 				type: "numeral",
 				value: value,
-				getVal: function() {	return this.value;	}
+				getVal: function() {	return this.value;	},
+				getDisplay: function() {	return this.value;	}
 			};
 		};
 	});
@@ -64,7 +66,8 @@
 				expressionType: "literal",
 				type: "letter",
 				value: value,
-				getVal: function() {	return this.value;	}
+				getVal: function() {	return this.value;	},
+				getDisplay: function() {	return this.value;	}
 			};
 		};
 	});
@@ -78,7 +81,8 @@
 				type: "parenthesis",
 				isStart: (paren == "(" ? true : false),
 				isEnd: !this.isStart,
-				getVal: function() {	return (this.isStart ? "(" : ")");	}
+				getVal: function() {	return (this.isStart ? "(" : ")");	},
+				getDisplay: function() {	return (this.isStart ? "(" : ")");	}
 			};
 		};
 	});
@@ -91,7 +95,13 @@
 				expressionType: "literal",
 				type: "operator",
 				operator: operator,
-				getVal: function() {	return this.operator;	}
+				getVal: function() {	return this.operator;	},
+				getDisplay: function() {
+					switch(this.operator) {
+						case "*":	return "\&times\;";
+						default:	return this.operator;
+					}
+				}
 			};
 		};
 	});
@@ -104,7 +114,8 @@
 				expressionType: "literal",
 				type: "exponent",
 				exponent: exponentNode,
-				getVal: function() {	return null;	}
+				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	}
 			};
 		};
 	});
@@ -118,7 +129,8 @@
 				type: "division",
 				numerator: numeratorNode,
 				denominator: denominatorNode,
-				getVal: function() {	return null;	}
+				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	}
 			};
 		};
 	});

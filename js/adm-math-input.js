@@ -1,7 +1,7 @@
 (function() {
 	var CURSOR_FLASHPERIOD	= 530;
 
-	var mathInput = angular.module("admMathInput", ["admMathCore", "admMathOpenmathConverter"]);
+	var mathInput = angular.module("admMathInput", ["ngSanitize", "admMathCore", "admMathOpenmathConverter"]);
 
 	mathInput.run(["$templateCache", function($templateCache) {
 		var expressionTemplate = "";
@@ -47,7 +47,7 @@
 		expressionTemplate += " ng-switch-default";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
 		expressionTemplate += "  'exponent': node.type == 'exponent'}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">{{node.getVal()}}</span>";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\" ng-bind-html=\"node.getDisplay()\"></span>";
 
 		expressionTemplate += "</span>";
 		expressionTemplate += "</span>";

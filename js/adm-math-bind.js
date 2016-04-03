@@ -13,7 +13,7 @@
 		bindTemplate += "<span class=\"denominator\" adm-literal-bind=\"node.denominator\" adm-is-inner=\"true\"></span>";
 		bindTemplate += "</span>";
 
-		bindTemplate += "<span ng-switch-default ng-class=\"{'exponent': node.type == 'exponent'}\">{{node.getVal()}}</span>";
+		bindTemplate += "<span ng-switch-default ng-class=\"{'exponent': node.type == 'exponent'}\" ng-bind-html=\"node.getDisplay()\"></span>";
 
 		bindTemplate += "</span>";
 		bindTemplate += "</span>";
