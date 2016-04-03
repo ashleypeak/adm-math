@@ -54,10 +54,11 @@
 
 		var inputTemplate = "";
 		inputTemplate += "<div";
-		inputTemplate += "	class=\"mathinput\"";
+		inputTemplate += " class=\"mathinput\"";
+		inputTemplate += " ng-class=\"{'mathinput-error': !output.isValid}\"";
 		inputTemplate += " tabindex=\"0\"";
 		inputTemplate += " ng-keypress=\"control.keypress($event)\"";
-		inputTemplate += "	ng-keydown=\"control.keydown($event)\"";
+		inputTemplate += " ng-keydown=\"control.keydown($event)\"";
 		inputTemplate += " ng-focus=\"control.focus()\"";
 		inputTemplate += " ng-blur=\"control.blur()\">";
 		inputTemplate += "<adm-math-expression";
@@ -1033,6 +1034,7 @@
 
 				scope.output = {
 					lastModel: null, //used by $watch('value') to determine if ngModel was altered by this class or from outside
+					isValid: true,
 
 					/*******************************************************************
 					 * function:		get()
@@ -1052,6 +1054,7 @@
 						openMath += semanticTree.getOpenMath();
 						openMath += "</OMOBJ>";
 
+						this.isValid = (semanticTree.type != "error");
 						scope.model = this.lastModel = openMath;
 					}
 				};

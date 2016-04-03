@@ -1,9 +1,8 @@
 .mathinput {
 	display: inline-block;
-	border: 1px solid #000000;
-	background-color:#ffffff;
+	border: 1px solid;
+	background-color: #ffffff;
 	min-width: 200px;
-	font-size: 12pt;
 	line-height: 30px;
 	text-align: left;
 	white-space: nowrap;
@@ -21,6 +20,11 @@
 	overflow: hidden;
 	cursor: text;
 }*/
+
+.mathinput-error {
+	border-color: #d9534f;
+	background-color: #f2dede;
+}
 
 .mathinput span, .mathoutput span {
 	display: inline-block;

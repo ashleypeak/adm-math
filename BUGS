@@ -1,4 +1,3 @@
-	- indicate somewhere in the field if the parser can parse the input (red background on wrong?)
 	- should an empty expression really be an error?
 	- colour empty literalExpressions so people can see where they are
 	- can't click on empty nodes above/below division
