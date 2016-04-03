@@ -64,7 +64,7 @@
 		inputTemplate += " cursor=\"cursor\"";
 		inputTemplate += " expression=\"literalTree\"";
 		inputTemplate += " control=\"control\"></adm-math-expression>";
-		inputTemplate += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{value}}\" />";
+		inputTemplate += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{model}}\" />";
 		inputTemplate += "</div>";
 		
 		$templateCache.put("adm-math-expression.htm", expressionTemplate);
