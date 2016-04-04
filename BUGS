@@ -1,6 +1,8 @@
 	- should an empty expression really be an error?
 	- can't click on empty nodes above/below division
-	- given expression (n/d1)/d2 can't navigate from d1 to d2, and similar
+	- output of (1+2)x is wrong - brackets need to be included
+		- also implicit times, I'm going to need to build on top of pure OpenMath
+		- although brackets shouldn't require altering the OpenMath, they can be determined programatically
 
 	- semanticError should only be inserted if output mode is OpenMath, all LaTeX is valid
 		- also, like, build in Latex support

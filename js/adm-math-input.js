@@ -713,7 +713,9 @@
 				 * 
 				 * functions:		`show`										returns none
 				 *							`hide`										returns none
+				 *							`insertDivision`					returns none
 				 *							`insert`									returns none
+				 *							`insertNode`							returns none
 				 *							`backspace`								returns none
 				 *							`tryMoveIntoParent`				returns BOOLEAN
 				 *							`tryMoveIntoExponent`			returns BOOLEAN
@@ -784,12 +786,13 @@
 						while(this.position > 0) {
 							var nodeToCollect = this.expression.getNode(this.position-1);
 
-							if(/[)]/.test(nodeToCollect.getVal()))	bracketDepth++;
-							if(/[(]/.test(nodeToCollect.getVal()))	bracketDepth--;
+							if(nodeToCollect.getVal() == ")")	bracketDepth++;
+							if(nodeToCollect.getVal() == "(")	bracketDepth--;
 
 							if(bracketDepth < 0)																					break;
 							if(/[+\-]/.test(nodeToCollect.getVal()) && bracketDepth == 0)	break;
 
+							nodeToCollect.parentNode = node.numerator;
 							node.numerator.insert(0, nodeToCollect);
 							this.expression.deleteAt(this.position-1);
 
@@ -951,45 +954,61 @@
 					/*******************************************************************
 					 * function:		tryMoveIntoNumerator()
 					 *
-					 * description:	if the cursor is in a denominator, moves the cursor
-					 *							up to the corresponding numerator
+					 * description:	if the cursor is in a denominator (even if it's an
+					 *							ancestor), moves the cursor up to the corresponding
+					 *							numerator
 					 *
 					 * arguments:		terminus:		STRING ("start"|"end")
 					 *
 					 * return:			BOOLEAN
 					 ******************************************************************/
 					tryMoveIntoNumerator: function(terminus) {
-						if(this.expression.parentNode === null)									return false;
-						if(this.expression.parentNode.type != "division")				return false;
+						var node = this.expression;
+						while(true) {
+							if(node.parentNode === null)						return false;
+							if(node.parentNode.type != "division")	return false;
 
-						var divisionNode = this.expression.parentNode;
-						if(this.expression.id !== divisionNode.denominator.id)	return false;
+							var divisionNode = node.parentNode;
 
-						this.expression = divisionNode.numerator;
-						this.position = (terminus == "start" ? 0 : this.expression.getLength());
-						return true;
+							if(node.id != divisionNode.denominator.id) {
+								node = divisionNode.parentNode;
+								continue;
+							}
+
+							this.expression = divisionNode.numerator;
+							this.position = (terminus == "start" ? 0 : this.expression.getLength());
+							return true;
+						}
 					},
 					
 					/*******************************************************************
 					 * function:		tryMoveIntoDenominator()
 					 *
-					 * description:	if the cursor is in a numerator, moves the cursor
-					 *							up to the corresponding denominator
+					 * description:	if the cursor is in a numerator (even if it's an
+					 *							ancestor), moves the cursor down to the corresponding
+					 *							denominator
 					 *
 					 * arguments:		terminus:		STRING ("start"|"end")
 					 *
 					 * return:			BOOLEAN
 					 ******************************************************************/
 					tryMoveIntoDenominator: function(terminus) {
-						if(this.expression.parentNode === null)								return false;
-						if(this.expression.parentNode.type != "division")			return false;
+						var node = this.expression;
+						while(true) {
+							if(node.parentNode === null)						return false;
+							if(node.parentNode.type != "division")	return false;
 
-						var divisionNode = this.expression.parentNode;
-						if(this.expression.id !== divisionNode.numerator.id)	return false;
+							var divisionNode = node.parentNode;
 
-						this.expression = divisionNode.denominator;
-						this.position = (terminus == "start" ? 0 : this.expression.getLength());
-						return true;
+							if(node.id != divisionNode.numerator.id) {
+								node = divisionNode.parentNode;
+								continue;
+							}
+
+							this.expression = divisionNode.denominator;
+							this.position = (terminus == "start" ? 0 : this.expression.getLength());
+							return true;
+						}
 					},
 					
 					/*******************************************************************
