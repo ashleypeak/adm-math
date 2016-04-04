@@ -33,6 +33,11 @@
 	cursor: text;
 }
 
+.mathinput .empty-expression {
+	background-color: #d9edf7;
+	border: 1px solid #31708f;
+}
+
 .mathinput span.cursor {
 	padding: 0px;
 	border-right: 1px solid;
