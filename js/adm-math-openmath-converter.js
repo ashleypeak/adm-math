@@ -93,12 +93,12 @@
 				case "root":
 					if(node.childNodes.length != 3)	throw new Error("arith1.root takes two children.");
 
-					var root = convertNode(node.childNodes[2]);
-					if(!/^[0-9]+$/.test(root))	throw new Error("The root of arith1.root must be an integer.");
+					var index = convertNode(node.childNodes[2]);
+					if(!/^[0-9]+$/.test(index))	throw new Error("The root of arith1.root must be an integer.");
 					
 					if(root == "2")
 						return "\\sqrt{"+convertNode(node.childNodes[1])+"}";
-					return "\\sqrt["+root+"]{"+convertNode(node.childNodes[1])+"}";
+					return "\\sqrt["+index+"]{"+convertNode(node.childNodes[1])+"}";
 				case "unary_minus":
 					if(node.childNodes.length != 2)	throw new Error("arith1.unary_minus takes one child.");
 					return "-"+convertNode(node.childNodes[1]);
@@ -399,15 +399,21 @@
 					exponentNode.exponent.nodes = convertNode(exponentNode.exponent, xmlNode.childNodes[2]);
 
 					return baseLiteralNodes.concat(exponentNode);
-				/*case "root":
+				case "root":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.root takes two children.");
 
-					var root = convertNode(xmlNode.childNodes[2]);
-					if(!/^[0-9]+$/.test(root))	throw new Error("The root of arith1.root must be an integer.");
+					var indexNodes = convertNode(null, xmlNode.childNodes[2]);
 					
-					if(root == "2")
-						return "\\sqrt{"+convertNode(xmlNode.childNodes[1])+"}";
-					return "\\sqrt["+root+"]{"+convertNode(xmlNode.childNodes[1])+"}";*/
+					if(indexNodes.length == 1 && indexNodes[0].getVal() == "2") {
+						var rootNode = admLiteralNode.buildByName(parentLiteralNode, "squareRoot");
+
+						rootNode.radicand.nodes = convertNode(rootNode, xmlNode.childNodes[1]);
+
+						return [rootNode];
+					} else {
+						//admLiteralRoot not yet implemented
+						throw new Error("admLiteralRoot not yet implemented, cannot handle (index != 2).");
+					}
 				case "unary_minus":
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.unary_minus takes one child.");
 

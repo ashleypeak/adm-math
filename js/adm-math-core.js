@@ -135,9 +135,24 @@
 		};
 	});
 
+	mathCore.service("admLiteralSquareRoot", function() {
+		this.build = function(id, parentNode, radicandNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "squareRoot",
+				radicand: radicandNode,
+				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	}
+			};
+		};
+	});
+
 	mathCore.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralParenthesis",
-		 "admLiteralOperator", "admLiteralExponent", "admLiteralDivision",
-		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralParenthesis, admLiteralOperator, admLiteralExponent, admLiteralDivision) {
+		 "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
+		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralParenthesis, admLiteralOperator,
+			 admLiteralExponent, admLiteralDivision, admLiteralSquareRoot) {
 		var id = 0;
 
 		return {
@@ -145,7 +160,6 @@
 				return admLiteralExpression.build(id++, parentNode);
 			},
 			build: function(parentNode, nodeVal) {
-
 				if(/[0-9.]/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
 				else if(/[a-zA-Z]/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
 				else if(/[+\-*]/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
@@ -167,6 +181,17 @@
 					node.denominator.parentNode = node;
 
 					return node;
+				}
+			},
+			buildByName: function(parentNode, nodeName) {
+				switch(nodeName) {
+					case "squareRoot":
+						var radicand = admLiteralExpression.build(id++, null);
+						
+						var node = admLiteralSquareRoot.build(id++, parentNode, radicand);
+						node.radicand.parentNode = node;
+
+						return node;
 				}
 			}
 		};

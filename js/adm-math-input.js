@@ -44,6 +44,17 @@
 		expressionTemplate += "</span>";
 
 		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-when=\"squareRoot\"";
+		expressionTemplate += " class=\"square-root\"";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.radicand\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "</span>";
+
+		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-default";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
 		expressionTemplate += "  'exponent': node.type == 'exponent'}\"";
@@ -77,7 +88,7 @@
 			return {
 				expressionType: "semantic",
 				type: "numeral",
-				value: value,
+				value: String(value),
 
 				getOpenMath: function() {
 					if(this.value.indexOf('.') != -1)
@@ -163,9 +174,9 @@
 				exponent: typeof exponent !== "undefined" ? exponent : null,
 
 				assertHasValidChildren: function() {
-						if(this.base === null || this.exponent === null)	throw "errInvalidArguments";
-						if(this.base.type == "error")											throw "errInvalidArguments";
-						if(this.exponent.type == "error")									throw "errInvalidArguments";
+					if(this.base === null || this.exponent === null)	throw "errInvalidArguments";
+					if(this.base.type == "error")											throw "errInvalidArguments";
+					if(this.exponent.type == "error")									throw "errInvalidArguments";
 				},
 
 				getOpenMath: function() {
@@ -202,6 +213,31 @@
 		};
 	});
 
+	mathInput.service("admSemanticRoot", function() {
+		this.build = function(index, radicand) {
+			return {
+				expressionType: "semantic",
+				type: "squareRoot",
+				index: typeof index !== "undefined" ? index : null,
+				radicand: typeof radicand !== "undefined" ? radicand : null,
+
+				assertHasValidChildren: function() {
+						if(this.index === null || this.radicand === null)	throw "errInvalidArguments";
+						if(this.index.type == "error")										throw "errInvalidArguments";
+						if(this.radicand.type == "error")									throw "errInvalidArguments";
+				},
+
+				//the order is right. fuck openmath.
+				getOpenMath: function() {
+					return "<OMA><OMS cd='arith1' name='root'/>"
+						+ this.radicand.getOpenMath()
+						+ this.index.getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		};
+	});
+
 	mathInput.service("admSemanticError", function() {
 		this.build = function(message) {
 			return {
@@ -217,9 +253,9 @@
 	});
 
 	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
-		 "admSemanticExponent", "admSemanticDivision", "admSemanticError",
+		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticError",
 		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
-			 admSemanticDivision, admSemanticError) {
+			 admSemanticDivision, admSemanticRoot, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
@@ -228,6 +264,7 @@
 				case "unaryMinus":	return admSemanticUnaryMinus.build(arguments[1]);
 				case "exponent":		return admSemanticExponent.build(arguments[1], arguments[2]);
 				case "division":		return admSemanticDivision.build(arguments[1], arguments[2]);
+				case "root":				return admSemanticRoot.build(arguments[1], arguments[2]);
 				case "error":				return admSemanticError.build(arguments[1]);
 			}
 		};
@@ -378,6 +415,31 @@
 				nodes.splice(i, 1, semanticDiv);
 			}
 		}
+
+		/*******************************************************************
+		 * function:		parseRoots()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literalSquareRoots and literalRoots
+		 *							with an equivalent semanticRoots
+		 *							WARNING: currently only works on literalSquareRoot
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseRoots(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "squareRoot")					continue;
+				
+				var semanticIndex = admSemanticNode.build("numeral", "2");
+				var semanticRadicand = build(nodes[i].radicand.getNodes().slice());
+
+				nodes.splice(i, 1, admSemanticNode.build("root", semanticIndex, semanticRadicand));
+			}
+		}
 		
 		/*******************************************************************
 		 * function:		parseNumerals()
@@ -510,6 +572,7 @@
 				assertParenthesesMatched(nodes);
 				parseParentheses(nodes);
 				parseDivision(nodes);
+				parseRoots(nodes);
 				parseExponents(nodes);		//create exponent semantic nodes, leave base empty for now
 				//parse multichar symbols 1 (sin, cos etc)
 				parseNumerals(nodes);
@@ -590,13 +653,15 @@
 
 				scope.hook = {
 					addSymbol: function(symbol) {
+						var node = null;
 						switch(symbol) {
-							case "division":
-								var node = admLiteralNode.build(scope.cursor.expression, "/");
-								scope.cursor.insertNode(node);
-								break;
+							case "division":		node = admLiteralNode.build(scope.cursor.expression, "/");								break;
+							case "squareRoot":	node = admLiteralNode.buildByName(scope.cursor.expression, "squareRoot");	break;
 						}
 						
+						if(node !== null)
+							scope.cursor.insertNode(node);
+
 						element[0].focus();
 					}
 				};
@@ -758,6 +823,7 @@
 				 *							`tryMoveIntoDivision`			returns BOOLEAN
 				 *							`tryMoveIntoNumerator`		returns BOOLEAN
 				 *							`tryMoveIntoDenominator`	returns BOOLEAN
+				 *							`tryMoveIntoSquareRoot`		returns BOOLEAN
 				 *							`moveLeft`								returns none
 				 *							`moveUp`									returns none
 				 *							`moveRight`								returns none
@@ -1048,6 +1114,35 @@
 					},
 					
 					/*******************************************************************
+					 * function:		tryMoveIntoSquareRoot()
+					 *
+					 * description:	if the cursor is over a SquareRoot node, moves the
+					 *							cursor inside the radicand expression, to the
+					 *							start or end according to `terminus`.
+					 *
+					 * arguments:		terminus: STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoSquareRoot: function(terminus) {
+						//due to differing indices, this.position-1 is the node under the cursor
+						var nodeIndex = this.position - 1;
+						
+						//if moving left, only try to enter node after scrolling PAST it
+						//otherwise you can't scroll left to the space directly after the node
+						if(terminus == "end")	nodeIndex++;
+
+						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/		return false;
+						if(nodeIndex >= this.expression.getLength())								return false;
+						if(this.expression.getNode(nodeIndex).type != "squareRoot")	return false;
+
+						this.expression = this.expression.getNode(nodeIndex).radicand;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+
+						return true;
+					},
+					
+					/*******************************************************************
 					 * function:		moveLeft()
 					 *
 					 * description:	attempts to move the cursor one character to the
@@ -1061,7 +1156,7 @@
 						if(this.position === 0) return this.tryMoveIntoParent("before");
 
 						this.position--;
-						this.tryMoveIntoExponent("end") || this.tryMoveIntoDivision("numerator", "end");
+						this.tryMoveIntoExponent("end") || this.tryMoveIntoDivision("numerator", "end") || this.tryMoveIntoSquareRoot("end");
 						this.show();
 					},
 					
@@ -1095,7 +1190,7 @@
 						if(this.position == this.expression.getLength())	return this.tryMoveIntoParent("after");
 						
 						this.position++;
-						this.tryMoveIntoExponent("start") || this.tryMoveIntoDivision("numerator", "start");
+						this.tryMoveIntoExponent("start") || this.tryMoveIntoDivision("numerator", "start") || this.tryMoveIntoSquareRoot("start");
 						this.show();
 					},
 

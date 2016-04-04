@@ -12,6 +12,6 @@
 	- nodeClick (and goToPos, possibly others) don't handle nested Expressions
 
 MATH FEATURES NEEDING IMPLEMENTING
-	- square root
+	- non-square root
 	- circular functions
 	- pi, e

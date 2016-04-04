@@ -13,6 +13,9 @@
 		bindTemplate += "<span class=\"denominator\" adm-literal-bind=\"node.denominator\" adm-is-inner=\"true\"></span>";
 		bindTemplate += "</span>";
 
+		bindTemplate += "<span ng-switch-when=\"squareRoot\" class=\"square-root\" adm-literal-bind=\"node.radicand\" adm-is-inner=\"true\">";
+		bindTemplate += "</span>";
+
 		bindTemplate += "<span ng-switch-default ng-class=\"{'exponent': node.type == 'exponent'}\" ng-bind-html=\"node.getDisplay()\"></span>";
 
 		bindTemplate += "</span>";

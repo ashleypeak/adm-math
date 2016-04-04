@@ -39,7 +39,7 @@
 }
 
 .mathinput span.cursor {
-	padding: 0px;
+	padding-right: 0px;
 	border-right: 1px solid;
 }
 
@@ -72,4 +72,12 @@
 .mathinput .denominator, .mathoutput .denominator {
 	border-top: 1px solid;
 	display: block;
+}
+
+.mathinput .square-root, .mathoutput .square-root {
+	border-top: 1px solid;
+}
+
+.mathinput .square-root:before, .mathoutput .square-root:before {
+	content: "\221A";
 }
