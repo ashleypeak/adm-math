@@ -555,7 +555,10 @@
 				scope.hook = {
 					addSymbol: function(symbol) {
 						switch(symbol) {
-							case "division":	scope.cursor.insert('/');	break;
+							case "division":
+								var node = admLiteralNode.build(scope.cursor.expression, "/");
+								scope.cursor.insertNode(node);
+								break;
 						}
 						
 						element[0].focus();
@@ -764,18 +767,72 @@
 					},
 
 					/*******************************************************************
+					 * function:		insertDivision()
+					 *
+					 * description:	insert a division symbol, and move the last logical
+					 *							term (highly subjective) into the numerator
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					insertDivision: function() {
+						var node = admLiteralNode.build(this.expression, "/");
+
+						//when figuring out what should go in the numerator, don't break up bracketed terms
+						var bracketDepth = 0;
+						while(this.position > 0) {
+							var nodeToCollect = this.expression.getNode(this.position-1);
+
+							if(/[)]/.test(nodeToCollect.getVal()))	bracketDepth++;
+							if(/[(]/.test(nodeToCollect.getVal()))	bracketDepth--;
+
+							if(bracketDepth < 0)																					break;
+							if(/[+\-]/.test(nodeToCollect.getVal()) && bracketDepth == 0)	break;
+
+							node.numerator.insert(0, nodeToCollect);
+							this.expression.deleteAt(this.position-1);
+
+							this.position--;
+						}
+						this.expression.insert(this.position, node);
+
+						this.expression = node.denominator;
+						this.position = 0;
+					},
+					
+					/*******************************************************************
 					 * function:		insert()
 					 *
-					 * description:	insert character `character` after the node under
-					 *							the cursor
+					 * description:	insert character (typed by user) `character` after
+					 *							the node under the cursor
 					 *
-					 * arguments:		character CHAR
+					 * arguments:		`character` CHAR
+					 *								the character to be inserted
 					 *
 					 * return:			none
 					 ******************************************************************/
 					insert: function(character) {
+						if(character == "/") return this.insertDivision();
+
 						var node = admLiteralNode.build(this.expression, character);
 
+						this.expression.insert(this.position, node);
+						this.moveRight();
+					},
+					
+					/*******************************************************************
+					 * function:		insertNode()
+					 *
+					 * description:	insert a prebuilt node directly into 
+					 *							the cursor
+					 *
+					 * arguments:		`node` admLiteralNode
+					 *								the node to be inserted
+					 *
+					 * return:			none
+					 ******************************************************************/
+					insertNode: function(node) {
 						this.expression.insert(this.position, node);
 						this.moveRight();
 					},
@@ -1031,6 +1088,7 @@
 						this.show();
 					}
 				};
+				scope.cursor.expression = scope.literalTree;
 
 				scope.output = {
 					lastModel: null, //used by $watch('value') to determine if ngModel was altered by this class or from outside
