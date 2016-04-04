@@ -130,6 +130,30 @@
 		};
 	});
 
+	mathInput.service("admSemanticUnaryMinus", function() {
+		this.build = function(child) {
+			return {
+				expressionType: "semantic",
+				type: "unaryMinus",
+				child: child,
+
+				assertHasValidChildren: function() {
+					if(!this.child)																		throw "errInvalidArguments";
+					if(!this.child.hasOwnProperty("expressionType"))	throw "errInvalidArguments";
+					if(this.child.expressionType != "semantic")				throw "errInvalidArguments";
+				},
+
+				getOpenMath: function() {
+					var opName = (this.symbol == "+" ? "plus" : (this.symbol == "-" ? "minus" : "times"));
+
+					return "<OMA><OMS cd='arith1' name='unary_minus'/>"
+						+ this.child.getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		};
+	});
+
 	mathInput.service("admSemanticExponent", function() {
 		this.build = function(base, exponent) {
 			return {
@@ -192,17 +216,19 @@
 		};
 	});
 
-	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticExponent",
-		 "admSemanticDivision", "admSemanticError",
-		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticExponent, admSemanticDivision, admSemanticError) {
+	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
+		 "admSemanticExponent", "admSemanticDivision", "admSemanticError",
+		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
+			 admSemanticDivision, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
-				case "numeral":		return admSemanticNumeral.build(arguments[1]);
-				case "variable":	return admSemanticVariable.build(arguments[1]);
-				case "operator":	return admSemanticOperator.build(arguments[1], arguments[2]);
-				case "exponent":	return admSemanticExponent.build(arguments[1], arguments[2]);
-				case "division":	return admSemanticDivision.build(arguments[1], arguments[2]);
-				case "error":			return admSemanticError.build(arguments[1]);
+				case "numeral":			return admSemanticNumeral.build(arguments[1]);
+				case "variable":		return admSemanticVariable.build(arguments[1]);
+				case "operator":		return admSemanticOperator.build(arguments[1], arguments[2]);
+				case "unaryMinus":	return admSemanticUnaryMinus.build(arguments[1]);
+				case "exponent":		return admSemanticExponent.build(arguments[1], arguments[2]);
+				case "division":		return admSemanticDivision.build(arguments[1], arguments[2]);
+				case "error":				return admSemanticError.build(arguments[1]);
 			}
 		};
 	}]);
@@ -448,12 +474,22 @@
 				if(nodes[i].expressionType != "literal")	continue;
 				if(!condition.test(nodes[i].getVal()))		continue;
 
-				if(i === 0 || i == nodes.length-1) throw "errInvalidArguments";
+				if(i == nodes.length-1)									throw "errInvalidArguments";
+				if(i === 0 && nodes[i].getVal() != "-")	throw "errInvalidArguments";
 
-				var opNode = admSemanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
-				opNode.assertHasValidChildren();
+				//if operator is a unary minus
+				if(i === 0 && nodes[i].getVal() == "-") {
+					var opNode = admSemanticNode.build("unaryMinus", nodes[i+1]);
+					opNode.assertHasValidChildren();
 
-				nodes.splice(i-1, 3, opNode);
+					nodes.splice(i, 2, opNode);
+				} else {
+					var opNode = admSemanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
+					opNode.assertHasValidChildren();
+
+					nodes.splice(i-1, 3, opNode);
+				}
+
 				i--;
 			}
 		}

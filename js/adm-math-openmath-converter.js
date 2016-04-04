@@ -408,9 +408,13 @@
 					if(root == "2")
 						return "\\sqrt{"+convertNode(xmlNode.childNodes[1])+"}";
 					return "\\sqrt["+root+"]{"+convertNode(xmlNode.childNodes[1])+"}";*/
-				/*case "unary_minus":
+				case "unary_minus":
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.unary_minus takes one child.");
-					return "-"+convertNode(xmlNode.childNodes[1]);*/
+
+					var symbolNode = admLiteralNode.build(parentLiteralNode, "-");
+					var childLiteralNode = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
+
+					return [symbolNode].concat(childLiteralNode);
 			}
 
 			throw new Error("OMA references unimplemented symbol arith1."+omsNode.attributes.name.nodeValue);
