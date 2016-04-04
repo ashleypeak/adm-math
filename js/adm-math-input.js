@@ -261,6 +261,21 @@
 		};
 	});
 
+	mathInput.service("admSemanticConstant", function() {
+		this.build = function(name) {
+			return {
+				expressionType: "semantic",
+				type: "constant",
+				name: name,
+
+				getOpenMath: function() {
+					//obviously not all constants are in nums. deal with it when i get to it.
+					return "<OMS cd='nums1' name='"+this.name+"'/>";
+				}
+			};
+		};
+	});
+
 	mathInput.service("admSemanticError", function() {
 		this.build = function(message) {
 			return {
@@ -276,9 +291,9 @@
 	});
 
 	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
-		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticError",
+		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticConstant", "admSemanticError",
 		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
-			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticError) {
+			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticConstant, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
@@ -289,6 +304,7 @@
 				case "division":		return admSemanticDivision.build(arguments[1], arguments[2]);
 				case "root":				return admSemanticRoot.build(arguments[1], arguments[2]);
 				case "function":		return admSemanticFunction.build(arguments[1], arguments[2]);
+				case "constant":		return admSemanticConstant.build(arguments[1]);
 				case "error":				return admSemanticError.build(arguments[1]);
 			}
 		};
@@ -507,6 +523,8 @@
 		 * description:	takes mixed collection of nodes `nodes` and
 		 *							replaces admLiteralLetters making up multicharacter
 		 *							symbols (like 'sin') with admSemanticNodes
+		 *							also some single character symbols like 'e' - basically
+		 *							anything which shouldn't be turned into a variable
 		 *							WARNING: mutates `nodes`
 		 *
 		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
@@ -526,6 +544,8 @@
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /cos/, ["function", "cos"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /tan/, ["function", "tan"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /ln/, ["function", "ln"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /pi/, ["constant", "pi"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /e/, ["constant", "e"]);
 		}
 
 		/*******************************************************************
@@ -603,6 +623,28 @@
 
 				var semanticVar = admSemanticNode.build("variable", nodes[i].getVal()); 
 				nodes.splice(i, 1, semanticVar);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all admLiteralSymbols with
+		 *							admSemanticConstants
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseSymbols(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "symbol")							continue;
+
+				var semanticSymbol = admSemanticNode.build("constant", nodes[i].getVal()); 
+				nodes.splice(i, 1, semanticSymbol);
 			}
 		}
 
@@ -691,6 +733,7 @@
 				parseMulticharacterSymbols(nodes);	//parse symbols made of multiple characters, like sin, cos, pi
 				parseNumerals(nodes);
 				parseVariables(nodes);
+				parseSymbols(nodes);
 
 				applyExponents(nodes);							//fill in bases of exponent semantic nodes
 				applyMulticharacterSymbols(nodes);
@@ -772,10 +815,13 @@
 						switch(symbol) {
 							case "division":		node = admLiteralNode.build(scope.cursor.expression, "/");								break;
 							case "squareRoot":	node = admLiteralNode.buildByName(scope.cursor.expression, "squareRoot");	break;
+							case "pi":					node = admLiteralNode.buildByName(scope.cursor.expression, "pi");					break;
 						}
 						
-						if(node !== null)
+						if(node !== null) {
 							scope.cursor.insertNode(node);
+							scope.output.write();
+						}
 
 						element[0].focus();
 					}

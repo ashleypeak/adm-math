@@ -381,7 +381,7 @@
 						convertNode(parentLiteralNode, xmlNode.childNodes[2])
 					];
 
-					return childLiteralNodes[0].concat(symbolNode).concat(childLiteralNodes[1]);
+					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
 				case "minus":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.minus takes two children.");
 
@@ -392,7 +392,7 @@
 						convertNode(parentLiteralNode, xmlNode.childNodes[2])
 					];
 
-					return childLiteralNodes[0].concat(symbolNode).concat(childLiteralNodes[1]);
+					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
 				case "times":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.times takes two children.");
 
@@ -403,7 +403,7 @@
 						convertNode(parentLiteralNode, xmlNode.childNodes[2])
 					];
 
-					return childLiteralNodes[0].concat(symbolNode).concat(childLiteralNodes[1]);
+					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
 				case "divide":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.divide takes two children.");
 
@@ -441,16 +441,16 @@
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.unary_minus takes one child.");
 
 					var symbolNode = admLiteralNode.build(parentLiteralNode, "-");
-					var childLiteralNode = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
+					var childLiteralNodes = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
 
-					return [symbolNode].concat(childLiteralNode);
+					return [symbolNode].concat(childLiteralNodes);
 			}
 
 			throw new Error("OMA references unimplemented symbol arith1."+omsNode.attributes.name.nodeValue);
 		}
 
 		/*******************************************************************
-		 * function:		convertTransc1() UNIMPLEMENTED
+		 * function:		convertTransc1()
 		 *
 		 * description:	takes an OMA with OMS in content dictionary `transc1`
 		 *							as node `xmlNode`, converts to an array of
@@ -465,11 +465,17 @@
 			omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
-				/*case "exp":
-					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.exp takes one child.");
-					return "e^{"+convertNode(xmlNode.childNodes[1])+"}";
-				case "log":
-					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.log takes two children.");
+				case "exp":
+					if(xmlNode.childNodes.length != 2)	throw new Error("transc1.exp takes one child.");
+
+					var baseLiteralNode = admLiteralNode.build(parentLiteralNode, "e");
+					var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
+
+					exponentNode.exponent.nodes = convertNode(exponentNode.exponent, xmlNode.childNodes[1]);
+
+					return [baseLiteralNode, exponentNode];
+				/*case "log":
+					if(xmlNode.childNodes.length != 3)	throw new Error("transc1.log takes two children.");
 					return "\\log_{"+convertNode(xmlNode.childNodes[1])+"}("+convertNode(xmlNode.childNodes[2])+")";*/
 				case "ln":
 				case "sin":
@@ -483,14 +489,14 @@
 					var childLiteralNode = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
 					var terminalNode = [admLiteralNode.build(parentLiteralNode, ")")];
 
-					return functionNodes.concat(childLiteralNode).concat(terminalNode);
+					return functionNodes.concat(childLiteralNode, terminalNode);
 			}
 
 			throw new Error("OMA references unimplemented symbol transc1."+omsNode.attributes.name.nodeValue);
 		}
 
 		/*******************************************************************
-		 * function:		convertNums1() UNIMPLEMENTED
+		 * function:		convertNums1()
 		 *
 		 * description:	takes an OMS in content dictionary `nums1` as node
 		 *							node `xmlNode`, converts to an array of
@@ -503,11 +509,11 @@
 		 ******************************************************************/
 		function convertNums1(parentLiteralNode, xmlNode) {
 			switch(xmlNode.attributes.name.nodeValue) {
-				/*case "e":
-					return "e";
+				case "e":
+					return [admLiteralNode.build(parentLiteralNode, "e")];
 				case "pi":
-					return "\\pi";
-				case "infinity":
+					return [admLiteralNode.buildByName(parentLiteralNode, "pi")];
+				/*case "infinity":
 					return "\\infty";*/
 			}
 

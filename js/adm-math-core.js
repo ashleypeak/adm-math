@@ -72,6 +72,24 @@
 		};
 	});
 
+	mathCore.service("admLiteralSymbol", function() {
+		this.build = function(id, parentNode, name) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "symbol",
+				name: name,
+				getVal: function() {	return this.name;	},
+				getDisplay: function() {
+					switch(name) {
+						case "pi":	return "&pi;";
+					}
+				}
+			};
+		};
+	});
+
 	mathCore.service("admLiteralParenthesis", function() {
 		this.build = function(id, parentNode, paren) {
 			return {
@@ -149,9 +167,9 @@
 		};
 	});
 
-	mathCore.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralParenthesis",
-		 "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
-		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralParenthesis, admLiteralOperator,
+	mathCore.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralSymbol",
+		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
+		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralSymbol, admLiteralParenthesis, admLiteralOperator,
 			 admLiteralExponent, admLiteralDivision, admLiteralSquareRoot) {
 		var id = 0;
 
@@ -185,6 +203,8 @@
 			},
 			buildByName: function(parentNode, nodeName) {
 				switch(nodeName) {
+					case "pi":
+						return admLiteralSymbol.build(id++, parentNode, "pi");
 					case "squareRoot":
 						var radicand = admLiteralExpression.build(id++, null);
 						
