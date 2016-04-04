@@ -238,6 +238,29 @@
 		};
 	});
 
+	mathInput.service("admSemanticFunction", function() {
+		this.build = function(name, child) {
+			return {
+				expressionType: "semantic",
+				type: "function",
+				name: name,
+				child: typeof child !== "undefined" ? child : null,
+
+				assertHasValidChildren: function() {
+						if(this.child === null)					throw "errInvalidArguments";
+						if(this.child.type == "error")	throw "errInvalidArguments";
+				},
+
+				getOpenMath: function() {
+					//obviously not all functions are in transc1. deal with it when i get to it.
+					return "<OMA><OMS cd='transc1' name='"+this.name+"'/>"
+						+ this.child.getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		};
+	});
+
 	mathInput.service("admSemanticError", function() {
 		this.build = function(message) {
 			return {
@@ -253,9 +276,9 @@
 	});
 
 	mathInput.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
-		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticError",
+		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticError",
 		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
-			 admSemanticDivision, admSemanticRoot, admSemanticError) {
+			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
@@ -265,6 +288,7 @@
 				case "exponent":		return admSemanticExponent.build(arguments[1], arguments[2]);
 				case "division":		return admSemanticDivision.build(arguments[1], arguments[2]);
 				case "root":				return admSemanticRoot.build(arguments[1], arguments[2]);
+				case "function":		return admSemanticFunction.build(arguments[1], arguments[2]);
 				case "error":				return admSemanticError.build(arguments[1]);
 			}
 		};
@@ -440,6 +464,96 @@
 				nodes.splice(i, 1, admSemanticNode.build("root", semanticIndex, semanticRadicand));
 			}
 		}
+
+
+		/*******************************************************************
+		 * function:		replaceMulticharacterSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and replaces
+		 *							each instance of admLiteralLetters making up the
+		 *							symbol matched by `pattern` with an admSemanticNode
+		 *							called with arguments `args`
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		`nodes` [admLiteralNode | admSemanticNode]
+		 *							`nodeString` STRING
+		 *								a string representation of `nodes` to aid searching
+		 *							`pattern` REGEX
+		 *								a regex pattern describing the symbol
+		 *							`args` ARRAY
+		 *								arguments with which admSemanticNode.build is called
+		 *
+		 * return:			STRING
+		 *								nodeString, updated to reflect new changes
+		 ******************************************************************/
+		function replaceMulticharacterSymbols(nodes, nodeString, pattern, args) {
+			var matches;
+			while(matches = pattern.exec(nodeString)) {
+				var pos = matches.index;
+				var len = matches[0].length;
+
+				var newNode = admSemanticNode.build.apply(null, args);
+
+				nodes.splice(pos, len, newNode);
+				nodeString = nodeString.slice(0, pos) + "_" + nodeString.slice(pos+len);
+			}
+
+			return nodeString;
+		}
+
+		/*******************************************************************
+		 * function:		parseMulticharacterSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces admLiteralLetters making up multicharacter
+		 *							symbols (like 'sin') with admSemanticNodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseMulticharacterSymbols(nodes) {
+			var nodeString = "";
+			angular.forEach(nodes, function(node, index) {
+				if(node.expressionType != "literal")	nodeString += "_";
+				else if(node.type != "letter")				nodeString += "_";
+				else																	nodeString += node.getVal();
+			});
+
+			//if one symbol is a substring of another, the longer symbol MUST go first
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /sin/, ["function", "sin"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /cos/, ["function", "cos"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /tan/, ["function", "tan"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /ln/, ["function", "ln"]);
+		}
+
+		/*******************************************************************
+		 * function:		applyMulticharacterSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and,
+		 *							wherever there is a multicharacter admSemanticNode
+		 *							like 'sin', fill its `child` with the following
+		 *							node
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function applyMulticharacterSymbols(nodes) {
+			//has to run right-to-left or else you get things like sincosx => sin(cos)x instead of => sin(cos(x))
+			for(var i = nodes.length-1; i >= 0; i--) {
+				if(nodes[i].expressionType != "semantic")	continue;
+				if(nodes[i].type != "function")						continue;
+
+				if(i+1 == nodes.length) throw "errMissingArgument";
+
+				nodes[i].child = nodes[i+1];
+				nodes[i].assertHasValidChildren();
+				nodes.splice(i+1, 1);
+			}
+		}
 		
 		/*******************************************************************
 		 * function:		parseNumerals()
@@ -469,7 +583,7 @@
 				nodes.splice(i, numeral.length, semanticNum);
 			}
 		}
-		
+
 		/*******************************************************************
 		 * function:		parseVariables()
 		 *
@@ -573,13 +687,13 @@
 				parseParentheses(nodes);
 				parseDivision(nodes);
 				parseRoots(nodes);
-				parseExponents(nodes);		//create exponent semantic nodes, leave base empty for now
-				//parse multichar symbols 1 (sin, cos etc)
+				parseExponents(nodes);							//create exponent semantic nodes, leave base empty for now
+				parseMulticharacterSymbols(nodes);	//parse symbols made of multiple characters, like sin, cos, pi
 				parseNumerals(nodes);
 				parseVariables(nodes);
 
-				applyExponents(nodes);		//fill in bases of exponent semantic nodes
-				//parse multichars 2
+				applyExponents(nodes);							//fill in bases of exponent semantic nodes
+				applyMulticharacterSymbols(nodes);
 				parseImpliedMultiplication(nodes);
 				parseOperators(nodes, /[*]/);
 				parseOperators(nodes, /[+\-]/);
@@ -591,6 +705,7 @@
 					case "errInvalidArguments":			return admSemanticNode.build("error", "Invalid arguments.");
 					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
 					case "errMissingBase":					return admSemanticNode.build("error", "Exponent has no base.");
+					case "errMissingArgument":			return admSemanticNode.build("error", "Function has no argument.");
 					default:												return admSemanticNode.build("error", "Unidentified error.");
 				}
 			}

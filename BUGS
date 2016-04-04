@@ -13,6 +13,7 @@
 
 MATH FEATURES NEEDING IMPLEMENTING
 	- non-square root
-	- circular functions
 	- pi, e
+		- and transc1.exponent when I do
 	- abs
+	- log

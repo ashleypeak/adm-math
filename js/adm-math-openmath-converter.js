@@ -122,22 +122,22 @@
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "exp":
-					if(node.childNodes.length != 2)	throw new Error("arith1.exp takes one child.");
+					if(node.childNodes.length != 2)	throw new Error("transc1.exp takes one child.");
 					return "e^{"+convertNode(node.childNodes[1])+"}";
 				case "log":
-					if(node.childNodes.length != 3)	throw new Error("arith1.log takes two children.");
+					if(node.childNodes.length != 3)	throw new Error("transc1.log takes two children.");
 					return "\\log_{"+convertNode(node.childNodes[1])+"}("+convertNode(node.childNodes[2])+")";
 				case "ln":
-					if(node.childNodes.length != 2)	throw new Error("arith1.ln takes one child.");
+					if(node.childNodes.length != 2)	throw new Error("transc1.ln takes one child.");
 					return "\\ln("+convertNode(node.childNodes[1])+")";
 				case "sin":
-					if(node.childNodes.length != 2)	throw new Error("arith1.sin takes one child.");
+					if(node.childNodes.length != 2)	throw new Error("transc1.sin takes one child.");
 					return "\\sin("+convertNode(node.childNodes[1])+")";
 				case "cos":
-					if(node.childNodes.length != 2)	throw new Error("arith1.cos takes one child.");
+					if(node.childNodes.length != 2)	throw new Error("transc1.cos takes one child.");
 					return "\\cos("+convertNode(node.childNodes[1])+")";
 				case "tan":
-					if(node.childNodes.length != 2)	throw new Error("arith1.tan takes one child.");
+					if(node.childNodes.length != 2)	throw new Error("transc1.tan takes one child.");
 					return "\\tan("+convertNode(node.childNodes[1])+")";
 			}
 
@@ -330,6 +330,29 @@
 
 	mathOpenmathConverter.factory("admOpenmathLiteralConverter", ["admXmlParser", "admLiteralNode", function(xmlParser, admLiteralNode) {
 		/*******************************************************************
+		 * function:		buildLiteralsFromString()
+		 *
+		 * description:	takes a string `literalString` and builds an
+		 *							admLiteralNode for each character in it
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`literalString`
+		 *
+		 * return:			[admLiteralNode]
+		 ******************************************************************/
+		function buildLiteralsFromString(parentLiteralNode, literalString) {
+			var literalNodes = [];
+
+			angular.forEach(literalString, function(character) {
+				var node = admLiteralNode.build(parentLiteralNode, character);
+
+				literalNodes.push(node);
+			});
+
+			return literalNodes;
+		}
+
+		/*******************************************************************
 		 * function:		convertArith1()
 		 *
 		 * description:	takes an OMA with OMS in content dictionary `arith1`
@@ -447,19 +470,20 @@
 					return "e^{"+convertNode(xmlNode.childNodes[1])+"}";
 				case "log":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.log takes two children.");
-					return "\\log_{"+convertNode(xmlNode.childNodes[1])+"}("+convertNode(xmlNode.childNodes[2])+")";
+					return "\\log_{"+convertNode(xmlNode.childNodes[1])+"}("+convertNode(xmlNode.childNodes[2])+")";*/
 				case "ln":
-					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.ln takes one child.");
-					return "\\ln("+convertNode(xmlNode.childNodes[1])+")";
 				case "sin":
-					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.sin takes one child.");
-					return "\\sin("+convertNode(xmlNode.childNodes[1])+")";
 				case "cos":
-					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.cos takes one child.");
-					return "\\cos("+convertNode(xmlNode.childNodes[1])+")";
 				case "tan":
-					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.tan takes one child.");
-					return "\\tan("+convertNode(xmlNode.childNodes[1])+")";*/
+					var functionName = omsNode.attributes.name.nodeValue;
+
+					if(xmlNode.childNodes.length != 2)	throw new Error("transc1."+functionName+" takes one child.");
+
+					var functionNodes = buildLiteralsFromString(parentLiteralNode, functionName+"(");
+					var childLiteralNode = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
+					var terminalNode = [admLiteralNode.build(parentLiteralNode, ")")];
+
+					return functionNodes.concat(childLiteralNode).concat(terminalNode);
 			}
 
 			throw new Error("OMA references unimplemented symbol transc1."+omsNode.attributes.name.nodeValue);
