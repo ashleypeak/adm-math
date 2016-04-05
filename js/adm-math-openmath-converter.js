@@ -455,9 +455,14 @@
 					exponentNode.exponent.nodes = convertNode(exponentNode.exponent, xmlNode.childNodes[1]);
 
 					return [baseLiteralNode, exponentNode];
-				/*case "log":
+				case "log":
 					if(xmlNode.childNodes.length != 3)	throw new Error("transc1.log takes two children.");
-					return "\\log_{"+convertNode(xmlNode.childNodes[1])+"}("+convertNode(xmlNode.childNodes[2])+")";*/
+
+					var logNode = admLiteralNode.buildByName(parentLiteralNode, "log");
+					logNode.base.nodes = convertNode(logNode.base, xmlNode.childNodes[1]);
+					logNode.argument.nodes = convertNode(logNode.argument, xmlNode.childNodes[2]);
+
+					return [logNode];
 				case "ln":
 				case "sin":
 				case "cos":

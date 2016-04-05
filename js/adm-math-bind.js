@@ -6,7 +6,7 @@
 		bindTemplate += "<span ng-class=\"{'mathoutput': !isInner}\">";
 		bindTemplate += "<span ng-repeat=\"node in expression.nodes track by $index\" ng-switch on=\"node.type\">";
 
-		bindTemplate += "<span ng-switch-when=\"exponent\" class=\"exponent\" adm-literal-bind=\"node.exponent\" adm-is-inner=\"true\"></span>";
+		bindTemplate += "<span ng-switch-when=\"exponent\" class=\"superscript\" adm-literal-bind=\"node.exponent\" adm-is-inner=\"true\"></span>";
 
 		bindTemplate += "<span ng-switch-when=\"division\" class=\"division\">";
 		bindTemplate += "<span class=\"numerator\" adm-literal-bind=\"node.numerator\" adm-is-inner=\"true\"></span>";
@@ -22,7 +22,15 @@
 		bindTemplate += "{{node.getDisplay().end}}";
 		bindTemplate += "</span>";
 
-		bindTemplate += "<span ng-switch-default ng-class=\"{'exponent': node.type == 'exponent'}\" ng-bind-html=\"node.getDisplay()\"></span>";
+		bindTemplate += "<span ng-switch-when=\"logarithm\">";
+		bindTemplate += "log";
+		bindTemplate += "<span class=\"subscript\" adm-literal-bind=\"node.base\" adm-is-inner=\"true\"></span>";
+		bindTemplate += "(";
+		bindTemplate += "<span adm-literal-bind=\"node.argument\" adm-is-inner=\"true\"></span>";
+		bindTemplate += ")";
+		bindTemplate += "</span>";
+
+		bindTemplate += "<span ng-switch-default ng-bind-html=\"node.getDisplay()\"></span>";
 
 		bindTemplate += "</span>";
 		bindTemplate += "</span>";

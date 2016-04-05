@@ -185,6 +185,30 @@
 		};
 	});
 
+	module.service("admSemanticLogarithm", function() {
+		this.build = function(base, argument) {
+			return {
+				expressionType: "semantic",
+				type: "logarithm",
+				base: typeof base !== "undefined" ? base : null,
+				argument: typeof argument !== "undefined" ? argument : null,
+
+				assertHasValidChildren: function() {
+						if(this.base === null || this.argument === null)	throw "errInvalidArguments";
+						if(this.base.type == "error")											throw "errInvalidArguments";
+						if(this.argument.type == "error")									throw "errInvalidArguments";
+				},
+
+				getOpenMath: function() {
+					return "<OMA><OMS cd='transc1' name='log'/>"
+						+ this.base.getOpenMath()
+						+ this.argument.getOpenMath()
+						+ "</OMA>";
+				}
+			};
+		};
+	});
+
 	module.service("admSemanticConstant", function() {
 		this.build = function(name) {
 			return {
@@ -214,9 +238,10 @@
 	});
 
 	module.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
-		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticConstant", "admSemanticError",
+		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticLogarithm",
+		 "admSemanticConstant", "admSemanticError",
 		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
-			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticConstant, admSemanticError) {
+			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticLogarithm, admSemanticConstant, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
@@ -227,6 +252,7 @@
 				case "division":		return admSemanticDivision.build(arguments[1], arguments[2]);
 				case "root":				return admSemanticRoot.build(arguments[1], arguments[2]);
 				case "function":		return admSemanticFunction.build(arguments[1], arguments[2]);
+				case "logarithm":		return admSemanticLogarithm.build(arguments[1], arguments[2]);
 				case "constant":		return admSemanticConstant.build(arguments[1]);
 				case "error":				return admSemanticError.build(arguments[1]);
 			}
@@ -654,6 +680,32 @@
 		}
 
 		/*******************************************************************
+		 * function:		parseLogarithms()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all admLiteralLogarithms with
+		 *							admSemanticLogarithms
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseLogarithms(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "logarithm")					continue;
+
+				var semanticBase = build(nodes[i].base.getNodes());
+				var semanticArgument = build(nodes[i].argument.getNodes());
+				var semanticLogarithm = admSemanticNode.build("logarithm", semanticBase, semanticArgument);
+				semanticLogarithm.assertHasValidChildren();
+
+				nodes.splice(i, 1, semanticLogarithm);
+			}
+		}
+
+		/*******************************************************************
 		 * function:		parseImpliedMultiplication()
 		 *
 		 * description:	takes mixed collection of nodes `nodes` and,
@@ -744,6 +796,7 @@
 				parseVariables(newNodes);
 				parseSymbols(newNodes);
 				parseFunctions(newNodes);
+				parseLogarithms(newNodes);
 
 				applyExponents(newNodes);							//fill in bases of exponent semantic nodes
 				applyMulticharacterSymbols(newNodes);

@@ -52,12 +52,20 @@
 	background-color: #c8e8ff;
 }
 
-.mathinput .exponent, .mathoutput .exponent {
+.mathinput .superscript, .mathoutput .superscript {
 	position: relative;
 	margin-right: -8px;
 	left: -5px;
 	font-size: 70%;
 	vertical-align: 0.6em;
+}
+
+.mathinput .subscript, .mathoutput .subscript {
+	position: relative;
+	margin-right: -8px;
+	left: -5px;
+	font-size: 70%;
+	vertical-align: -0.6em;
 }
 
 .mathinput .division, .mathinput .numerator, .mathinput .denominator,

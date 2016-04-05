@@ -44,16 +44,43 @@
 		};
 	});
 
-	module.service("admLiteralCharacter", function() {
-		this.build = function(id, parentNode, type, value) {
+	module.service("admLiteralNumeral", function() {
+		this.build = function(id, parentNode, value) {
 			return {
 				id: id,
 				parentNode: parentNode,
 				expressionType: "literal",
-				type: type,
+				type: "numeral",
 				value: value,
 				getVal: function() {	return this.value;	},
 				getDisplay: function() {	return this.value;	}
+			};
+		};
+	});
+
+	module.service("admLiteralLetter", function() {
+		this.build = function(id, parentNode, value) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "letter",
+				value: value,
+				getVal: function() {	return this.value;	},
+				getDisplay: function() {	return this.value;	}
+			};
+		};
+	});
+
+	module.service("admLiteralPipe", function() {
+		this.build = function(id, parentNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "pipe",
+				getVal: function() {	return "|";	},
+				getDisplay: function() {	return "|";	}
 			};
 		};
 	});
@@ -182,11 +209,26 @@
 		};
 	});
 
-	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralCharacter", "admLiteralSymbol",
+	module.service("admLiteralLogarithm", function() {
+		this.build = function(id, parentNode, base, argument) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "logarithm",
+				base: base,
+				argument: argument,
+				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	}
+			};
+		};
+	});
+
+	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralPipe", "admLiteralSymbol",
 		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
-		 "admLiteralFunction",
-		 function(admLiteralExpression, admLiteralCharacter, admLiteralSymbol, admLiteralParenthesis,
-			 admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralFunction) {
+		 "admLiteralFunction", "admLiteralLogarithm",
+		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol, admLiteralParenthesis,
+			 admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralFunction, admLiteralLogarithm) {
 		var id = 0;
 
 		return {
@@ -194,9 +236,9 @@
 				return admLiteralExpression.build(id++, parentNode);
 			},
 			build: function(parentNode, nodeVal) {
-				if(/^[0-9.]$/.test(nodeVal))				{ return admLiteralCharacter.build(id++, parentNode, "numeral", nodeVal); }
-				else if(/^[a-zA-Z]$/.test(nodeVal))	{ return admLiteralCharacter.build(id++, parentNode, "letter", nodeVal); }
-				else if(/^[|]$/.test(nodeVal))			{ return admLiteralCharacter.build(id++, parentNode, "pipe", nodeVal); }
+				if(/^[0-9.]$/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
+				else if(/^[a-zA-Z]$/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
+				else if(/^[|]$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode, nodeVal); }
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
 				else if(/^[\^]$/.test(nodeVal)) {
@@ -236,6 +278,12 @@
 					case "squareRoot":
 						var node = admLiteralSquareRoot.build(id++, parentNode, null);
 						node.radicand = admLiteralExpression.build(id++, node);
+
+						return node;
+					case "log":
+						var node = admLiteralLogarithm.build(id++, parentNode, null);
+						node.base = admLiteralExpression.build(id++, node);
+						node.argument = admLiteralExpression.build(id++, node);
 
 						return node;
 				}

@@ -16,7 +16,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"exponent\"";
-		expressionTemplate += " class=\"exponent\"";
+		expressionTemplate += " class=\"superscript\"";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
 		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
 		expressionTemplate += "<adm-math-expression";
@@ -65,6 +65,24 @@
 		expressionTemplate += " expression=\"node.child\"";
 		expressionTemplate += " control=\"control\"></adm-math-expression>";
 		expressionTemplate += "{{node.getDisplay().end}}";
+		expressionTemplate += "</span>";
+
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-when=\"logarithm\"";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += "log";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " class=\"subscript\"";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.base\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "(";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.argument\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += ")";
 		expressionTemplate += "</span>";
 
 		expressionTemplate += "<span";
@@ -158,6 +176,12 @@
 							case "tan":					node = admLiteralNode.buildByName(scope.cursor.expression, "tan");				break;
 							case "absolute":		node = admLiteralNode.buildByName(scope.cursor.expression, "abs");				break;
 							case "ln":					node = admLiteralNode.buildByName(scope.cursor.expression, "ln");					break;
+							case "log":					node = admLiteralNode.buildByName(scope.cursor.expression, "log");				break;
+							case "log10":
+								node = admLiteralNode.buildByName(scope.cursor.expression, "log");
+								node.base.insert(0, admLiteralNode.build(node.base, "1"));
+								node.base.insert(1, admLiteralNode.build(node.base, "0"));
+								break;
 							default:
 								if(/^[0-9.a-zA-Z+\-*()\^\/]$/.test(symbol))	node = admLiteralNode.build(scope.cursor.expression, symbol);
 								else																				alert(symbol + ": Symbol not supported.");
@@ -483,7 +507,7 @@
 					tryMoveIntoParent: function(relativePosition) {
 						if(this.expression.parentNode === null)	return false;
 
-						//every expression except the root expression (scope.literal.tree)
+						//every expression except the root expression (scope.literalTree)
 						//has a parentNode (exponent or division), while every node of course
 						//has a parent expression. we want to move into that expression
 						var parentNode = this.expression.parentNode;
@@ -523,6 +547,10 @@
 							case "exponent":		this.expression = this.expression.getNode(nodeIndex).exponent;	break;
 							case "squareRoot":	this.expression = this.expression.getNode(nodeIndex).radicand;	break;
 							case "function":		this.expression = this.expression.getNode(nodeIndex).child;			break;
+							case "logarithm":
+								if(terminus == "start")	this.expression = this.expression.getNode(nodeIndex).base;
+								if(terminus == "end")		this.expression = this.expression.getNode(nodeIndex).argument;
+								break;
 							default:						return false;
 						}
 
@@ -589,6 +617,52 @@
 							return true;
 						}
 					},
+
+					/*******************************************************************
+					 * function:		tryMoveIntoLogBase()
+					 *
+					 * description:	if the cursor is in the argument of a logarithm,
+					 *							moves the cursor to the base
+					 *
+					 * arguments:		terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoLogBase: function(terminus) {
+						var node = this.expression;
+						if(node.parentNode === null)						return false;
+						if(node.parentNode.type != "logarithm")	return false;
+
+						var logNode = node.parentNode;
+						if(node.id != logNode.argument.id)			return false;
+
+						this.expression = logNode.base;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
+					},
+
+					/*******************************************************************
+					 * function:		tryMoveIntoLogArgument()
+					 *
+					 * description:	if the cursor is in the base of a logarithm,
+					 *							moves the cursor to the argument
+					 *
+					 * arguments:		terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoLogArgument: function(terminus) {
+						var node = this.expression;
+						if(node.parentNode === null)						return false;
+						if(node.parentNode.type != "logarithm")	return false;
+
+						var logNode = node.parentNode;
+						if(node.id != logNode.base.id)					return false;
+
+						this.expression = logNode.argument;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
+					},
 					
 					/*******************************************************************
 					 * function:		moveLeft()
@@ -601,7 +675,8 @@
 					 * return:			none
 					 ******************************************************************/
 					moveLeft: function() {
-						if(this.position === 0) return this.tryMoveIntoParent("before");
+						if(this.position === 0)
+							return this.tryMoveIntoLogBase("end") || this.tryMoveIntoParent("before");
 
 						this.position--;
 						this.tryMoveIntoChild("end");
@@ -635,7 +710,8 @@
 					 * return:			none
 					 ******************************************************************/
 					moveRight: function() {
-						if(this.position == this.expression.getLength())	return this.tryMoveIntoParent("after");
+						if(this.position == this.expression.getLength())
+							return this.tryMoveIntoLogArgument("start") || this.tryMoveIntoParent("after");
 						
 						this.position++;
 						this.tryMoveIntoChild("start");
