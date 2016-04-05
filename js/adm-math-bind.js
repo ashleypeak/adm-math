@@ -16,6 +16,8 @@
 		bindTemplate += "<span ng-switch-when=\"squareRoot\" class=\"square-root\" adm-literal-bind=\"node.radicand\" adm-is-inner=\"true\">";
 		bindTemplate += "</span>";
 
+		bindTemplate += "<span ng-switch-when=\"function\" adm-literal-bind=\"node.child\" adm-is-inner=\"true\"></span>";
+
 		bindTemplate += "<span ng-switch-default ng-class=\"{'exponent': node.type == 'exponent'}\" ng-bind-html=\"node.getDisplay()\"></span>";
 
 		bindTemplate += "</span>";

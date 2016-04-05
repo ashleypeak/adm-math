@@ -55,6 +55,18 @@
 		expressionTemplate += "</span>";
 
 		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-when=\"function\"";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += "{{node.name}}(";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.child\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += ")";
+		expressionTemplate += "</span>";
+
+		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-default";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
 		expressionTemplate += "  'exponent': node.type == 'exponent'}\"";
@@ -566,6 +578,7 @@
 			for(var i = nodes.length-1; i >= 0; i--) {
 				if(nodes[i].expressionType != "semantic")	continue;
 				if(nodes[i].type != "function")						continue;
+				if(nodes[i].child !== null)								continue; //some functions are parsed by parseFunctions()
 
 				if(i+1 == nodes.length) throw "errMissingArgument";
 
@@ -645,6 +658,30 @@
 
 				var semanticSymbol = admSemanticNode.build("constant", nodes[i].getVal()); 
 				nodes.splice(i, 1, semanticSymbol);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseFunctions()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all admLiteralFunctions with
+		 *							admSemanticFunctions
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseFunctions(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "function")						continue;
+
+				var semanticChild = build(nodes[i].child.getNodes().slice());
+				var semanticFunction = admSemanticNode.build("function", nodes[i].name, semanticChild);
+
+				nodes.splice(i, 1, semanticFunction);
 			}
 		}
 
@@ -734,6 +771,7 @@
 				parseNumerals(nodes);
 				parseVariables(nodes);
 				parseSymbols(nodes);
+				parseFunctions(nodes);
 
 				applyExponents(nodes);							//fill in bases of exponent semantic nodes
 				applyMulticharacterSymbols(nodes);
@@ -819,6 +857,10 @@
 							case "divide":			node = admLiteralNode.build(scope.cursor.expression, "/");								break;
 							case "squareRoot":	node = admLiteralNode.buildByName(scope.cursor.expression, "squareRoot");	break;
 							case "pi":					node = admLiteralNode.buildByName(scope.cursor.expression, "pi");					break;
+							case "sin":					node = admLiteralNode.buildByName(scope.cursor.expression, "sin");				break;
+							case "cos":					node = admLiteralNode.buildByName(scope.cursor.expression, "cos");				break;
+							case "tan":					node = admLiteralNode.buildByName(scope.cursor.expression, "tan");				break;
+							case "ln":					node = admLiteralNode.buildByName(scope.cursor.expression, "ln");					break;
 							default:
 								if(/^[0-9.a-zA-Z+\-*()\^\/]$/.test(symbol))	node = admLiteralNode.build(scope.cursor.expression, symbol);
 								else																				alert(symbol + ": Symbol not supported.");
@@ -1157,17 +1199,17 @@
 					},
 					
 					/*******************************************************************
-					 * function:		tryMoveIntoExponent()
+					 * function:		tryMoveIntoChild()
 					 *
-					 * description:	if the cursor is over an Exponent node, moves the
-					 *							cursor inside the exponent expression, to the
+					 * description:	if the cursor is over a node with a child, moves the
+					 *							cursor inside the child expression, to the
 					 *							start or end according to `terminus`.
 					 *
 					 * arguments:		terminus: STRING ("start"|"end")
 					 *
 					 * return:			BOOLEAN
 					 ******************************************************************/
-					tryMoveIntoExponent: function(terminus) {
+					tryMoveIntoChild: function(terminus) {
 						//due to differing indices, this.position-1 is the node under the cursor
 						var nodeIndex = this.position - 1;
 						
@@ -1175,45 +1217,16 @@
 						//otherwise you can't scroll left to the space directly after the node
 						if(terminus == "end")	nodeIndex++;
 
-						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return false;
-						if(nodeIndex >= this.expression.getLength())							return false;
-						if(this.expression.getNode(nodeIndex).type != "exponent")	return false;
+						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/		return false;
+						if(nodeIndex >= this.expression.getLength())								return false;
+						//if(this.expression.getNode(nodeIndex).type != "function")		return false;
 
-						this.expression = this.expression.getNode(nodeIndex).exponent;
-						this.position = (terminus == "start" ? 0 : this.expression.getLength());
-
-						return true;
-					},
-					
-					/*******************************************************************
-					 * function:		tryMoveIntoDivision()
-					 *
-					 * description:	if the cursor is over a Division node, moves the
-					 *							cursor inside the numerator or denominator expression,
-					 *							depending on `expression`, and to the start or end
-					 *							of that expression according to `terminus`.
-					 *
-					 * arguments:		expression:	STRING ("numerator"|"denominator")
-					 *							terminus:		STRING ("start"|"end")
-					 *
-					 * return:			BOOLEAN
-					 ******************************************************************/
-					tryMoveIntoDivision: function(expression, terminus) {
-						//due to differing indices, this.position-1 is the node under the cursor
-						var nodeIndex = this.position - 1;
-
-						//if moving left, only try to enter node after scrolling PAST it
-						//otherwise you can't scroll left to the space directly after the node
-						if(terminus == "end")	nodeIndex++;
-						
-						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/	return false;
-						if(nodeIndex >= this.expression.getLength())							return false;
-						if(this.expression.getNode(nodeIndex).type != "division")	return false;
-
-						var divisionNode = this.expression.getNode(nodeIndex);
-						switch(expression) {
-							case "numerator":			this.expression = divisionNode.numerator;			break;
-							case "denominator":		this.expression = divisionNode.denominator;		break;
+						switch(this.expression.getNode(nodeIndex).type) {
+							case "division":		this.expression = this.expression.getNode(nodeIndex).numerator;	break;
+							case "exponent":		this.expression = this.expression.getNode(nodeIndex).exponent;	break;
+							case "squareRoot":	this.expression = this.expression.getNode(nodeIndex).radicand;	break;
+							case "function":		this.expression = this.expression.getNode(nodeIndex).child;			break;
+							default:						return false;
 						}
 
 						this.position = (terminus == "start" ? 0 : this.expression.getLength());
@@ -1281,35 +1294,6 @@
 					},
 					
 					/*******************************************************************
-					 * function:		tryMoveIntoSquareRoot()
-					 *
-					 * description:	if the cursor is over a SquareRoot node, moves the
-					 *							cursor inside the radicand expression, to the
-					 *							start or end according to `terminus`.
-					 *
-					 * arguments:		terminus: STRING ("start"|"end")
-					 *
-					 * return:			BOOLEAN
-					 ******************************************************************/
-					tryMoveIntoSquareRoot: function(terminus) {
-						//due to differing indices, this.position-1 is the node under the cursor
-						var nodeIndex = this.position - 1;
-						
-						//if moving left, only try to enter node after scrolling PAST it
-						//otherwise you can't scroll left to the space directly after the node
-						if(terminus == "end")	nodeIndex++;
-
-						if(nodeIndex < 0)	/*i.e. if cursor is left of all nodes*/		return false;
-						if(nodeIndex >= this.expression.getLength())								return false;
-						if(this.expression.getNode(nodeIndex).type != "squareRoot")	return false;
-
-						this.expression = this.expression.getNode(nodeIndex).radicand;
-						this.position = (terminus == "start" ? 0 : this.expression.getLength());
-
-						return true;
-					},
-					
-					/*******************************************************************
 					 * function:		moveLeft()
 					 *
 					 * description:	attempts to move the cursor one character to the
@@ -1323,7 +1307,7 @@
 						if(this.position === 0) return this.tryMoveIntoParent("before");
 
 						this.position--;
-						this.tryMoveIntoExponent("end") || this.tryMoveIntoDivision("numerator", "end") || this.tryMoveIntoSquareRoot("end");
+						this.tryMoveIntoChild("end");
 						this.show();
 					},
 					
@@ -1357,7 +1341,7 @@
 						if(this.position == this.expression.getLength())	return this.tryMoveIntoParent("after");
 						
 						this.position++;
-						this.tryMoveIntoExponent("start") || this.tryMoveIntoDivision("numerator", "start") || this.tryMoveIntoSquareRoot("start");
+						this.tryMoveIntoChild("start");
 						this.show();
 					},
 

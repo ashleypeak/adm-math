@@ -167,10 +167,26 @@
 		};
 	});
 
+	mathCore.service("admLiteralFunction", function() {
+		this.build = function(id, parentNode, name, childNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "function",
+				name: name,
+				child: childNode,
+				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	}
+			};
+		};
+	});
+
 	mathCore.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralSymbol",
 		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
+		 "admLiteralFunction",
 		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralSymbol, admLiteralParenthesis, admLiteralOperator,
-			 admLiteralExponent, admLiteralDivision, admLiteralSquareRoot) {
+			 admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralFunction) {
 		var id = 0;
 
 		return {
@@ -203,13 +219,18 @@
 			},
 			buildByName: function(parentNode, nodeName) {
 				switch(nodeName) {
-					case "pi":
-						return admLiteralSymbol.build(id++, parentNode, "pi");
+					case "pi":	return admLiteralSymbol.build(id++, parentNode, "pi");
+					case "sin":
+					case "cos":
+					case "tan":
+					case "ln":
+						var node = admLiteralFunction.build(id++, parentNode, nodeName, null);
+						node.child = admLiteralExpression.build(id++, node);
+
+						return node;
 					case "squareRoot":
-						var radicand = admLiteralExpression.build(id++, null);
-						
-						var node = admLiteralSquareRoot.build(id++, parentNode, radicand);
-						node.radicand.parentNode = node;
+						var node = admLiteralSquareRoot.build(id++, parentNode, null);
+						node.radicand = admLiteralExpression.build(id++, node);
 
 						return node;
 				}
