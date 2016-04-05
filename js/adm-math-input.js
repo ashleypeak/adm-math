@@ -151,6 +151,8 @@
 							case "divide":			node = admLiteralNode.build(scope.cursor.expression, "/");								break;
 							case "squareRoot":	node = admLiteralNode.buildByName(scope.cursor.expression, "squareRoot");	break;
 							case "pi":					node = admLiteralNode.buildByName(scope.cursor.expression, "pi");					break;
+							case "e":						node = admLiteralNode.buildByName(scope.cursor.expression, "e");					break;
+							case "infinity":		node = admLiteralNode.buildByName(scope.cursor.expression, "infinity");		break;
 							case "sin":					node = admLiteralNode.buildByName(scope.cursor.expression, "sin");				break;
 							case "cos":					node = admLiteralNode.buildByName(scope.cursor.expression, "cos");				break;
 							case "tan":					node = admLiteralNode.buildByName(scope.cursor.expression, "tan");				break;

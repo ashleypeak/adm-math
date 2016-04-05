@@ -83,7 +83,9 @@
 				getVal: function() {	return this.name;	},
 				getDisplay: function() {
 					switch(name) {
-						case "pi":	return "&pi;";
+						case "pi":				return "&pi;";
+						case "e":					return "e";
+						case "infinity":	return "&infin;";
 					}
 				}
 			};
@@ -231,7 +233,10 @@
 			},
 			buildByName: function(parentNode, nodeName) {
 				switch(nodeName) {
-					case "pi":	return admLiteralSymbol.build(id++, parentNode, "pi");
+					case "pi":
+					case "e":
+					case "infinity":
+						return admLiteralSymbol.build(id++, parentNode, nodeName);
 					case "sin":
 					case "cos":
 					case "tan":

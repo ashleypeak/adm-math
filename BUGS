@@ -14,5 +14,5 @@
 
 MATH FEATURES NEEDING IMPLEMENTING
 	- non-square root
-	- abs
+	- typing |a| should create an abs
 	- log

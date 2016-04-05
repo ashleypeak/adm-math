@@ -330,29 +330,6 @@
 
 	module.factory("admOpenmathLiteralConverter", ["admXmlParser", "admLiteralNode", function(xmlParser, admLiteralNode) {
 		/*******************************************************************
-		 * function:		buildLiteralsFromString()
-		 *
-		 * description:	takes a string `literalString` and builds an
-		 *							admLiteralNode for each character in it
-		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`literalString`
-		 *
-		 * return:			[admLiteralNode]
-		 ******************************************************************/
-		function buildLiteralsFromString(parentLiteralNode, literalString) {
-			var literalNodes = [];
-
-			angular.forEach(literalString, function(character) {
-				var node = admLiteralNode.build(parentLiteralNode, character);
-
-				literalNodes.push(node);
-			});
-
-			return literalNodes;
-		}
-
-		/*******************************************************************
 		 * function:		convertArith1()
 		 *
 		 * description:	takes an OMA with OMS in content dictionary `arith1`
@@ -516,8 +493,8 @@
 					return [admLiteralNode.build(parentLiteralNode, "e")];
 				case "pi":
 					return [admLiteralNode.buildByName(parentLiteralNode, "pi")];
-				/*case "infinity":
-					return "\\infty";*/
+				case "infinity":
+					return [admLiteralNode.buildByName(parentLiteralNode, "infinity")];
 			}
 
 			throw new Error("OMA references unimplemented symbol nums."+xmlNode.attributes.name.nodeValue);

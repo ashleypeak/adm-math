@@ -193,7 +193,6 @@
 				name: name,
 
 				getOpenMath: function() {
-					//obviously not all constants are in nums. deal with it when i get to it.
 					return "<OMS cd='nums1' name='"+this.name+"'/>";
 				}
 			};
