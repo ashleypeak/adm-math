@@ -23,13 +23,12 @@ First include the module files:
 
 ```html
 <link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
-<script type="text/javascript" src="../bower_components/angular/angular.js"></script>
-<script type="text/javascript" src="../bower_components/angular-sanitize/angular-sanitize.js"></script>
-<script type="text/javascript" src="../js/adm-math-core.js"></script>
-<script type="text/javascript" src="../js/adm-math-openmath-converter.js"></script>
-<script type="text/javascript" src="../js/adm-math-literal-converter.js"></script>
-<script type="text/javascript" src="../js/adm-math-input.js"></script>
-<script type="text/javascript" src="../js/adm-math-bind.js"></script>
+<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+<script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-input.js"></script>
 ```
 
 Then include the module in your Angular.js module:
@@ -99,7 +98,7 @@ A full list of supported values for `adm-symbol` follows:
 * `cos` The function cos()
 * `tan` The function tan()
 * `ln` A natural logarithm
-* `absolute` An empty absolute function ||
+* `absolute` An empty absolute function | |
 * `log10` A base-10 logarithm
 * `log` A logarithm with an empty base
 * `power` An exponent field
@@ -119,6 +118,7 @@ First include the module files:
 
 ```html
 <link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
+<script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-bind.js"></script>
@@ -159,6 +159,7 @@ A set of services for converting OpenMath into other formats
 First include the module files:
 
 ```html
+<script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 ```
