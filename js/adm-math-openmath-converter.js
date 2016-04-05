@@ -368,9 +368,13 @@
 			omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
-				/*case "abs":
+				case "abs":
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.abs takes one child.");
-					return "|"+convertNode(xmlNode.childNodes[1])+"|";*/
+
+					var absNode = admLiteralNode.buildByName(parentLiteralNode, "abs");
+					absNode.child.nodes = convertNode(absNode, xmlNode.childNodes[1]);
+
+					return [absNode];
 				case "plus":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.plus takes two children.");
 
@@ -485,11 +489,10 @@
 
 					if(xmlNode.childNodes.length != 2)	throw new Error("transc1."+functionName+" takes one child.");
 
-					var functionNodes = buildLiteralsFromString(parentLiteralNode, functionName+"(");
-					var childLiteralNode = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
-					var terminalNode = [admLiteralNode.build(parentLiteralNode, ")")];
+					var functionNode = admLiteralNode.buildByName(parentLiteralNode, functionName);
+					functionNode.child.nodes = convertNode(functionNode, xmlNode.childNodes[1]);
 
-					return functionNodes.concat(childLiteralNode, terminalNode);
+					return [functionNode];
 			}
 
 			throw new Error("OMA references unimplemented symbol transc1."+omsNode.attributes.name.nodeValue);

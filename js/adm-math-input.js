@@ -59,12 +59,12 @@
 		expressionTemplate += " ng-switch-when=\"function\"";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
 		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
-		expressionTemplate += "{{node.name}}(";
+		expressionTemplate += "{{node.getDisplay().start}}";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
 		expressionTemplate += " expression=\"node.child\"";
 		expressionTemplate += " control=\"control\"></adm-math-expression>";
-		expressionTemplate += ")";
+		expressionTemplate += "{{node.getDisplay().end}}";
 		expressionTemplate += "</span>";
 
 		expressionTemplate += "<span";
@@ -265,8 +265,14 @@
 				},
 
 				getOpenMath: function() {
-					//obviously not all functions are in transc1. deal with it when i get to it.
-					return "<OMA><OMS cd='transc1' name='"+this.name+"'/>"
+					var cd;
+
+					switch(this.name) {
+						case "abs":	cd = "arith1";	break;
+						default:		cd = "transc1";
+					}
+
+					return "<OMA><OMS cd='"+cd+"' name='"+this.name+"'/>"
 						+ this.child.getOpenMath()
 						+ "</OMA>";
 				}
@@ -864,6 +870,7 @@
 							case "sin":					node = admLiteralNode.buildByName(scope.cursor.expression, "sin");				break;
 							case "cos":					node = admLiteralNode.buildByName(scope.cursor.expression, "cos");				break;
 							case "tan":					node = admLiteralNode.buildByName(scope.cursor.expression, "tan");				break;
+							case "absolute":		node = admLiteralNode.buildByName(scope.cursor.expression, "abs");				break;
 							case "ln":					node = admLiteralNode.buildByName(scope.cursor.expression, "ln");					break;
 							default:
 								if(/^[0-9.a-zA-Z+\-*()\^\/]$/.test(symbol))	node = admLiteralNode.build(scope.cursor.expression, symbol);

@@ -177,7 +177,19 @@
 				name: name,
 				child: childNode,
 				getVal: function() {	return null;	},
-				getDisplay: function() {	return null;	}
+				getDisplay: function() {
+					var start, end;
+					
+					switch(this.name) {
+						case "abs":	start = "|";						end="|";	break;
+						default:		start = this.name+"(";	end=")";	break;
+					}
+
+					return {
+						start: start,
+						end: end
+					};
+				}
 			};
 		};
 	});
@@ -223,6 +235,7 @@
 					case "sin":
 					case "cos":
 					case "tan":
+					case "abs":
 					case "ln":
 						var node = admLiteralFunction.build(id++, parentNode, nodeName, null);
 						node.child = admLiteralExpression.build(id++, node);
