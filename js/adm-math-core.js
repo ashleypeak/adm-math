@@ -1,7 +1,7 @@
 (function() {
-	var mathCore = angular.module("admMathCore", []);
+	var module = angular.module("admMathCore", []);
 
-	mathCore.service("admLiteralExpression", function() {
+	module.service("admLiteralExpression", function() {
 		this.build = function(id, parentNode) {
 			return {
 				id: id,
@@ -44,7 +44,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralNumeral", function() {
+	module.service("admLiteralNumeral", function() {
 		this.build = function(id, parentNode, value) {
 			return {
 				id: id,
@@ -58,7 +58,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralLetter", function() {
+	module.service("admLiteralLetter", function() {
 		this.build = function(id, parentNode, value) {
 			return {
 				id: id,
@@ -72,7 +72,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralSymbol", function() {
+	module.service("admLiteralSymbol", function() {
 		this.build = function(id, parentNode, name) {
 			return {
 				id: id,
@@ -90,7 +90,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralParenthesis", function() {
+	module.service("admLiteralParenthesis", function() {
 		this.build = function(id, parentNode, paren) {
 			return {
 				id: id,
@@ -105,7 +105,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralOperator", function() {
+	module.service("admLiteralOperator", function() {
 		this.build = function(id, parentNode, operator) {
 			return {
 				id: id,
@@ -124,7 +124,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralExponent", function() {
+	module.service("admLiteralExponent", function() {
 		this.build = function(id, parentNode, exponentNode) {
 			return {
 				id: id,
@@ -138,7 +138,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralDivision", function() {
+	module.service("admLiteralDivision", function() {
 		this.build = function(id, parentNode, numeratorNode, denominatorNode) {
 			return {
 				id: id,
@@ -153,7 +153,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralSquareRoot", function() {
+	module.service("admLiteralSquareRoot", function() {
 		this.build = function(id, parentNode, radicandNode) {
 			return {
 				id: id,
@@ -167,7 +167,7 @@
 		};
 	});
 
-	mathCore.service("admLiteralFunction", function() {
+	module.service("admLiteralFunction", function() {
 		this.build = function(id, parentNode, name, childNode) {
 			return {
 				id: id,
@@ -194,7 +194,7 @@
 		};
 	});
 
-	mathCore.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralSymbol",
+	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralSymbol",
 		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
 		 "admLiteralFunction",
 		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralSymbol, admLiteralParenthesis, admLiteralOperator,

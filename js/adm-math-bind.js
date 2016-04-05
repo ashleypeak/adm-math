@@ -1,7 +1,7 @@
 (function() {
-	var mathBind = angular.module("admMathBind", ["admMathCore", "admMathOpenmathConverter"]);
+	var module = angular.module("admMathBind", ["admMathCore", "admMathOpenmathConverter"]);
 
-	mathBind.run(["$templateCache", function($templateCache) {
+	module.run(["$templateCache", function($templateCache) {
 		var bindTemplate = "";
 		bindTemplate += "<span ng-class=\"{'mathoutput': !isInner}\">";
 		bindTemplate += "<span ng-repeat=\"node in expression.nodes track by $index\" ng-switch on=\"node.type\">";
@@ -30,7 +30,7 @@
 		$templateCache.put("adm-math-bind.htm", bindTemplate);
 	}]);
 
-	mathBind.directive("admLiteralBind", function() {
+	module.directive("admLiteralBind", function() {
 		return {
 			restrict: "A",
 			scope: {
@@ -50,7 +50,7 @@
 		};
 	});
 
-	mathBind.directive("admOpenmathBind", ["admOpenmathLiteralConverter", function(admOpenmathLiteralConverter) {
+	module.directive("admOpenmathBind", ["admOpenmathLiteralConverter", function(admOpenmathLiteralConverter) {
 		return {
 			restrict: "A",
 			scope: {

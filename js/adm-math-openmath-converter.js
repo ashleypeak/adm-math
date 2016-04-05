@@ -1,7 +1,7 @@
 (function() {
-	var mathOpenmathConverter = angular.module("admMathOpenmathConverter", ["admMathCore"]);
+	var module = angular.module("admMathOpenmathConverter", ["admMathCore"]);
 
-	mathOpenmathConverter.factory("admXmlParser", function() {
+	module.factory("admXmlParser", function() {
 		/*******************************************************************
 		 * function:		parseDefault()
 		 *
@@ -57,7 +57,7 @@
 		};
 	});
 
-	mathOpenmathConverter.factory("admOpenmathLatexConverter", ["admXmlParser", function(xmlParser) {
+	module.factory("admOpenmathLatexConverter", ["admXmlParser", function(xmlParser) {
 		/*******************************************************************
 		 * function:		convertArith1()
 		 *
@@ -328,7 +328,7 @@
 		};
 	}]);
 
-	mathOpenmathConverter.factory("admOpenmathLiteralConverter", ["admXmlParser", "admLiteralNode", function(xmlParser, admLiteralNode) {
+	module.factory("admOpenmathLiteralConverter", ["admXmlParser", "admLiteralNode", function(xmlParser, admLiteralNode) {
 		/*******************************************************************
 		 * function:		buildLiteralsFromString()
 		 *
