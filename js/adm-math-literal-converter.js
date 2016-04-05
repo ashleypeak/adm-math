@@ -465,7 +465,6 @@
 		 * description:	takes mixed collection of nodes `nodes` and
 		 *							replaces all literalSquareRoots and literalRoots
 		 *							with an equivalent semanticRoots
-		 *							WARNING: currently only works on literalSquareRoot
 		 *							WARNING: mutates `nodes`
 		 *
 		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
@@ -474,10 +473,13 @@
 		 ******************************************************************/
 		function parseRoots(nodes) {
 			for(var i = 0; i < nodes.length; i++) {
-				if(nodes[i].expressionType != "literal")	continue;
-				if(nodes[i].type != "squareRoot")					continue;
+				if(nodes[i].expressionType != "literal")											continue;
+				if(nodes[i].type != "squareRoot" && nodes[i].type != "root")	continue;
 				
-				var semanticIndex = admSemanticNode.build("numeral", "2");
+				var semanticIndex;
+				if(nodes[i].type == "squareRoot")	semanticIndex = admSemanticNode.build("numeral", "2");
+				else															semanticIndex = build(nodes[i].index.getNodes());
+
 				var semanticRadicand = build(nodes[i].radicand.getNodes());
 				var semanticRoot = admSemanticNode.build("root", semanticIndex, semanticRadicand);
 				semanticRoot.assertHasValidChildren();
@@ -485,7 +487,6 @@
 				nodes.splice(i, 1, semanticRoot);
 			}
 		}
-
 
 		/*******************************************************************
 		 * function:		replaceMulticharacterSymbols()

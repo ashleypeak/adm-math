@@ -46,13 +46,31 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"squareRoot\"";
-		expressionTemplate += " class=\"square-root\"";
+		expressionTemplate += " class=\"root\"";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
 		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
 		expressionTemplate += " expression=\"node.radicand\"";
 		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "</span>";
+
+		expressionTemplate += "<span";
+		expressionTemplate += " ng-switch-when=\"root\"";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
+		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " class=\"superscript\"";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.index\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "<span";
+		expressionTemplate += " class=\"root\">";
+		expressionTemplate += "<adm-math-expression";
+		expressionTemplate += " cursor=\"cursor\"";
+		expressionTemplate += " expression=\"node.radicand\"";
+		expressionTemplate += " control=\"control\"></adm-math-expression>";
+		expressionTemplate += "</span>";
 		expressionTemplate += "</span>";
 
 		expressionTemplate += "<span";
@@ -177,6 +195,7 @@
 							case "absolute":		nodes = [admLiteralNode.buildByName(scope.cursor.expression, "abs")];					break;
 							case "ln":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "ln")];					break;
 							case "log":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "log")];					break;
+							case "root":				nodes = [admLiteralNode.buildByName(scope.cursor.expression, "root")];				break;
 							case "power":				nodes = [admLiteralNode.build(scope.cursor.expression, "^")];									break;
 							case "exponent":
 								nodes = [
@@ -556,6 +575,10 @@
 							case "exponent":		this.expression = this.expression.getNode(nodeIndex).exponent;	break;
 							case "squareRoot":	this.expression = this.expression.getNode(nodeIndex).radicand;	break;
 							case "function":		this.expression = this.expression.getNode(nodeIndex).child;			break;
+							case "root":
+								if(terminus == "start")	this.expression = this.expression.getNode(nodeIndex).index;
+								if(terminus == "end")		this.expression = this.expression.getNode(nodeIndex).radicand;
+								break;
 							case "logarithm":
 								if(terminus == "start")	this.expression = this.expression.getNode(nodeIndex).base;
 								if(terminus == "end")		this.expression = this.expression.getNode(nodeIndex).argument;
@@ -674,6 +697,52 @@
 					},
 					
 					/*******************************************************************
+					 * function:		tryMoveIntoRootIndex()
+					 *
+					 * description:	if the cursor is in the radicand of a root,
+					 *							moves the cursor to the index
+					 *
+					 * arguments:		terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoRootIndex: function(terminus) {
+						var node = this.expression;
+						if(node.parentNode === null)				return false;
+						if(node.parentNode.type != "root")	return false;
+
+						var logNode = node.parentNode;
+						if(node.id != logNode.radicand.id)	return false;
+
+						this.expression = logNode.index;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
+					},
+					
+					/*******************************************************************
+					 * function:		tryMoveIntoRootRadicand()
+					 *
+					 * description:	if the cursor is in the index of a root,
+					 *							moves the cursor to the radicand
+					 *
+					 * arguments:		terminus:		STRING ("start"|"end")
+					 *
+					 * return:			BOOLEAN
+					 ******************************************************************/
+					tryMoveIntoRootRadicand: function(terminus) {
+						var node = this.expression;
+						if(node.parentNode === null)				return false;
+						if(node.parentNode.type != "root")	return false;
+
+						var logNode = node.parentNode;
+						if(node.id != logNode.index.id)			return false;
+
+						this.expression = logNode.radicand;
+						this.position = (terminus == "start" ? 0 : this.expression.getLength());
+						return true;
+					},
+
+					/*******************************************************************
 					 * function:		moveLeft()
 					 *
 					 * description:	attempts to move the cursor one character to the
@@ -685,7 +754,7 @@
 					 ******************************************************************/
 					moveLeft: function() {
 						if(this.position === 0)
-							return this.tryMoveIntoLogBase("end") || this.tryMoveIntoParent("before");
+							return this.tryMoveIntoLogBase("end") || this.tryMoveIntoRootIndex("end") || this.tryMoveIntoParent("before");
 
 						this.position--;
 						this.tryMoveIntoChild("end");
@@ -720,7 +789,7 @@
 					 ******************************************************************/
 					moveRight: function() {
 						if(this.position == this.expression.getLength())
-							return this.tryMoveIntoLogArgument("start") || this.tryMoveIntoParent("after");
+							return this.tryMoveIntoLogArgument("start") || this.tryMoveIntoRootRadicand("start") || this.tryMoveIntoParent("after");
 						
 						this.position++;
 						this.tryMoveIntoChild("start");

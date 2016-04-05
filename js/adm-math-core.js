@@ -182,6 +182,21 @@
 		};
 	});
 
+	module.service("admLiteralRoot", function() {
+		this.build = function(id, parentNode, indexNode, radicandNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "root",
+				index: indexNode,
+				radicand: radicandNode,
+				getVal: function() {	return null;	},
+				getDisplay: function() {	return null;	}
+			};
+		};
+	});
+
 	module.service("admLiteralFunction", function() {
 		this.build = function(id, parentNode, name, childNode) {
 			return {
@@ -225,10 +240,11 @@
 	});
 
 	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralPipe", "admLiteralSymbol",
-		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
+		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot", "admLiteralRoot",
 		 "admLiteralFunction", "admLiteralLogarithm",
 		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol, admLiteralParenthesis,
-			 admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralFunction, admLiteralLogarithm) {
+			 admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralRoot, admLiteralFunction,
+			 admLiteralLogarithm) {
 		var id = 0;
 
 		return {
@@ -277,6 +293,12 @@
 						return node;
 					case "squareRoot":
 						var node = admLiteralSquareRoot.build(id++, parentNode, null);
+						node.radicand = admLiteralExpression.build(id++, node);
+
+						return node;
+					case "root":
+						var node = admLiteralRoot.build(id++, parentNode, null);
+						node.index = admLiteralExpression.build(id++, node);
 						node.radicand = admLiteralExpression.build(id++, node);
 
 						return node;

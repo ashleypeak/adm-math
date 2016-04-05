@@ -13,7 +13,11 @@
 		bindTemplate += "<span class=\"denominator\" adm-literal-bind=\"node.denominator\" adm-is-inner=\"true\"></span>";
 		bindTemplate += "</span>";
 
-		bindTemplate += "<span ng-switch-when=\"squareRoot\" class=\"square-root\" adm-literal-bind=\"node.radicand\" adm-is-inner=\"true\">";
+		bindTemplate += "<span ng-switch-when=\"squareRoot\" class=\"root\" adm-literal-bind=\"node.radicand\" adm-is-inner=\"true\"></span>";
+
+		bindTemplate += "<span ng-switch-when=\"root\">";
+		bindTemplate += "<span class=\"superscript\" adm-literal-bind=\"node.index\" adm-is-inner=\"true\"></span>";
+		bindTemplate += "<span class=\"root\" adm-literal-bind=\"node.radicand\" adm-is-inner=\"true\"></span>";
 		bindTemplate += "</span>";
 
 		bindTemplate += "<span ng-switch-when=\"function\">";

@@ -13,4 +13,4 @@
 	- nodeClick (and goToPos, possibly others) don't handle nested Expressions
 
 MATH FEATURES NEEDING IMPLEMENTING
-	- non-square root
+	- DONE!! (for the time being)

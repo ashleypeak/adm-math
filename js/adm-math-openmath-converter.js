@@ -415,8 +415,12 @@
 
 						return [rootNode];
 					} else {
-						//admLiteralRoot not yet implemented
-						throw new Error("admLiteralRoot not yet implemented, cannot handle (index != 2).");
+						var rootNode = admLiteralNode.buildByName(parentLiteralNode, "root");
+
+						rootNode.index.nodes = convertNode(rootNode, xmlNode.childNodes[2]);
+						rootNode.radicand.nodes = convertNode(rootNode, xmlNode.childNodes[1]);
+
+						return [rootNode];
 					}
 				case "unary_minus":
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.unary_minus takes one child.");

@@ -87,10 +87,10 @@
 	display: block;
 }
 
-.mathinput .square-root, .mathoutput .square-root {
+.mathinput .root, .mathoutput .root {
 	border-top: 1px solid;
 }
 
-.mathinput .square-root:before, .mathoutput .square-root:before {
+.mathinput .root:before, .mathoutput .root:before {
 	content: "\221A";
 }
