@@ -161,36 +161,45 @@
 
 				scope.hook = {
 					addSymbol: function(symbol) {
-						var node = null;
+						var nodes = [];
 						switch(symbol) {
-							case "plus":				node = admLiteralNode.build(scope.cursor.expression, "+");								break;
-							case "minus":				node = admLiteralNode.build(scope.cursor.expression, "-");								break;
-							case "times":				node = admLiteralNode.build(scope.cursor.expression, "*");								break;
-							case "divide":			node = admLiteralNode.build(scope.cursor.expression, "/");								break;
-							case "squareRoot":	node = admLiteralNode.buildByName(scope.cursor.expression, "squareRoot");	break;
-							case "pi":					node = admLiteralNode.buildByName(scope.cursor.expression, "pi");					break;
-							case "e":						node = admLiteralNode.buildByName(scope.cursor.expression, "e");					break;
-							case "infinity":		node = admLiteralNode.buildByName(scope.cursor.expression, "infinity");		break;
-							case "sin":					node = admLiteralNode.buildByName(scope.cursor.expression, "sin");				break;
-							case "cos":					node = admLiteralNode.buildByName(scope.cursor.expression, "cos");				break;
-							case "tan":					node = admLiteralNode.buildByName(scope.cursor.expression, "tan");				break;
-							case "absolute":		node = admLiteralNode.buildByName(scope.cursor.expression, "abs");				break;
-							case "ln":					node = admLiteralNode.buildByName(scope.cursor.expression, "ln");					break;
-							case "log":					node = admLiteralNode.buildByName(scope.cursor.expression, "log");				break;
+							case "plus":				nodes = [admLiteralNode.build(scope.cursor.expression, "+")];									break;
+							case "minus":				nodes = [admLiteralNode.build(scope.cursor.expression, "-")];									break;
+							case "times":				nodes = [admLiteralNode.build(scope.cursor.expression, "*")];									break;
+							case "divide":			nodes = [admLiteralNode.build(scope.cursor.expression, "/")];									break;
+							case "squareRoot":	nodes = [admLiteralNode.buildByName(scope.cursor.expression, "squareRoot")];	break;
+							case "pi":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "pi")];					break;
+							case "e":						nodes = [admLiteralNode.buildByName(scope.cursor.expression, "e")];						break;
+							case "infinity":		nodes = [admLiteralNode.buildByName(scope.cursor.expression, "infinity")];		break;
+							case "sin":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "sin")];					break;
+							case "cos":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "cos")];					break;
+							case "tan":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "tan")];					break;
+							case "absolute":		nodes = [admLiteralNode.buildByName(scope.cursor.expression, "abs")];					break;
+							case "ln":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "ln")];					break;
+							case "log":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "log")];					break;
+							case "power":				nodes = [admLiteralNode.build(scope.cursor.expression, "^")];									break;
+							case "exponent":
+								nodes = [
+									admLiteralNode.buildByName(scope.cursor.expression, "e"),
+									admLiteralNode.build(scope.cursor.expression, "^")
+								];
+								break;
 							case "log10":
-								node = admLiteralNode.buildByName(scope.cursor.expression, "log");
+								var node = admLiteralNode.buildByName(scope.cursor.expression, "log");
 								node.base.insert(0, admLiteralNode.build(node.base, "1"));
 								node.base.insert(1, admLiteralNode.build(node.base, "0"));
+
+								nodes = [node];
 								break;
 							default:
-								if(/^[0-9.a-zA-Z+\-*()\^\/]$/.test(symbol))	node = admLiteralNode.build(scope.cursor.expression, symbol);
+								if(/^[0-9.a-zA-Z+\-*()\^\/]$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
 								else																				alert(symbol + ": Symbol not supported.");
 						}
 						
-						if(node !== null) {
+						angular.forEach(nodes, function(node) {
 							scope.cursor.insertNode(node);
-							scope.output.write();
-						}
+						});
+						scope.output.write();
 
 						element[0].focus();
 					}
