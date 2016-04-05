@@ -551,6 +551,7 @@
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /ln/, ["function", "ln"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /pi/, ["constant", "pi"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /e/, ["constant", "e"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /abs/, ["function", "abs"]);
 		}
 
 		/*******************************************************************
