@@ -489,8 +489,10 @@
 				
 				var semanticIndex = admSemanticNode.build("numeral", "2");
 				var semanticRadicand = build(nodes[i].radicand.getNodes().slice());
+				var semanticRoot = admSemanticNode.build("root", semanticIndex, semanticRadicand);
+				semanticRoot.assertHasValidChildren();
 
-				nodes.splice(i, 1, admSemanticNode.build("root", semanticIndex, semanticRadicand));
+				nodes.splice(i, 1, semanticRoot);
 			}
 		}
 
@@ -681,6 +683,7 @@
 
 				var semanticChild = build(nodes[i].child.getNodes().slice());
 				var semanticFunction = admSemanticNode.build("function", nodes[i].name, semanticChild);
+				semanticFunction.assertHasValidChildren();
 
 				nodes.splice(i, 1, semanticFunction);
 			}
