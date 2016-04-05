@@ -83,7 +83,7 @@ A label used by and `admInputControl` to programmatically insert characters.
 For example, the following button would insert the character &pi; into an `admInputField` with `admHook="field1"`
 
 ```html
-<button adm-input-control adm-target="field1" adm-symbol="pi">Insert pi</button>
+<button adm-input-control adm-target="field1" adm-symbol="pi">&pi;</button>
 ```
 
 A full list of supported values for `adm-symbol` follows:
@@ -94,12 +94,12 @@ A full list of supported values for `adm-symbol` follows:
 * `squareRoot` An empty square root
 * `pi` The symbol &pi;
 * `e` The constant e
-* `infinity` The symbol &infty;
-* `sin` The function `sin`
-* `cos` The function `cos`
-* `tan` The function `tan`
+* `infinity` The symbol &infin;
+* `sin` The function sin()
+* `cos` The function cos()
+* `tan` The function tan()
 * `ln` A natural logarithm
-* `absolute` The absolute function `||`
+* `absolute` An empty absolute function ||
 * `log10` A base-10 logarithm
 * `log` A logarithm with an empty base
 * `power` An exponent field
