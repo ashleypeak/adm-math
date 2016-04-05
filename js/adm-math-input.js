@@ -5,7 +5,8 @@
 
 	mathInput.run(["$templateCache", function($templateCache) {
 		var expressionTemplate = "";
-		expressionTemplate += "<span ng-class=\"{'empty-expression': (expression.nodes.length === 0)}\">";
+		expressionTemplate += "<span ng-class=\"{'empty-expression': (expression.nodes.length === 0),";
+		expressionTemplate += " 'cursor-inside': (cursor.expression == expression)}\">";
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === 0 && cursor.visible)}\"";
 		expressionTemplate += " ng-click=\"control.nodeClick(-1)\">&nbsp;</span>";

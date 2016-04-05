@@ -38,6 +38,11 @@
 	border: 1px solid #31708f;
 }
 
+.mathinput .empty-expression.cursor-inside {
+	background-color: #dff0d8;
+	border: 1px solid #3c763d;
+}
+
 .mathinput span.cursor {
 	padding-right: 0px;
 	border-right: 1px solid;
