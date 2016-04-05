@@ -1,3 +1,4 @@
+	- backspace symbol before division - you end up in the numerator
 	- should an empty expression really be an error?
 	- can't click on empty nodes above/below division
 	- output of (1+2)x is wrong - brackets need to be included

@@ -813,9 +813,15 @@
 					addSymbol: function(symbol) {
 						var node = null;
 						switch(symbol) {
-							case "division":		node = admLiteralNode.build(scope.cursor.expression, "/");								break;
+							case "plus":				node = admLiteralNode.build(scope.cursor.expression, "+");								break;
+							case "minus":				node = admLiteralNode.build(scope.cursor.expression, "-");								break;
+							case "times":				node = admLiteralNode.build(scope.cursor.expression, "*");								break;
+							case "divide":			node = admLiteralNode.build(scope.cursor.expression, "/");								break;
 							case "squareRoot":	node = admLiteralNode.buildByName(scope.cursor.expression, "squareRoot");	break;
 							case "pi":					node = admLiteralNode.buildByName(scope.cursor.expression, "pi");					break;
+							default:
+								if(/^[0-9.a-zA-Z+\-*()\^\/]$/.test(symbol))	node = admLiteralNode.build(scope.cursor.expression, symbol);
+								else																				alert(symbol + ": Symbol not supported.");
 						}
 						
 						if(node !== null) {
