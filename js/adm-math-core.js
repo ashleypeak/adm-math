@@ -72,6 +72,19 @@
 		};
 	});
 
+	module.service("admLiteralPipe", function() {
+		this.build = function(id, parentNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "pipe",
+				getVal: function() {	return "|";	},
+				getDisplay: function() {	return "|";	}
+			};
+		};
+	});
+
 	module.service("admLiteralSymbol", function() {
 		this.build = function(id, parentNode, name) {
 			return {
@@ -196,11 +209,11 @@
 		};
 	});
 
-	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralSymbol",
+	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralPipe","admLiteralSymbol",
 		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
 		 "admLiteralFunction",
-		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralSymbol, admLiteralParenthesis, admLiteralOperator,
-			 admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralFunction) {
+		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol, admLiteralParenthesis,
+			 admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralFunction) {
 		var id = 0;
 
 		return {
@@ -210,6 +223,7 @@
 			build: function(parentNode, nodeVal) {
 				if(/^[0-9.]$/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
 				else if(/^[a-zA-Z]$/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
+				else if(/^[|]$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode); }
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
 				else if(/^[\^]$/.test(nodeVal)) {

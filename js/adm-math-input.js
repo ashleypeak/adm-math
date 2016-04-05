@@ -248,7 +248,7 @@
 					 ******************************************************************/
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
-						if(/[a-zA-Z0-9.+\-*()\^]/.test(character))
+						if(/[a-zA-Z0-9.+\-*()\^|]/.test(character))
 							scope.cursor.insert(character);
 
 						scope.output.write();

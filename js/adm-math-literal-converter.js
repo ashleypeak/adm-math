@@ -274,6 +274,29 @@
 		}
 
 		/*******************************************************************
+		 * function:		assertPipesMatched()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							throws an exception if there are an uneven number
+		 *							of | characters
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function assertPipesMatched(nodes) {
+			var matched = true;
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "pipe")								continue;
+				
+				matched = !matched;
+			}
+
+			if(!matched)	throw "errUnmatchedPipe";
+		}
+
+		/*******************************************************************
 		 * function:		parseExponents()
 		 *
 		 * description:	takes mixed collection of nodes `nodes` and
@@ -348,6 +371,37 @@
 				if(semanticNode.type == "error")	throw "errEmptyExpression";
 
 				nodes.splice(i, literalLength, semanticNode);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parsePipes()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal subexpressions surrounded
+		 *							by pipes with absolute semantic nodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parsePipes(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "pipe")								continue;
+
+				var subExpressionNodes = [];
+				for(var j = i+1; nodes[j].type != "pipe"; j++)
+					subExpressionNodes.push(nodes[j]);
+
+				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
+
+				var semanticChild = build(subExpressionNodes);
+				var semanticAbs = admSemanticNode.build("function", "abs", semanticChild);
+				semanticAbs.assertHasValidChildren();
+
+				nodes.splice(i, literalLength, semanticAbs);
 			}
 		}
 
@@ -444,7 +498,7 @@
 
 		/*******************************************************************
 		 * function:		parseMulticharacterSymbols()
-		 *
+		 Pipes*
 		 * description:	takes mixed collection of nodes `nodes` and
 		 *							replaces admLiteralLetters making up multicharacter
 		 *							symbols (like 'sin') with admSemanticNodes
@@ -679,7 +733,9 @@
 			try {
 				assertNotEmpty(newNodes);
 				assertParenthesesMatched(newNodes);
+				assertPipesMatched(newNodes);
 				parseParentheses(newNodes);
+				parsePipes(newNodes);
 				parseDivision(newNodes);
 				parseRoots(newNodes);
 				parseExponents(newNodes);							//create exponent semantic nodes, leave base empty for now
@@ -698,6 +754,7 @@
 				switch(e) {
 					case "errNotFound":							return admSemanticNode.build("error", "Missing number.");
 					case "errUnmatchedParenthesis":	return admSemanticNode.build("error", "Unmatched parenthesis.");
+					case "errUnmatchedPipe":				return admSemanticNode.build("error", "Unmatched pipe.");
 					case "errMalformedNumeral":			return admSemanticNode.build("error", "Malformed Number.");
 					case "errInvalidArguments":			return admSemanticNode.build("error", "Invalid arguments.");
 					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
