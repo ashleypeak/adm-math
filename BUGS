@@ -1,3 +1,4 @@
+	- input shouldn't expand widthwise, should scroll to keep cursor in view
 	- backspace symbol before division - you end up in the numerator
 	- should an empty expression really be an error?
 	- can't click on empty nodes above/below division
