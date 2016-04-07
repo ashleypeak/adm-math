@@ -1,9 +1,9 @@
 .mathinput {
 	display: inline-block;
 	border: 1px solid;
+	padding: 3px;
 	background-color: #ffffff;
 	min-width: 200px;
-	line-height: 30px;
 	white-space: nowrap;
 	overflow: hidden;
 	cursor: text;
