@@ -73,6 +73,20 @@ A two-way-bound variable containing a representation of the mathematical express
 
 `admFormat='adm'` is the only format which will give a perfect two-way model, the others are approximations, however it is not suitable for storage.
 
+##### adm-focus
+_Optional_
+
+Type: `Function`
+
+A function (local to the scope of the parent controller) which is to be called the the input field gains focus.
+
+##### adm-blur
+_Optional_
+
+Type: `Function`
+
+A function (local to the scope of the parent controller) which is to be called the the input field loses focus.
+
 ##### adm-hook
 _Optional_
 

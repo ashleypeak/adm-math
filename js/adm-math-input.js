@@ -169,7 +169,9 @@
 			replace: true,
 			scope: {
 				model: "=?ngModel",
-				hook: "=?admHook"
+				hook: "=?admHook",
+				onFocus: "&?admFocus",
+				onBlur: "&?admBlur"
 			},
 			templateUrl: "adm-math-input.htm",
 			link: function(scope, element, attrs) {
@@ -271,6 +273,10 @@
 					focus: function() {
 						scope.cursor.expression = scope.literalTree;
 						scope.cursor.goToEnd();
+
+						if(typeof scope.onFocus != "undefined") {
+							scope.onFocus();
+						}
 					},
 
 					/*******************************************************************
@@ -285,6 +291,10 @@
 					 ******************************************************************/
 					blur: function() {
 						scope.cursor.hide();
+
+						if(typeof scope.onBlur != "undefined") {
+							scope.onBlur();
+						}
 					},
 
 					/*******************************************************************
