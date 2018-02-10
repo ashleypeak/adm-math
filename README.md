@@ -143,49 +143,6 @@ A full list of supported values for `adm-symbol` follows:
 
 ---
 
-### adm-math-bind
-
-A binding to display OpenMath and ADM formatted equations
-
-#### Usage
-
-First include the module files:
-
-```html
-<link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
-<script type="text/javascript" src="bower_components/angular/angular.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-bind.js"></script>
-```
-
-Then include the module in your Angular.js module:
-
-```javascript
-var myApp = angular.module("myApp", ["admMathBind"]);
-```
-
-In order to display math, just add one of the two binding attributes to any HTML element
-
-```html
-<span adm-openmath-bind="openmathVar"></span>
-```
-
-#### Attributes
-
-##### adm-openmath-bind
-Type: `Variable`
-
-Bind an openmath string for display
-
-##### adm-literal-bind
-Type: `Variable`
-
-Bind an ADM literal equation representation for display
-
----
-
 ### adm-math-openmath-converter
 
 A service for converting OpenMath into an admSemanticNode

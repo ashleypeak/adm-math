@@ -25,7 +25,7 @@
 	background-color: #f2dede;
 }
 
-.mathinput span, .mathoutput span {
+.mathinput span {
 	display: inline-block;
 	vertical-align: middle;
 	padding: 0px 1px 0px 0px;
@@ -51,7 +51,7 @@
 	background-color: #c8e8ff;
 }
 
-.mathinput .superscript, .mathoutput .superscript {
+.mathinput .superscript {
 	position: relative;
 	margin-right: -8px;
 	left: -5px;
@@ -59,7 +59,7 @@
 	vertical-align: 0.6em;
 }
 
-.mathinput .subscript, .mathoutput .subscript {
+.mathinput .subscript {
 	position: relative;
 	margin-right: -8px;
 	left: -5px;
@@ -67,12 +67,11 @@
 	vertical-align: -0.6em;
 }
 
-.mathinput .division, .mathinput .numerator, .mathinput .denominator,
-.mathoutput .division, .mathoutput .numerator, .mathoutput .denominator {
+.mathinput .division, .mathinput .numerator, .mathinput .denominator {
 	padding: 0px 5px;    
 }
 
-.mathinput .division, .mathoutput .division {
+.mathinput .division {
 	text-align: center;
 	vertical-align: -20px;
 }
@@ -81,15 +80,15 @@
 	padding: 0px 4px 0px 5px;
 }
 
-.mathinput .denominator, .mathoutput .denominator {
+.mathinput .denominator {
 	border-top: 1px solid;
 	display: block;
 }
 
-.mathinput .root, .mathoutput .root {
+.mathinput .root {
 	border-top: 1px solid;
 }
 
-.mathinput .root:before, .mathoutput .root:before {
+.mathinput .root:before {
 	content: "\221A";
 }
