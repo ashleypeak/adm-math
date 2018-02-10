@@ -229,15 +229,25 @@
 					}
 				};
 
-				scope.$watch('modelOm', function(newModel, oldModel) {
+				scope.$watch('model', function(newModel, oldModel) {
 					if(newModel == scope.output.lastModel) return;
-
+					
 					try {
-						if(!!newModel)	scope.literalTree = admOpenmathLiteralConverter.convert(newModel);
-						else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
-
-						scope.output.write();
+						switch(scope.format) {
+							case "adm":
+								if(!!newModel)	scope.literalTree = newModel.getAdmLiteral();
+								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
+							case "latex":
+								//something
+								break;
+							case "openmath":
+							default:
+								//this will have to change, probs
+								if(!!newModel)	scope.literalTree = admOpenmathLiteralConverter.convert(newModel);
+								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
+						}
 					} catch(e) {
+						console.log("scope.$watch error: "+e);
 						//just suppress any errors, user can't do anything about them
 					}
 				});
@@ -894,7 +904,7 @@
 							default:			scope.model = scope.modelOm;
 						}
 						
-						this.lastModel = scope.modelOm;
+						this.lastModel = scope.model;
 					}
 				};
 

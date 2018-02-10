@@ -1,12 +1,24 @@
 (function() {
 	var module = angular.module("admMathLiteralConverter", ["admMathCore"]);
 
-	module.service("admSemanticNumeral", function() {
+	module.service("admSemanticNumeral", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(value) {
 			return {
 				expressionType: "semantic",
 				type: "numeral",
 				value: String(value),
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var literalNodes = [];
+
+					angular.forEach(this.value, function(c) {
+						var node = admLiteralNode.build(parentLiteralNode, c);
+
+						literalNodes.push(node);
+					});
+
+					return literalNodes;
+				},
 
 				getOpenMath: function() {
 					if(this.value.indexOf('.') != -1)
@@ -19,14 +31,20 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticVariable", function() {
+	module.service("admSemanticVariable", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(name) {
 			return {
 				expressionType: "semantic",
 				type: "variable",
 				name: name,
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var literalNode = admLiteralNode.build(parentLiteralNode, this.name);
+
+					return [literalNode];
+				},
 
 				getOpenMath: function() {
 					return "<OMV name='"+this.name+"'/>";
@@ -37,9 +55,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticOperator", function() {
+	module.service("admSemanticOperator", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(symbol, children) {
 			return {
 				expressionType: "semantic",
@@ -53,6 +71,17 @@
 						if(!this.children[i].hasOwnProperty("expressionType"))	throw "errInvalidArguments";
 						if(this.children[i].expressionType != "semantic")				throw "errInvalidArguments";
 					}
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var symbolNode = admLiteralNode.build(parentLiteralNode, this.symbol);
+
+					var childLiteralNodes = [
+						children[0].getAdmLiteral(parentLiteralNode),
+						children[1].getAdmLiteral(parentLiteralNode)
+					];
+
+					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
 				},
 
 				getOpenMath: function() {
@@ -70,9 +99,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticUnaryMinus", function() {
+	module.service("admSemanticUnaryMinus", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(child) {
 			return {
 				expressionType: "semantic",
@@ -83,6 +112,13 @@
 					if(!this.child)																		throw "errInvalidArguments";
 					if(!this.child.hasOwnProperty("expressionType"))	throw "errInvalidArguments";
 					if(this.child.expressionType != "semantic")				throw "errInvalidArguments";
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var symbolNode = admLiteralNode.build(parentLiteralNode, "-");
+					var childLiteralNodes = this.child.getAdmLiteral(parentLiteralNode);
+
+					return [symbolNode].concat(childLiteralNodes);
 				},
 
 				getOpenMath: function() {
@@ -98,9 +134,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticExponent", function() {
+	module.service("admSemanticExponent", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(base, exponent) {
 			return {
 				expressionType: "semantic",
@@ -112,6 +148,15 @@
 					if(this.base === null || this.exponent === null)	throw "errInvalidArguments";
 					if(this.base.type == "error")											throw "errInvalidArguments";
 					if(this.exponent.type == "error")									throw "errInvalidArguments";
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var baseLiteralNodes = this.base.getAdmLiteral(parentLiteralNode);
+					var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
+
+					exponentNode.exponent.nodes = this.exponent.getAdmLiteral(exponentNode.exponent);
+
+					return baseLiteralNodes.concat(exponentNode);
 				},
 
 				getOpenMath: function() {
@@ -126,9 +171,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticDivision", function() {
+	module.service("admSemanticDivision", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(numerator, denominator) {
 			return {
 				expressionType: "semantic",
@@ -140,6 +185,15 @@
 						if(this.numerator === null || this.denominator === null)	throw "errInvalidArguments";
 						if(this.numerator.type == "error")												throw "errInvalidArguments";
 						if(this.denominator.type == "error")											throw "errInvalidArguments";
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var divisionNode = admLiteralNode.build(parentLiteralNode, "/");
+
+					divisionNode.numerator.nodes = this.numerator.getAdmLiteral(parentLiteralNode);
+					divisionNode.denominator.nodes = this.denominator.getAdmLiteral(parentLiteralNode);
+
+					return [divisionNode];
 				},
 
 				getOpenMath: function() {
@@ -154,9 +208,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticRoot", function() {
+	module.service("admSemanticRoot", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(index, radicand) {
 			return {
 				expressionType: "semantic",
@@ -168,6 +222,25 @@
 						if(this.index === null || this.radicand === null)	throw "errInvalidArguments";
 						if(this.index.type == "error")										throw "errInvalidArguments";
 						if(this.radicand.type == "error")									throw "errInvalidArguments";
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var indexNodes = this.index.getAdmLiteral(parentLiteralNode);
+					
+					if(indexNodes.length == 1 && indexNodes[0].getVal() == "2") {
+						var rootNode = admLiteralNode.buildByName(parentLiteralNode, "squareRoot");
+
+						rootNode.radicand.nodes = this.radicand.getAdmLiteral(rootNode);
+
+						return [rootNode];
+					} else {
+						var rootNode = admLiteralNode.buildByName(parentLiteralNode, "root");
+
+						rootNode.index.nodes = this.index.getAdmLiteral(rootNode);
+						rootNode.radicand.nodes = this.radicand.getAdmLiteral(rootNode);
+
+						return [rootNode];
+					}
 				},
 
 				//the order is right. fuck openmath.
@@ -186,9 +259,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticFunction", function() {
+	module.service("admSemanticFunction", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(name, child) {
 			return {
 				expressionType: "semantic",
@@ -199,6 +272,13 @@
 				assertHasValidChildren: function() {
 						if(this.child === null)					throw "errInvalidArguments";
 						if(this.child.type == "error")	throw "errInvalidArguments";
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var functionNode = admLiteralNode.buildByName(parentLiteralNode, this.name);
+					functionNode.child.nodes = this.child.getAdmLiteral(functionNode);
+
+					return [functionNode];
 				},
 
 				getOpenMath: function() {
@@ -222,9 +302,9 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticLogarithm", function() {
+	module.service("admSemanticLogarithm", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(base, argument) {
 			return {
 				expressionType: "semantic",
@@ -236,6 +316,14 @@
 						if(this.base === null || this.argument === null)	throw "errInvalidArguments";
 						if(this.base.type == "error")											throw "errInvalidArguments";
 						if(this.argument.type == "error")									throw "errInvalidArguments";
+				},
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var logNode = admLiteralNode.buildByName(parentLiteralNode, "log");
+					logNode.base.nodes = this.base.getAdmLiteral(logNode.base);
+					logNode.argument.nodes = this.argument.getAdmLiteral(logNode.argument);
+
+					return [logNode];
 				},
 
 				getOpenMath: function() {
@@ -250,14 +338,25 @@
 				}
 			};
 		};
-	});
+	}]);
 
-	module.service("admSemanticConstant", function() {
+	module.service("admSemanticConstant", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(name) {
 			return {
 				expressionType: "semantic",
 				type: "constant",
 				name: name,
+
+				getAdmLiteral: function(parentLiteralNode) {
+					switch(this.name) {
+						case "e":
+							return [admLiteralNode.build(parentLiteralNode, "e")];
+						case "pi":
+							return [admLiteralNode.buildByName(parentLiteralNode, "pi")];
+						case "infinity":
+							return [admLiteralNode.buildByName(parentLiteralNode, "infinity")];
+					}
+				},
 
 				getOpenMath: function() {
 					return "<OMS cd='nums1' name='"+this.name+"'/>";
@@ -272,14 +371,21 @@
 				}
 			};
 		};
-	});
+	}]);
 	
-	module.service("admSemanticWrapper", function() {
+	module.service("admSemanticWrapper", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(child) {
 			return {
 				expressionType: "semantic",
 				type: "wrapper",
 				child: child,
+
+				getAdmLiteral: function() {
+					var literalNode = admLiteralNode.buildBlankExpression(null);
+					literalNode.nodes = this.child.getAdmLiteral(literalNode);
+
+					return literalNode;
+				},
 
 				getOpenMath: function() {
 					return "<OMOBJ>"+this.child.getOpenMath()+"</OMOBJ>";
@@ -290,7 +396,7 @@
 				}
 			};
 		};
-	});
+	}]);
 
 	module.service("admSemanticError", function() {
 		this.build = function(message) {
@@ -298,6 +404,14 @@
 				expressionType: "semantic",
 				type: "error",
 				message: message,
+
+				getAdmLiteral: function(parentLiteralNode) {
+					//not much to do here. return blank expression because if you return nothing
+					//you can end up with an admMathInput with no expression, which can't be edited
+					var literalNode = admLiteralNode.buildBlankExpression(null);
+
+					return literalNode;
+				},
 
 				getOpenMath: function() {
 					return "<OME>"+this.message+"</OME>";
@@ -849,13 +963,16 @@
 		 * function:		build()
 		 *
 		 * description:	takes mixed collection of nodes `nodes` and parses
-		 *							into a single semantic node
+		 *							into a single semantic node. Adds an admSemanticWrapper
+		 *							around it if `hasParent` is false
 		 *
-		 * arguments:		nodes:	[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
+		 *							hasParent:	BOOLEAN
 		 *
 		 * return:			admSemanticNode
 		 ******************************************************************/
-		function build(nodes) {
+		function build(nodes, hasParent) {
+			hasParent = (typeof hasParent !== "undefined") ? hasParent : true;
 			var newNodes = nodes.slice(); //use slice() to copy by value, not reference
 			
 			try {
@@ -895,12 +1012,14 @@
 
 			if(newNodes.length > 1) return admSemanticNode.build("error", "Irreducible expression.");
 			
+			if(hasParent)
+				return newNodes[0];
 			return admSemanticNode.build("wrapper", newNodes[0]);
 		}
 
 		return {
 			toSemantic: function(literalNodes) {
-				var semantic = build(literalNodes);
+				var semantic = build(literalNodes, false);
 				
 				return semantic;
 			}

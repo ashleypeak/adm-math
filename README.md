@@ -26,8 +26,8 @@ First include the module files:
 <script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-input.js"></script>
 ```
 
@@ -71,7 +71,7 @@ Type: `Variable`
 
 A two-way-bound variable containing a representation of the mathematical expression in the format defined by admFormat.
 
-`admFormat='adm'` is the only format which will give a perfect two-way model, the others are approximations, however it is not suitable for storage.
+Guarantees semantic equivalence but not literal equivalence to input (e.g. may render '(1)(2)' as '1*2').
 
 ##### ng-model-adm
 _Optional_
@@ -155,6 +155,7 @@ First include the module files:
 <link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
 <script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-bind.js"></script>
 ```
@@ -196,6 +197,7 @@ First include the module files:
 ```html
 <script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
 ```
 
