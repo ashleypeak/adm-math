@@ -328,107 +328,75 @@
 		};
 	}]);
 
-	module.factory("admOpenmathLiteralConverter", ["admXmlParser", "admLiteralNode", function(xmlParser, admLiteralNode) {
+	module.factory("admOpenmathSemanticConverter", ["admXmlParser", "admSemanticNode", function(xmlParser, admSemanticNode) {
 		/*******************************************************************
 		 * function:		convertArith1()
 		 *
 		 * description:	takes an OMA with OMS in content dictionary `arith1`
-		 *							as node `xmlNode`, converts to an array of
-		 *							admLiteralNodes and returns
+		 *							as node `xmlNode`, converts to an admSemanticNode
+		 *							and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertArith1(parentLiteralNode, xmlNode) {
+		function convertArith1(xmlNode) {
 			omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "abs":
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.abs takes one child.");
 
-					var absNode = admLiteralNode.buildByName(parentLiteralNode, "abs");
-					absNode.child.nodes = convertNode(absNode, xmlNode.childNodes[1]);
+					var childNode = convertNode(xmlNode.childNodes[1]);
+					var absNode = admSemanticNode.build("function", "abs", childNode);
 
-					return [absNode];
+					return absNode;
 				case "plus":
-					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.plus takes two children.");
-
-					var symbolNode = admLiteralNode.build(parentLiteralNode, "+");
-
-					var childLiteralNodes = [
-						convertNode(parentLiteralNode, xmlNode.childNodes[1]),
-						convertNode(parentLiteralNode, xmlNode.childNodes[2])
-					];
-
-					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
 				case "minus":
-					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.minus takes two children.");
-
-					var symbolNode = admLiteralNode.build(parentLiteralNode, "-");
-
-					var childLiteralNodes = [
-						convertNode(parentLiteralNode, xmlNode.childNodes[1]),
-						convertNode(parentLiteralNode, xmlNode.childNodes[2])
-					];
-
-					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
 				case "times":
-					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.times takes two children.");
+					var opName = omsNode.attributes.name.nodeValue;
+					var symbol = (opName == "plus" ? "+" : (opName == "minus" ? "-" : "*"));
+					
+					if(xmlNode.childNodes.length != 3)	throw new Error("arith1."+opName+" takes two children.");
 
-					var symbolNode = admLiteralNode.build(parentLiteralNode, "*");
-
-					var childLiteralNodes = [
-						convertNode(parentLiteralNode, xmlNode.childNodes[1]),
-						convertNode(parentLiteralNode, xmlNode.childNodes[2])
+					var childNodes = [
+						convertNode(xmlNode.childNodes[1]),
+						convertNode(xmlNode.childNodes[2])
 					];
+					var opNode = admSemanticNode.build("operator", symbol, childNodes);
 
-					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
+					return opNode;
 				case "divide":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.divide takes two children.");
 
-					var divisionNode = admLiteralNode.build(parentLiteralNode, "/");
+					var numeratorNode = convertNode(xmlNode.childNodes[1]);
+					var denominatorNode = convertNode(xmlNode.childNodes[2]);
+					var divisionNode = admSemanticNode.build("division", numeratorNode, denominatorNode);
 
-					divisionNode.numerator.nodes = convertNode(divisionNode.numerator, xmlNode.childNodes[1]);
-					divisionNode.denominator.nodes = convertNode(divisionNode.denominator, xmlNode.childNodes[2]);
-
-					return [divisionNode];
+					return divisionNode;
 				case "power":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.power takes two children.");
 
-					var baseLiteralNodes = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
-					var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
+					var baseNode = convertNode(xmlNode.childNodes[1]);
+					var exponentNode = convertNode(xmlNode.childNodes[2]);
+					var powerNode = admSemanticNode.build("exponent", baseNode, exponentNode);
 
-					exponentNode.exponent.nodes = convertNode(exponentNode.exponent, xmlNode.childNodes[2]);
-
-					return baseLiteralNodes.concat(exponentNode);
+					return powerNode;
 				case "root":
 					if(xmlNode.childNodes.length != 3)	throw new Error("arith1.root takes two children.");
 
-					var indexNodes = convertNode(null, xmlNode.childNodes[2]);
-					
-					if(indexNodes.length == 1 && indexNodes[0].getVal() == "2") {
-						var rootNode = admLiteralNode.buildByName(parentLiteralNode, "squareRoot");
+					var indexNode = convertNode(xmlNode.childNodes[2]);
+					var radicandNode = convertNode(xmlNode.childNodes[1]);
+					var rootNode = admSemanticNode.build("root", indexNode, radicandNode);
 
-						rootNode.radicand.nodes = convertNode(rootNode, xmlNode.childNodes[1]);
-
-						return [rootNode];
-					} else {
-						var rootNode = admLiteralNode.buildByName(parentLiteralNode, "root");
-
-						rootNode.index.nodes = convertNode(rootNode, xmlNode.childNodes[2]);
-						rootNode.radicand.nodes = convertNode(rootNode, xmlNode.childNodes[1]);
-
-						return [rootNode];
-					}
+					return rootNode;
 				case "unary_minus":
 					if(xmlNode.childNodes.length != 2)	throw new Error("arith1.unary_minus takes one child.");
 
-					var symbolNode = admLiteralNode.build(parentLiteralNode, "-");
-					var childLiteralNodes = convertNode(parentLiteralNode, xmlNode.childNodes[1]);
+					var childNode = convertNode(xmlNode.childNodes[1]);
+					var minusNode = admSemanticNode.build("unaryMinus", childNode);
 
-					return [symbolNode].concat(childLiteralNodes);
+					return minusNode;
 			}
 
 			throw new Error("OMA references unimplemented symbol arith1."+omsNode.attributes.name.nodeValue);
@@ -438,47 +406,43 @@
 		 * function:		convertTransc1()
 		 *
 		 * description:	takes an OMA with OMS in content dictionary `transc1`
-		 *							as node `xmlNode`, converts to an array of
-		 *							admLiteralNodes and returns
+		 *							as node `xmlNode`, converts to an admSemanticNode
+		 *							returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertTransc1(parentLiteralNode, xmlNode) {
+		function convertTransc1(xmlNode) {
 			omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "exp":
 					if(xmlNode.childNodes.length != 2)	throw new Error("transc1.exp takes one child.");
 
-					var baseLiteralNode = admLiteralNode.build(parentLiteralNode, "e");
-					var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
+					var baseNode = admSemanticNode.build("constant", "e");
+					var exponentNode = convertNode(xmlNode.childNodes[1]);
+					var powerNode = admSemanticNode.build("exponent", baseNode, exponentNode);
 
-					exponentNode.exponent.nodes = convertNode(exponentNode.exponent, xmlNode.childNodes[1]);
-
-					return [baseLiteralNode, exponentNode];
+					return powerNode;
 				case "log":
 					if(xmlNode.childNodes.length != 3)	throw new Error("transc1.log takes two children.");
 
-					var logNode = admLiteralNode.buildByName(parentLiteralNode, "log");
-					logNode.base.nodes = convertNode(logNode.base, xmlNode.childNodes[1]);
-					logNode.argument.nodes = convertNode(logNode.argument, xmlNode.childNodes[2]);
+					var baseNode = convertNode(xmlNode.childNodes[1]);
+					var argumentNode = convertNode(xmlNode.childNodes[2]);
+					var logNode = admSemanticNode.build("logarithm", baseNode, argumentNode);
 
-					return [logNode];
+					return logNode;
 				case "ln":
 				case "sin":
 				case "cos":
 				case "tan":
 					var functionName = omsNode.attributes.name.nodeValue;
 
-					if(xmlNode.childNodes.length != 2)	throw new Error("transc1."+functionName+" takes one child.");
+					var childNode = convertNode(xmlNode.childNodes[1]);
+					var functionNode = admSemanticNode.build("function", functionName, childNode);
 
-					var functionNode = admLiteralNode.buildByName(parentLiteralNode, functionName);
-					functionNode.child.nodes = convertNode(functionNode, xmlNode.childNodes[1]);
-
-					return [functionNode];
+					return functionNode;
 			}
 
 			throw new Error("OMA references unimplemented symbol transc1."+omsNode.attributes.name.nodeValue);
@@ -488,22 +452,21 @@
 		 * function:		convertNums1()
 		 *
 		 * description:	takes an OMS in content dictionary `nums1` as node
-		 *							node `xmlNode`, converts to an array of
-		 *							admLiteralNodes and returns
+		 *							node `xmlNode`, converts to an admSemanticNode
+		 *							and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertNums1(parentLiteralNode, xmlNode) {
+		function convertNums1(xmlNode) {
 			switch(xmlNode.attributes.name.nodeValue) {
 				case "e":
-					return [admLiteralNode.build(parentLiteralNode, "e")];
+					return admSemanticNode.build("constant", "e");
 				case "pi":
-					return [admLiteralNode.buildByName(parentLiteralNode, "pi")];
+					return admSemanticNode.build("constant", "pi");
 				case "infinity":
-					return [admLiteralNode.buildByName(parentLiteralNode, "infinity")];
+					return admSemanticNode.build("constant", "infinity");
 			}
 
 			throw new Error("OMA references unimplemented symbol nums."+xmlNode.attributes.name.nodeValue);
@@ -513,118 +476,98 @@
 		 * function:		convertOMOBJ()
 		 *
 		 * description:	takes an OMOBJ node `xmlNode`, converts to an
-		 *							admLiteralNode and returns
+		 *							admSemanticNode and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			admLiteralNode
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertOMOBJ(parentLiteralNode, xmlNode) {
+		function convertOMOBJ(xmlNode) {
 			if(xmlNode.childNodes.length != 1)	throw new Error("Node has incorrect number of children.");
 
-			var literalNode = admLiteralNode.buildBlankExpression(parentLiteralNode);
-			literalNode.nodes = convertNode(literalNode, xmlNode.childNodes[0]);
+			var childNode = convertNode(xmlNode.childNodes[0]);
+			var semanticNode = admSemanticNode.build("wrapper", childNode);
 
-			return literalNode;
+			return semanticNode;
 		}
 
 		/*******************************************************************
 		 * function:		convertOMI()
 		 *
 		 * description:	takes an OMI node `xmlNode`, converts to an
-		 *							array of admLiteralNode and returns
+		 *							admSemanticNode and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertOMI(parentLiteralNode, xmlNode) {
+		function convertOMI(xmlNode) {
 			if(xmlNode.childNodes.length != 1)	throw new Error("Node has incorrect number of children.");
 
-			//childNodes[0] is the text node i.e. the tag value
-			var chars = xmlNode.childNodes[0].nodeValue;
-			var literalNodes = [];
+			var semanticNode = admSemanticNode.build("numeral", xmlNode.childNodes[0].nodeValue);
 
-			angular.forEach(chars, function(c) {
-				var node = admLiteralNode.build(parentLiteralNode, c);
-
-				literalNodes.push(node);
-			});
-
-			return literalNodes;
+			return semanticNode;
 		}
 
 		/*******************************************************************
 		 * function:		convertOMF()
 		 *
 		 * description:	takes an OMF node `xmlNode`, converts to an
-		 *							array of admLiteralNode and returns
+		 *							admSemanticNode and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertOMF(parentLiteralNode, xmlNode) {
+		function convertOMF(xmlNode) {
 			if(xmlNode.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
 			if(typeof xmlNode.attributes.dec == "undefined")	throw new Error("OMF must have attribute `dec`.");
 
-			var chars = xmlNode.attributes.dec.nodeValue;
-			var literalNodes = [];
+			var semanticNode = admSemanticNode.build("numeral", xmlNode.attributes.dec.nodeValue);
 
-			angular.forEach(chars, function(c) {
-				var node = admLiteralNode.build(parentLiteralNode, c);
-
-				literalNodes.push(node);
-			});
-
-			return literalNodes;
+			return semanticNode;
 		}
 
 		/*******************************************************************
 		 * function:		convertOMV()
 		 *
 		 * description:	takes an OMV node `xmlNode`, converts to an
-		 *							array of admLiteralNode and returns
+		 *							admSemanticNode and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertOMV(parentLiteralNode, xmlNode) {
+		function convertOMV(xmlNode) {
 			if(xmlNode.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
 			if(typeof xmlNode.attributes.name == "undefined")	throw new Error("OMV must have attribute `name`.");
 
-			var literalNode = admLiteralNode.build(parentLiteralNode, xmlNode.attributes.name.nodeValue);
+			var semanticNode = admSemanticNode.build("variable", xmlNode.attributes.name.nodeValue);
 
-			return [literalNode];
+			return semanticNode;
 		}
 
 		/*******************************************************************
 		 * function:		convertOMA()
 		 *
-		 * description:	takes an OMF node `xmlNode`, converts to an
-		 *							array of admLiteralNodes and returns
+		 * description:	takes an OMA node `xmlNode`, converts to an
+		 *							admSemanticNode and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertOMA(parentLiteralNode, xmlNode) {
+		function convertOMA(xmlNode) {
 			if(xmlNode.childNodes.length === 0) throw new Error("OMA requires at least one child.");
 
 			omsNode = xmlNode.childNodes[0];
-			if(omsNode.nodeName !== "OMS")											throw new Error("OMA must have OMS as first child.");
+			if(omsNode.nodeName !== "OMS")										throw new Error("OMA must have OMS as first child.");
 			if(typeof omsNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
 			if(typeof omsNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(omsNode.attributes.cd.nodeValue) {
-				case "arith1":	return convertArith1(parentLiteralNode, xmlNode);
-				case "transc1":	return convertTransc1(parentLiteralNode, xmlNode);
+				case "arith1":	return convertArith1(xmlNode);
+				case "transc1":	return convertTransc1(xmlNode);
 			}
 
 			throw new Error("OMA references unimplemented content dictionary: "+omsNode.attributes.cd.nodeValue);
@@ -634,20 +577,19 @@
 		 * function:		convertOMS()
 		 *
 		 * description:	takes an OMS node `xmlNode` (that isn't being use to
-		 *							define an OMA),  converts to an array of
-		 *							admLiteralNodes and returns
+		 *							define an OMA),  converts to an admSemanticNode
+		 *							and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			[admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertOMS(parentLiteralNode, xmlNode) {
+		function convertOMS(xmlNode) {
 			if(typeof xmlNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
 			if(typeof xmlNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(xmlNode.attributes.cd.nodeValue) {
-				case "nums1":	return convertNums1(parentLiteralNode, xmlNode);
+				case "nums1":	return convertNums1(xmlNode);
 			}
 
 			throw new Error("OMS references unimplemented content dictionary: "+xmlNode.attributes.cd.nodeValue);
@@ -657,22 +599,20 @@
 		 * function:		convertNode()
 		 *
 		 * description:	takes any OpenMath node `xmlNode`, converts to an
-		 *							admLiteralNode (if nodeName=='OMOBJ') or an array
-		 *							thereof (otherwise) and returns
+		 *							admSemanticNode and returns
 		 *
-		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`xmlNode` DOM Element
+		 * arguments:		`xmlNode` DOM Element
 		 *
-		 * return:			admLiteralNode | [admLiteralNode]
+		 * return:			admSemanticNode
 		 ******************************************************************/
-		function convertNode(parentLiteralNode, xmlNode) {
+		function convertNode(xmlNode) {
 			switch(xmlNode.nodeName) {
-				case "OMOBJ":	return convertOMOBJ(parentLiteralNode, xmlNode);
-				case "OMI":		return convertOMI(parentLiteralNode, xmlNode);
-				case "OMF":		return convertOMF(parentLiteralNode, xmlNode);
-				case "OMV":		return convertOMV(parentLiteralNode, xmlNode);
-				case "OMA":		return convertOMA(parentLiteralNode, xmlNode);
-				case "OMS":		return convertOMS(parentLiteralNode, xmlNode);
+				case "OMOBJ":	return convertOMOBJ(xmlNode);
+				case "OMI":		return convertOMI(xmlNode);
+				case "OMF":		return convertOMF(xmlNode);
+				case "OMV":		return convertOMV(xmlNode);
+				case "OMA":		return convertOMA(xmlNode);
+				case "OMS":		return convertOMS(xmlNode);
 			}
 
 			throw new Error("Unknown node type: "+xmlNode.nodeName);
@@ -682,12 +622,12 @@
 			/*******************************************************************
 			 * function:		convert()
 			 *
-			 * description:	converts OpenMath document in `openmath` to LaTeX,
-			 *							and returns
+			 * description:	converts OpenMath document in `openmath` to
+			 *							admSemanticNode
 			 *
 			 * arguments:		`openmath` STRING
 			 *
-			 * return:			STRING
+			 * return:			admSemanticNode
 			 ******************************************************************/
 			convert: function(openmath) {
 				//remove all whitespace between tags
@@ -698,7 +638,7 @@
 				var omobj = openmathDocument.getElementsByTagName("OMOBJ");
 				if(omobj.length != 1)	throw new Error("Document must have one OMOBJ root node.");
 
-				return convertNode(null, omobj[0]);
+				return convertNode(omobj[0]);
 			}
 		};
 	}]);

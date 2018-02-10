@@ -162,8 +162,8 @@
 		};
 	});
 
-	module.directive("admMathInput", ["$interval", "admLiteralNode", "admLiteralParser", "admOpenmathLiteralConverter",
-			function($interval, admLiteralNode, admLiteralParser, admOpenmathLiteralConverter) {
+	module.directive("admMathInput", ["$interval", "admLiteralNode", "admLiteralParser", "admOpenmathSemanticConverter",
+			function($interval, admLiteralNode, admLiteralParser, admOpenmathSemanticConverter) {
 		return {
 			restrict: "E",
 			replace: true,
@@ -243,7 +243,7 @@
 							case "openmath":
 							default:
 								//this will have to change, probs
-								if(!!newModel)	scope.literalTree = admOpenmathLiteralConverter.convert(newModel);
+								if(!!newModel)	scope.literalTree = admOpenmathSemanticConverter.convert(newModel).getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 						}
 					} catch(e) {

@@ -218,5 +218,5 @@ var latex = admOpenmathLatexConverter.convert(openmath);
 ##### admOpenmathLatexConverter
 Convert an OpenMath string to LaTeX
 
-##### admOpenmathLiteralConverter
-Convert an OpenMath string to an ADM literal object
+##### admOpenmathSemanticConverter
+Convert an OpenMath string to an admSemanticNode object

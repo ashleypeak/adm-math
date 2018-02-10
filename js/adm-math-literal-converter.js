@@ -378,7 +378,7 @@
 			return {
 				expressionType: "semantic",
 				type: "wrapper",
-				child: child,
+				child:  typeof child !== "undefined" ? child : null,
 
 				getAdmLiteral: function() {
 					var literalNode = admLiteralNode.buildBlankExpression(null);
