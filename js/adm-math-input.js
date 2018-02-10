@@ -169,6 +169,9 @@
 			replace: true,
 			scope: {
 				model: "=?ngModel",
+				modelAdm: "=?admModelAdm",
+				modelOm: "=?admModelOm",
+				modelLatex: "=?admModelLatex",
 				hook: "=?admHook",
 				onFocus: "&?admFocus",
 				onBlur: "&?admBlur"
@@ -226,7 +229,7 @@
 					}
 				};
 
-				scope.$watch('model', function(newModel, oldModel) {
+				scope.$watch('modelOm', function(newModel, oldModel) {
 					if(newModel == scope.output.lastModel) return;
 
 					try {
@@ -869,13 +872,29 @@
 					write: function() {
 						try {
 							var literalTreeNodes = scope.literalTree.getNodes();
+							
+							var semantic = admLiteralParser.toSemantic(literalTreeNodes);
 
-							scope.model = this.lastModel = admLiteralParser.toOpenMath(literalTreeNodes);
-							this.isValid = true;
+							scope.modelAdm = semantic;
+							scope.modelOm = semantic.getOpenMath();
+							scope.modelLatex = semantic.getLatex();
+							
+							this.valid = (semantic.type !== "error") ? true : false;
 						} catch(e) {
-							scope.model = this.lastModel = "<OMOBJ><OME>"+e+"[FIND OUT HOW ERRORS ARE RECORDED]</OME></OMOBJ>";
+							scope.modelAdm = null;
+							scope.modelOm = "<OMOBJ><OME>"+e+"</OME></OMOBJ>";
+							scope.modelLatex = "\\text{Error: "+e+"}";
+							
 							this.isValid = false;
 						}
+						
+						switch(scope.format) {
+							case "adm":		scope.model = scope.modelAdm;		break;
+							case "latex":	scope.model = scope.modelLatex;	break;
+							default:			scope.model = scope.modelOm;
+						}
+						
+						this.lastModel = scope.modelOm;
 					}
 				};
 

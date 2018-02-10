@@ -54,8 +54,8 @@ Defines output format.
 
 Values:
 * 'openmath' - _(default)_ Use [OpenMath](http://openmath.org/) format
-* 'latex' - _(unimplemented)_ Use [LaTeX](https://www.latex-project.org/) math mode format
-* 'adm' - _(unimplemented)_ Use [ADM](http://github.com/wyattpeak/adm-math) literal format (suitable only for display, not for storage)
+* 'latex' - Use [LaTeX](https://www.latex-project.org/) math mode format
+* 'adm' - Use [ADM](http://github.com/wyattpeak/adm-math) admSemanticNode format (verbose object literal, not for storage)
 
 ##### name
 _Optional_
@@ -72,6 +72,27 @@ Type: `Variable`
 A two-way-bound variable containing a representation of the mathematical expression in the format defined by admFormat.
 
 `admFormat='adm'` is the only format which will give a perfect two-way model, the others are approximations, however it is not suitable for storage.
+
+##### ng-model-adm
+_Optional_
+
+Type: `Variable`
+
+A read-only variable containing an admSemanticNode representation of the mathematical expression.
+
+##### ng-model-openmath
+_Optional_
+
+Type: `Variable`
+
+A read-only variable containing an OpenMath representation of the mathematical expression.
+
+##### ng-model-latex
+_Optional_
+
+Type: `Variable`
+
+A read-only variable containing a LaTeX representation of the mathematical expression.
 
 ##### adm-focus
 _Optional_

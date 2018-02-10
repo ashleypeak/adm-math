@@ -12,6 +12,10 @@
 					if(this.value.indexOf('.') != -1)
 						return "<OMF dec='"+this.value+"'/>";
 					return "<OMI>"+this.value+"</OMI>";
+				},
+
+				getLatex: function() {
+					return this.value;
 				}
 			};
 		};
@@ -26,6 +30,10 @@
 
 				getOpenMath: function() {
 					return "<OMV name='"+this.name+"'/>";
+				},
+
+				getLatex: function() {
+					return this.name;
 				}
 			};
 		};
@@ -54,6 +62,11 @@
 						+ this.children[0].getOpenMath()
 						+ this.children[1].getOpenMath()
 						+ "</OMA>";
+				},
+
+				getLatex: function() {
+					var opSymbol = (this.symbol === "*" ? " \\times " : this.symbol);
+					return this.children[0].getLatex() + opSymbol + this.children[1].getLatex();
 				}
 			};
 		};
@@ -78,6 +91,10 @@
 					return "<OMA><OMS cd='arith1' name='unary_minus'/>"
 						+ this.child.getOpenMath()
 						+ "</OMA>";
+				},
+
+				getLatex: function() {
+					return "-" + this.child.getLatex();
 				}
 			};
 		};
@@ -102,6 +119,10 @@
 						+ this.base.getOpenMath()
 						+ this.exponent.getOpenMath()
 						+ "</OMA>";
+				},
+
+				getLatex: function() {
+					return this.base.getLatex() + "^{" + this.exponent.getLatex() + "}";
 				}
 			};
 		};
@@ -126,6 +147,10 @@
 						+ this.numerator.getOpenMath()
 						+ this.denominator.getOpenMath()
 						+ "</OMA>";
+				},
+
+				getLatex: function() {
+					return "\\frac{" + this.numerator.getLatex() + "}{" + this.denominator.getLatex() + "}";
 				}
 			};
 		};
@@ -151,6 +176,13 @@
 						+ this.radicand.getOpenMath()
 						+ this.index.getOpenMath()
 						+ "</OMA>";
+				},
+
+				getLatex: function() {
+					if(this.index.type === "numeral" && this.index.value === "2")
+						return "\\sqrt{" + this.radicand.getLatex() + "}";
+					else
+						return "\\sqrt[" + this.index.getLatex() + "]{" + this.radicand.getLatex() + "}";
 				}
 			};
 		};
@@ -180,6 +212,13 @@
 					return "<OMA><OMS cd='"+cd+"' name='"+this.name+"'/>"
 						+ this.child.getOpenMath()
 						+ "</OMA>";
+				},
+				
+				getLatex: function() {
+					if(this.name === "abs")
+						return "|" + this.child.getLatex() + "|";
+					
+					return "\\" + this.name + "(" + this.child.getLatex() + ")";
 				}
 			};
 		};
@@ -204,6 +243,10 @@
 						+ this.base.getOpenMath()
 						+ this.argument.getOpenMath()
 						+ "</OMA>";
+				},
+				
+				getLatex: function() {
+					return "\\log_{" + this.base.getLatex() + "}(" + this.argument.getLatex() + ")";
 				}
 			};
 		};
@@ -218,6 +261,32 @@
 
 				getOpenMath: function() {
 					return "<OMS cd='nums1' name='"+this.name+"'/>";
+				},
+				
+				getLatex: function() {
+					switch(this.name) {
+						case "pi":				return "\\pi";		break;
+						case "e":					return "e";				break;
+						case "infinity":	return "\\infty";	break;
+					};
+				}
+			};
+		};
+	});
+	
+	module.service("admSemanticWrapper", function() {
+		this.build = function(child) {
+			return {
+				expressionType: "semantic",
+				type: "wrapper",
+				child: child,
+
+				getOpenMath: function() {
+					return "<OMOBJ>"+this.child.getOpenMath()+"</OMOBJ>";
+				},
+				
+				getLatex: function() {
+					return this.child.getLatex();
 				}
 			};
 		};
@@ -231,7 +300,11 @@
 				message: message,
 
 				getOpenMath: function() {
-					return "<OME>"+message+"[FIND OUT HOW ERRORS ARE RECORDED]</OME>";
+					return "<OME>"+this.message+"</OME>";
+				},
+				
+				getLatex: function() {
+					return "\\text{Error: "+this.message+"}";
 				}
 			};
 		};
@@ -239,9 +312,9 @@
 
 	module.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
 		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticLogarithm",
-		 "admSemanticConstant", "admSemanticError",
+		 "admSemanticConstant", "admSemanticWrapper", "admSemanticError",
 		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
-			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticLogarithm, admSemanticConstant, admSemanticError) {
+			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticLogarithm, admSemanticConstant, admSemanticWrapper, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
@@ -254,6 +327,7 @@
 				case "function":		return admSemanticFunction.build(arguments[1], arguments[2]);
 				case "logarithm":		return admSemanticLogarithm.build(arguments[1], arguments[2]);
 				case "constant":		return admSemanticConstant.build(arguments[1]);
+				case "wrapper":			return admSemanticWrapper.build(arguments[1]);
 				case "error":				return admSemanticError.build(arguments[1]);
 			}
 		};
@@ -819,21 +893,16 @@
 				}
 			}
 
-			if(newNodes.length > 1) admSemanticNode.build("error", "Irreducible expression.");
-			return newNodes[0];
+			if(newNodes.length > 1) return admSemanticNode.build("error", "Irreducible expression.");
+			
+			return admSemanticNode.build("wrapper", newNodes[0]);
 		}
 
 		return {
-			toOpenMath: function(nodes) {
-				var semantic = build(nodes);
-
-				if(semantic.type == "error")	throw semantic.error;
-
-				var openmath = "<OMOBJ>";
-				openmath += semantic.getOpenMath();
-				openmath += "</OMOBJ>";
-
-				return openmath;
+			toSemantic: function(literalNodes) {
+				var semantic = build(literalNodes);
+				
+				return semantic;
 			}
 		};
 	}]);
