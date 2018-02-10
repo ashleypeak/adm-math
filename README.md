@@ -188,7 +188,7 @@ Bind an ADM literal equation representation for display
 
 ### adm-math-openmath-converter
 
-A set of services for converting OpenMath into other formats
+A service for converting OpenMath into an admSemanticNode
 
 #### Usage
 
@@ -207,16 +207,13 @@ Then include the module in your Angular.js module:
 var myApp = angular.module("myApp", ["admMathOpenmathConverter"]);
 ```
 
-In order to convert OpenMath to another format, just use one of the services below's `convert()` function:
+In order to convert OpenMath to an admSemanticNode, just use the service below's `convert()` function:
 
 ```javascript
-var latex = admOpenmathLatexConverter.convert(openmath);
+var semanticNode = admOpenmathSemanticConverter.convert(openmath);
 ```
 
 #### Services
-
-##### admOpenmathLatexConverter
-Convert an OpenMath string to LaTeX
 
 ##### admOpenmathSemanticConverter
 Convert an OpenMath string to an admSemanticNode object
