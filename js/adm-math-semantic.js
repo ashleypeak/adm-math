@@ -1,5 +1,5 @@
 (function() {
-	var module = angular.module("admMathLiteralConverter", ["admMathCore"]);
+	var module = angular.module("admMathSemantic", ["admMathLiteral"]);
 
 	module.service("admSemanticNumeral", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(value) {

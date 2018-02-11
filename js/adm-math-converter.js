@@ -1,5 +1,12 @@
+/*******************************************************************
+* NOTE: This converter ABSOLUTELY DOES NOT convert all OpenMath or
+*				LaTeX. It converts a very small subset. It will convert
+*				anything that is output but an admMathInput, but nothing
+*				else is guaranteed.
+*******************************************************************/
+
 (function() {
-	var module = angular.module("admMathOpenmathConverter", ["admMathCore"]);
+	var module = angular.module("admMathConverter", ["admMathLiteral", "admMathSemantic"]);
 
 	module.factory("admXmlParser", function() {
 		/*******************************************************************
@@ -368,6 +375,325 @@
 				if(omobj.length != 1)	throw new Error("Document must have one OMOBJ root node.");
 
 				return convertNode(omobj[0]);
+			}
+		};
+	}]);
+	
+	module.factory("admLatexSemanticConverter", ["admLiteralNode", "admLiteralParser", function(admLiteralNode, admLiteralParser) {
+		/*******************************************************************
+		 * function:		findExpression()
+		 *
+		 * description:	takes a LaTeX string `latex` and extract the first
+		 *							'unit' - either a single character or a bracketed
+		 *							set of characters. Return that unit (stripped of
+		 *							bracketing), the rest of the latex, and a string
+		 *							representing bracket type - "", "()", "{}", or "[]"
+		 *
+		 * arguments:		`latex` STRING
+		 *
+		 * return:			ARRAY [ STRING, STRING, STRING ]
+		 ******************************************************************/
+		function findExpression(latex) {
+			var bracketType = "";
+			var expression = "";
+			
+			latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
+			
+			switch(latex[0]) {
+				case "{":		bracketType = "{}";	break;
+				case "(":		bracketType = "()";	break;
+				case "[":		bracketType = "[]";	break;
+				default:		return [latex[0], latex.substr(1), ""];
+			}
+			
+			var depth = 1; //number of brackets deep - finish when depth==0;
+			for(var i = 1; i < latex.length; i++) {
+				switch(latex[i]) {
+					case bracketType[0]:	depth++;	break;
+					case bracketType[1]:	depth--;	break;
+				}
+				
+				if(depth == 0)
+					return [latex.substring(1, i), latex.substr(i+1), bracketType];
+			}
+			
+			throw new Error("Unclosed bracket sequence.");
+		}
+		
+		/*******************************************************************
+		 * function:		collectSimple()
+		 *
+		 * description:	takes a LaTeX string `latex`, already confirmed to
+		 *							start with a symbol which is rendered in admLiteral
+		 *							as a single node (a so-called 'simple node'), and
+		 *							extract it to an admLiteralNode. return the new node'
+		 *							and the remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectSimple(parentLiteralNode, latex) {
+			var simpleNode = admLiteralNode.build(parentLiteralNode, latex[0]);
+			
+			return [simpleNode, latex.substr(1)];
+		}
+		
+		/*******************************************************************
+		 * function:		collectExponent()
+		 *
+		 * description:	takes a LaTeX string `latex`, already confirmed to
+		 *							start with a '^', and extract the caret and the
+		 *							subsequent exponent string into an admLiteralNode.
+		 *							return the new node and the remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectExponent(parentLiteralNode, latex) {
+			latex = latex.substr(1);
+			
+			var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
+			var exponentExpression = null;
+			
+			[exponentExpression, latex] = findExpression(latex);
+			exponentNode.exponent.nodes = collectExpression(exponentNode, exponentExpression);
+			
+			return [exponentNode, latex];
+		}
+		
+		/*******************************************************************
+		 * function:		collectFunction()
+		 *
+		 * description:	takes a LaTeX string `latex`, which has just had a
+		 *							\sin, \cos, etc command removed from the start
+		 *							(identified by `command`), grab its argument and
+		 *							build into an admLiteralNode
+		 *							return that node and the remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *							`command` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectFunction(parentLiteralNode, latex, command) {
+			var functionNode = admLiteralNode.buildByName(parentLiteralNode, command);
+			var childExpression = null;
+			
+			[childExpression, latex] = findExpression(latex);
+			functionNode.child.nodes = collectExpression(functionNode, childExpression);
+			
+			return [functionNode, latex];
+		}
+		
+		/*******************************************************************
+		 * function:		collectRoot()
+		 *
+		 * description:	takes a LaTeX string `latex`, which has just had a
+		 *							\sqrt command removed from the start. grab its
+		 *							argument and build into an admLiteralNode, then
+		 *							return that node and the remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectRoot(parentLiteralNode, latex) {
+			var rootNode = admLiteralNode.buildByName(parentLiteralNode, "root");
+			var indexExpression = null;
+			var radicandExpression = null;
+			
+			var bracketType = null;
+			[indexExpression, latex, bracketType] = findExpression(latex);
+			
+			//in latex, \sqrt{a} means square-root(a), \sqrt[a]{b} means a-th-root(b)
+			//if the first argument is in square brackets, it's of the second format
+			//	and we need to then collect the radicand.
+			//if it's not, it's in the first format and we've misidentified the radicand
+			//	as the index. move it and set the index to 2.
+			if(bracketType === "[]") {
+				[radicandExpression, latex] = findExpression(latex);
+			} else {
+				radicandExpression = indexExpression;
+				indexExpression = "2";
+			}
+			
+			rootNode.index.nodes = collectExpression(rootNode, indexExpression);
+			rootNode.radicand.nodes = collectExpression(rootNode, radicandExpression);
+			
+			return [rootNode, latex];
+		}
+		
+		/*******************************************************************
+		 * function:		collectRoot()
+		 *
+		 * description:	takes a LaTeX string `latex`, which has just had a
+		 *							\log command removed from the start. grab its
+		 *							base and argument and build into an admLiteralNode,
+		 *							then return that node and the remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectLog(parentLiteralNode, latex) {
+			var logNode = admLiteralNode.buildByName(parentLiteralNode, "log");
+			var baseExpression = null;
+			var argumentExpression = null;
+			
+			if(latex[0] === "_")
+				latex = latex.substr(1);
+			else
+				throw new Error("Log is missing base.");
+			
+			[baseExpression, latex] = findExpression(latex);
+			[argumentExpression, latex] = findExpression(latex);
+			
+			logNode.base.nodes = collectExpression(logNode, baseExpression);
+			logNode.argument.nodes = collectExpression(logNode, argumentExpression);
+			
+			return [logNode, latex];
+		}
+		
+		/*******************************************************************
+		 * function:		collectFraction()
+		 *
+		 * description:	takes a LaTeX string `latex`, which has just had a
+		 *							\frac command removed from the start. grab its
+		 *							numerator and denominator and build into an
+		 *							admLiteralNode, then return that node and the
+		 *							remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectFraction(parentLiteralNode, latex) {
+			var fractionNode = admLiteralNode.build(parentLiteralNode, "/");
+			var numeratorExpression = null;
+			var denominatorExpression = null;
+			
+			[numeratorExpression, latex] = findExpression(latex);
+			[denominatorExpression, latex] = findExpression(latex);
+			fractionNode.numerator.nodes = collectExpression(fractionNode, numeratorExpression);
+			fractionNode.denominator.nodes = collectExpression(fractionNode, denominatorExpression);
+			
+			return [fractionNode, latex];
+		}
+		
+		/*******************************************************************
+		 * function:		collectCommand()
+		 *
+		 * description:	takes a LaTeX string `latex`, already confirmed to
+		 *							start with a '\', and 1) extract the backslash, the
+		 *							subsequent LaTeX command and its arguments, 2) store
+		 *							them in an admLiteralNode and 3) return the new node
+		 *							and the remaining latex
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 ******************************************************************/
+		function collectCommand(parentLiteralNode, latex) {
+			var command = "";
+			var commandNode = null;
+			
+			[, command, latex] = /^\\([a-z]+)(.*)$/.exec(latex);
+			
+			switch(command) {
+				case "times":
+					commandNode = admLiteralNode.build(parentLiteralNode, "*");
+					break;
+				case "pi":
+					commandNode = admLiteralNode.buildByName(parentLiteralNode, "pi");
+					break;
+				case "infty":
+					commandNode = admLiteralNode.buildByName(parentLiteralNode, "infinity");
+					break;
+				case "sin":
+				case "cos":
+				case "tan":
+				case "ln":
+					[commandNode, latex] = collectFunction(parentLiteralNode, latex, command);
+					break;
+				case "sqrt":
+					[commandNode, latex] = collectRoot(parentLiteralNode, latex);
+					break;
+				case "log":
+					[commandNode, latex] = collectLog(parentLiteralNode, latex);
+					break;
+				case "frac":
+					[commandNode, latex] = collectFraction(parentLiteralNode, latex);
+					break;
+			}
+			
+			if(commandNode !== null)
+				return [commandNode, latex];
+			else
+				throw new Error("Unrecognised command.");
+		}
+		
+		/*******************************************************************
+		 * function:		collectExpression()
+		 *
+		 * description:	takes a LaTeX string `latex`, which is presumed to be
+		 *							an expression (nodelled by an admLiteralExpression),
+		 *							convert it into an array of admLiteralNodes and return
+		 *
+		 * arguments:		`parentLiteralNode` admLiteralNode
+		 *							`latex` STRING
+		 *
+		 * return:			ARRAY [ admLiteralNodes ]
+		 ******************************************************************/
+		function collectExpression(parentLiteralNode, latex) {
+			var literalNodes = [];
+			var newNode = null;
+			
+			while(latex.length > 0) {
+				newNode = null;
+				latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
+				
+				if(/^[0-9.a-zA-Z+\-*()\|]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
+				else if(/^\^/.test(latex))							{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
+				else if(/^\\/.test(latex))							{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
+				
+				if(newNode !== null)
+					literalNodes.push(newNode);
+				else
+					throw new Error("Unrecognised sequence in LaTeX string.");
+			}
+			
+			return literalNodes;
+		}
+		
+		return {
+			/*******************************************************************
+			 * function:		convert()
+			 *
+			 * description:	converts LaTeX document in `latex` to
+			 *							admSemanticNode
+			 *
+			 * arguments:		`latex` STRING
+			 *
+			 * return:			admSemanticNode
+			 ******************************************************************/
+			convert: function(latex) {
+				var literalNode = admLiteralNode.buildBlankExpression(null);
+				literalNode.nodes = collectExpression(literalNode, latex);
+				
+				var literalTreeNodes = literalNode.getNodes();
+				
+				var semanticNode = admLiteralParser.toSemantic(literalTreeNodes);
+
+				return semanticNode;
 			}
 		};
 	}]);

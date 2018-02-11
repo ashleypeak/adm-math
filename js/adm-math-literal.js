@@ -1,5 +1,5 @@
 (function() {
-	var module = angular.module("admMathCore", []);
+	var module = angular.module("admMathLiteral", []);
 
 	module.service("admLiteralExpression", function() {
 		this.build = function(id, parentNode) {
@@ -254,10 +254,10 @@
 			build: function(parentNode, nodeVal) {
 				if(/^[0-9.]$/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
 				else if(/^[a-zA-Z]$/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
-				else if(/^[|]$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode, nodeVal); }
+				else if(/^\|$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode, nodeVal); }
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
-				else if(/^[\^]$/.test(nodeVal)) {
+				else if(/^\^$/.test(nodeVal)) {
 					var exponent = admLiteralExpression.build(id++, null);
 					
 					var node = admLiteralExponent.build(id++, parentNode, exponent);
@@ -265,7 +265,7 @@
 
 					return node;
 				}
-				else if(/^[\/]$/.test(nodeVal)) {
+				else if(/^\/$/.test(nodeVal)) {
 					var numerator = admLiteralExpression.build(id++, null);
 					var denominator = admLiteralExpression.build(id++, null);
 

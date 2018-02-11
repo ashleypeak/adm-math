@@ -25,9 +25,9 @@ First include the module files:
 <link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
 <script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-converter.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-input.js"></script>
 ```
 
@@ -143,9 +143,9 @@ A full list of supported values for `adm-symbol` follows:
 
 ---
 
-### adm-math-openmath-converter
+### adm-math-converter
 
-A service for converting OpenMath into an admSemanticNode
+A service for converting OpenMath or LaTeX into an admSemanticNode
 
 #### Usage
 
@@ -153,9 +153,9 @@ First include the module files:
 
 ```html
 <script type="text/javascript" src="bower_components/angular/angular.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-core.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal-converter.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-openmath-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-converter.js"></script>
 ```
 
 Then include the module in your Angular.js module:
@@ -164,7 +164,7 @@ Then include the module in your Angular.js module:
 var myApp = angular.module("myApp", ["admMathOpenmathConverter"]);
 ```
 
-In order to convert OpenMath to an admSemanticNode, just use the service below's `convert()` function:
+In order to convert OpenMath or LaTeX to an admSemanticNode, just use the service below's `convert()` function:
 
 ```javascript
 var semanticNode = admOpenmathSemanticConverter.convert(openmath);
@@ -174,3 +174,4 @@ var semanticNode = admOpenmathSemanticConverter.convert(openmath);
 
 ##### admOpenmathSemanticConverter
 Convert an OpenMath string to an admSemanticNode object
+Convert a LaTeX string to an admSemanticNode object

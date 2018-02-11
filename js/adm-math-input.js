@@ -1,7 +1,7 @@
 (function() {
 	var CURSOR_FLASHPERIOD	= 530;
 
-	var module = angular.module("admMathInput", ["ngSanitize", "admMathCore", "admMathOpenmathConverter", "admMathLiteralConverter"]);
+	var module = angular.module("admMathInput", ["ngSanitize", "admMathLiteral", "admMathSemantic", "admMathConverter"]);
 
 	module.run(["$templateCache", function($templateCache) {
 		var expressionTemplate = "";
@@ -162,8 +162,8 @@
 		};
 	});
 
-	module.directive("admMathInput", ["$interval", "admLiteralNode", "admLiteralParser", "admOpenmathSemanticConverter",
-			function($interval, admLiteralNode, admLiteralParser, admOpenmathSemanticConverter) {
+	module.directive("admMathInput", ["$interval", "admLiteralNode", "admLiteralParser", "admOpenmathSemanticConverter", "admLatexSemanticConverter",
+			function($interval, admLiteralNode, admLiteralParser, admOpenmathSemanticConverter, admLatexSemanticConverter) {
 		return {
 			restrict: "E",
 			replace: true,
@@ -238,11 +238,11 @@
 								if(!!newModel)	scope.literalTree = newModel.getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 							case "latex":
-								//something
+								if(!!newModel)	scope.literalTree = admLatexSemanticConverter.convert(newModel).getAdmLiteral();
+								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 								break;
 							case "openmath":
 							default:
-								//this will have to change, probs
 								if(!!newModel)	scope.literalTree = admOpenmathSemanticConverter.convert(newModel).getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 						}
@@ -889,7 +889,7 @@
 							scope.modelOm = semantic.getOpenMath();
 							scope.modelLatex = semantic.getLatex();
 							
-							this.valid = (semantic.type !== "error") ? true : false;
+							this.isValid = (semantic.type !== "error") ? true : false;
 						} catch(e) {
 							scope.modelAdm = null;
 							scope.modelOm = "<OMOBJ><OME>"+e+"</OME></OMOBJ>";
