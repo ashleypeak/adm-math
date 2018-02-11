@@ -6,7 +6,7 @@
 *******************************************************************/
 
 (function() {
-	var module = angular.module("admMathConverter", ["admMathLiteral", "admMathSemantic"]);
+	var module = angular.module("admMathParser", ["admMathLiteral", "admMathSemantic"]);
 
 	module.factory("admXmlParser", function() {
 		/*******************************************************************
@@ -64,7 +64,588 @@
 		};
 	});
 
-	module.factory("admOpenmathSemanticConverter", ["admXmlParser", "admSemanticNode", function(xmlParser, admSemanticNode) {
+	module.factory("admLiteralParser", ["admSemanticNode", function(admSemanticNode) {
+		/*******************************************************************
+		 * function:		assertNotEmpty()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							throws an exception if the collection is empty
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function assertNotEmpty(nodes) {
+			if(nodes.length === 0) throw "errEmptyExpression";
+		}
+
+		/*******************************************************************
+		 * function:		assertParenthesesMatched()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							throws an exception if there are any unmatched
+		 *							parentheses
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function assertParenthesesMatched(nodes) {
+			var depth = 0;
+
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "parenthesis")				continue;
+				
+				depth += (nodes[i].isStart ? 1 : -1);
+				if(depth < 0)	throw "errUnmatchedParenthesis";
+			}
+
+			if(depth > 0)	throw "errUnmatchedParenthesis";
+		}
+
+		/*******************************************************************
+		 * function:		assertPipesMatched()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							throws an exception if there are an uneven number
+		 *							of | characters
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function assertPipesMatched(nodes) {
+			var matched = true;
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "pipe")								continue;
+				
+				matched = !matched;
+			}
+
+			if(!matched)	throw "errUnmatchedPipe";
+		}
+
+		/*******************************************************************
+		 * function:		parseExponents()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal.nodeTypes.Exponent
+		 *							with an equivalent semantic.nodeTypes.Exponent
+		 *							leaves the semantic node's `base` as null
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseExponents(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "exponent")						continue;
+				
+				var semanticExp = build(nodes[i].exponent.getNodes());
+				nodes.splice(i, 1, admSemanticNode.build("exponent", null, semanticExp));
+			}
+		}
+
+		/*******************************************************************
+		 * function:		applyExponents()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and,
+		 *							wherever there is a semantic.nodeTypes.exponent,
+		 *							fills its `base` with the preceding node
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function applyExponents(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "semantic")	continue;
+				if(nodes[i].type != "exponent")						continue;
+
+				if(i === 0) throw "errMissingBase";
+
+				nodes[i].base = nodes[i-1];
+				nodes[i].assertHasValidChildren();
+				nodes.splice(i-1, 1);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseParentheses()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal subexpressions surrounded
+		 *							by parentheses with appropriate semantic nodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseParentheses(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "parenthesis")				continue;
+				if(!nodes[i].isStart)											continue;
+
+				var subExpressionNodes = [];
+				for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
+					subExpressionNodes.push(nodes[j]);
+
+				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
+				var semanticNode = build(subExpressionNodes);
+				if(semanticNode.type == "error")	throw "errEmptyExpression";
+
+				nodes.splice(i, literalLength, semanticNode);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parsePipes()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal subexpressions surrounded
+		 *							by pipes with absolute semantic nodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parsePipes(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "pipe")								continue;
+
+				var subExpressionNodes = [];
+				for(var j = i+1; nodes[j].type != "pipe"; j++)
+					subExpressionNodes.push(nodes[j]);
+
+				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
+
+				var semanticChild = build(subExpressionNodes);
+				var semanticAbs = admSemanticNode.build("function", "abs", semanticChild);
+				semanticAbs.assertHasValidChildren();
+
+				nodes.splice(i, literalLength, semanticAbs);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseDivision()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal.nodeTypes.Exponent
+		 *							with an equivalent semantic.nodeTypes.Exponent
+		 *							leaves the semantic node's `base` as null
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseDivision(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "division")						continue;
+
+				var semanticNumerator = build(nodes[i].numerator.getNodes());
+				var semanticDenominator = build(nodes[i].denominator.getNodes());
+
+				var semanticDiv = admSemanticNode.build("division", semanticNumerator, semanticDenominator);
+				semanticDiv.assertHasValidChildren();
+
+				nodes.splice(i, 1, semanticDiv);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseRoots()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literalSquareRoots and literalRoots
+		 *							with an equivalent semanticRoots
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseRoots(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")											continue;
+				if(nodes[i].type != "squareRoot" && nodes[i].type != "root")	continue;
+				
+				var semanticIndex;
+				if(nodes[i].type == "squareRoot")	semanticIndex = admSemanticNode.build("numeral", "2");
+				else															semanticIndex = build(nodes[i].index.getNodes());
+
+				var semanticRadicand = build(nodes[i].radicand.getNodes());
+				var semanticRoot = admSemanticNode.build("root", semanticIndex, semanticRadicand);
+				semanticRoot.assertHasValidChildren();
+
+				nodes.splice(i, 1, semanticRoot);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		replaceMulticharacterSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and replaces
+		 *							each instance of admLiteralLetters making up the
+		 *							symbol matched by `pattern` with an admSemanticNode
+		 *							called with arguments `args`
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		`nodes` [admLiteralNode | admSemanticNode]
+		 *							`nodeString` STRING
+		 *								a string representation of `nodes` to aid searching
+		 *							`pattern` REGEX
+		 *								a regex pattern describing the symbol
+		 *							`args` ARRAY
+		 *								arguments with which admSemanticNode.build is called
+		 *
+		 * return:			STRING
+		 *								nodeString, updated to reflect new changes
+		 ******************************************************************/
+		function replaceMulticharacterSymbols(nodes, nodeString, pattern, args) {
+			var matches;
+			while(matches = pattern.exec(nodeString)) {
+				var pos = matches.index;
+				var len = matches[0].length;
+
+				var newNode = admSemanticNode.build.apply(null, args);
+
+				nodes.splice(pos, len, newNode);
+				nodeString = nodeString.slice(0, pos) + "_" + nodeString.slice(pos+len);
+			}
+
+			return nodeString;
+		}
+
+		/*******************************************************************
+		 * function:		parseMulticharacterSymbols()
+		 Pipes*
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces admLiteralLetters making up multicharacter
+		 *							symbols (like 'sin') with admSemanticNodes
+		 *							also some single character symbols like 'e' - basically
+		 *							anything which shouldn't be turned into a variable
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseMulticharacterSymbols(nodes) {
+			var nodeString = "";
+			angular.forEach(nodes, function(node, index) {
+				if(node.expressionType != "literal")	nodeString += "_";
+				else if(node.type != "letter")				nodeString += "_";
+				else																	nodeString += node.getVal();
+			});
+
+			//if one symbol is a substring of another, the longer symbol MUST go first
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /sin/, ["function", "sin"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /cos/, ["function", "cos"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /tan/, ["function", "tan"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /ln/, ["function", "ln"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /pi/, ["constant", "pi"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /e/, ["constant", "e"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /abs/, ["function", "abs"]);
+		}
+
+		/*******************************************************************
+		 * function:		applyMulticharacterSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and,
+		 *							wherever there is a multicharacter admSemanticNode
+		 *							like 'sin', fill its `child` with the following
+		 *							node
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function applyMulticharacterSymbols(nodes) {
+			//has to run right-to-left or else you get things like sincosx => sin(cos)x instead of => sin(cos(x))
+			for(var i = nodes.length-1; i >= 0; i--) {
+				if(nodes[i].expressionType != "semantic")	continue;
+				if(nodes[i].type != "function")						continue;
+				if(nodes[i].child !== null)								continue; //some functions are parsed by parseFunctions()
+
+				if(i+1 == nodes.length) throw "errMissingArgument";
+
+				nodes[i].child = nodes[i+1];
+				nodes[i].assertHasValidChildren();
+				nodes.splice(i+1, 1);
+			}
+		}
+		
+		/*******************************************************************
+		 * function:		parseNumerals()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal.nodeTypes.Numeral
+		 *							with appropriate semantic nodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseNumerals(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "numeral")						continue;
+
+				var numeral = "";
+				for(var j = i; nodes[j] && nodes[j].expressionType == "literal" && nodes[j].type == "numeral"; j++)
+						numeral += nodes[j].getVal();
+
+				if(numeral === "")																			throw "errNotFound";
+				if(numeral.indexOf(".") != numeral.lastIndexOf("."))		throw "errMalformedNumeral";
+
+				var semanticNum = admSemanticNode.build("numeral", numeral);
+				nodes.splice(i, numeral.length, semanticNum);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseVariables()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all literal.nodeTypes.Letter
+		 *							with semantic.nodeTypes.Variable
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseVariables(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "letter")							continue;
+
+				var semanticVar = admSemanticNode.build("variable", nodes[i].getVal()); 
+				nodes.splice(i, 1, semanticVar);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseSymbols()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all admLiteralSymbols with
+		 *							admSemanticConstants
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseSymbols(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "symbol")							continue;
+
+				var semanticSymbol = admSemanticNode.build("constant", nodes[i].getVal()); 
+				nodes.splice(i, 1, semanticSymbol);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseFunctions()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all admLiteralFunctions with
+		 *							admSemanticFunctions
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseFunctions(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "function")						continue;
+
+				var semanticChild = build(nodes[i].child.getNodes());
+				var semanticFunction = admSemanticNode.build("function", nodes[i].name, semanticChild);
+				semanticFunction.assertHasValidChildren();
+
+				nodes.splice(i, 1, semanticFunction);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseLogarithms()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							replaces all admLiteralLogarithms with
+		 *							admSemanticLogarithms
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseLogarithms(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "logarithm")					continue;
+
+				var semanticBase = build(nodes[i].base.getNodes());
+				var semanticArgument = build(nodes[i].argument.getNodes());
+				var semanticLogarithm = admSemanticNode.build("logarithm", semanticBase, semanticArgument);
+				semanticLogarithm.assertHasValidChildren();
+
+				nodes.splice(i, 1, semanticLogarithm);
+			}
+		}
+
+		/*******************************************************************
+		 * function:		parseImpliedMultiplication()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and,
+		 *							wherever there are two semantic.nodeTypes.[any]
+		 *							side-by-side, replaces them with a multiplication
+		 *							semantic node
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseImpliedMultiplication(nodes) {
+			for(var i = 0; i < nodes.length-1; i++) {
+				if(nodes[i].expressionType != "semantic")		continue;
+				if(nodes[i+1].expressionType != "semantic")	continue;
+
+				var opNode = admSemanticNode.build("operator", "*", [nodes[i], nodes[i+1]]);
+				opNode.assertHasValidChildren();
+
+				nodes.splice(i, 2, opNode);
+				i--;	//necessary if there are two implied times in a row e.g. "2ab"
+			}
+		}
+		
+		/*******************************************************************
+		 * function:		parseOperators()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and replaces
+		 *							all literal.nodeTypes.Operator whose getVal() matches
+		 *							`condition` with appropriate semantic nodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
+		 *							condition:	REGEX
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseOperators(nodes, condition) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(!condition.test(nodes[i].getVal()))		continue;
+
+				if(i == nodes.length-1)									throw "errInvalidArguments";
+				if(i === 0 && nodes[i].getVal() != "-")	throw "errInvalidArguments";
+
+				//if operator is a unary minus
+				if(i === 0 && nodes[i].getVal() == "-") {
+					var opNode = admSemanticNode.build("unaryMinus", nodes[i+1]);
+					opNode.assertHasValidChildren();
+
+					nodes.splice(i, 2, opNode);
+				} else {
+					var opNode = admSemanticNode.build("operator", nodes[i].getVal(), [nodes[i-1], nodes[i+1]]);
+					opNode.assertHasValidChildren();
+
+					nodes.splice(i-1, 3, opNode);
+				}
+
+				i--;
+			}
+		}
+
+		/*******************************************************************
+		 * function:		build()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and parses
+		 *							into a single semantic node. Adds an admSemanticWrapper
+		 *							around it if `hasParent` is false
+		 *
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
+		 *							hasParent:	BOOLEAN
+		 *
+		 * return:			admSemanticNode
+		 ******************************************************************/
+		function build(nodes, hasParent) {
+			hasParent = (typeof hasParent !== "undefined") ? hasParent : true;
+			var newNodes = nodes.slice(); //use slice() to copy by value, not reference
+			
+			try {
+				assertNotEmpty(newNodes);
+				assertParenthesesMatched(newNodes);
+				assertPipesMatched(newNodes);
+				parseParentheses(newNodes);
+				parsePipes(newNodes);
+				parseDivision(newNodes);
+				parseRoots(newNodes);
+				parseExponents(newNodes);							//create exponent semantic nodes, leave base empty for now
+				parseMulticharacterSymbols(newNodes);	//parse symbols made of multiple characters, like sin, cos, pi
+				parseNumerals(newNodes);
+				parseVariables(newNodes);
+				parseSymbols(newNodes);
+				parseFunctions(newNodes);
+				parseLogarithms(newNodes);
+
+				applyExponents(newNodes);							//fill in bases of exponent semantic nodes
+				applyMulticharacterSymbols(newNodes);
+				parseImpliedMultiplication(newNodes);
+				parseOperators(newNodes, /[*]/);
+				parseOperators(newNodes, /[+\-]/);
+			} catch(e) {
+				switch(e) {
+					case "errNotFound":							return admSemanticNode.build("error", "Missing number.");
+					case "errUnmatchedParenthesis":	return admSemanticNode.build("error", "Unmatched parenthesis.");
+					case "errUnmatchedPipe":				return admSemanticNode.build("error", "Unmatched pipe.");
+					case "errMalformedNumeral":			return admSemanticNode.build("error", "Malformed Number.");
+					case "errInvalidArguments":			return admSemanticNode.build("error", "Invalid arguments.");
+					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
+					case "errMissingBase":					return admSemanticNode.build("error", "Exponent has no base.");
+					case "errMissingArgument":			return admSemanticNode.build("error", "Function has no argument.");
+					default:												return admSemanticNode.build("error", "Unidentified error.");
+				}
+			}
+
+			if(newNodes.length > 1) return admSemanticNode.build("error", "Irreducible expression.");
+			
+			if(hasParent)
+				return newNodes[0];
+			return admSemanticNode.build("wrapper", newNodes[0]);
+		}
+
+		return {
+			getAdmSemantic: function(literalNode) {
+				var literalNodes = literalNode.getNodes();
+				
+				var semantic = build(literalNodes, false);
+				
+				return semantic;
+			}
+		};
+	}]);
+	
+	module.factory("admOpenmathParser", ["admXmlParser", "admSemanticNode", function(xmlParser, admSemanticNode) {
 		/*******************************************************************
 		 * function:		convertArith1()
 		 *
@@ -356,7 +937,7 @@
 
 		return {
 			/*******************************************************************
-			 * function:		convert()
+			 * function:		getAdmSemantic()
 			 *
 			 * description:	converts OpenMath document in `openmath` to
 			 *							admSemanticNode
@@ -365,7 +946,7 @@
 			 *
 			 * return:			admSemanticNode
 			 ******************************************************************/
-			convert: function(openmath) {
+			getAdmSemantic: function(openmath) {
 				//remove all whitespace between tags
 				openmath = openmath.replace(/>\s+</g, "><");
 
@@ -379,7 +960,7 @@
 		};
 	}]);
 	
-	module.factory("admLatexSemanticConverter", ["admLiteralNode", "admLiteralParser", function(admLiteralNode, admLiteralParser) {
+	module.factory("admLatexParser", ["admLiteralNode", "admLiteralParser", function(admLiteralNode, admLiteralParser) {
 		/*******************************************************************
 		 * function:		findExpression()
 		 *
@@ -676,7 +1257,7 @@
 		
 		return {
 			/*******************************************************************
-			 * function:		convert()
+			 * function:		getAdmSemantic()
 			 *
 			 * description:	converts LaTeX document in `latex` to
 			 *							admSemanticNode
@@ -685,13 +1266,11 @@
 			 *
 			 * return:			admSemanticNode
 			 ******************************************************************/
-			convert: function(latex) {
+			getAdmSemantic: function(latex) {
 				var literalNode = admLiteralNode.buildBlankExpression(null);
 				literalNode.nodes = collectExpression(literalNode, latex);
 				
-				var literalTreeNodes = literalNode.getNodes();
-				
-				var semanticNode = admLiteralParser.toSemantic(literalTreeNodes);
+				var semanticNode = admLiteralParser.getAdmSemantic(literalNode);
 
 				return semanticNode;
 			}

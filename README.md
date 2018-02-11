@@ -27,7 +27,7 @@ First include the module files:
 <script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-parser.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-input.js"></script>
 ```
 
@@ -143,7 +143,7 @@ A full list of supported values for `adm-symbol` follows:
 
 ---
 
-### adm-math-converter
+### adm-math-parser
 
 A service for converting OpenMath or LaTeX into an admSemanticNode
 
@@ -155,23 +155,28 @@ First include the module files:
 <script type="text/javascript" src="bower_components/angular/angular.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
 <script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-converter.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-parser.js"></script>
 ```
 
 Then include the module in your Angular.js module:
 
 ```javascript
-var myApp = angular.module("myApp", ["admMathOpenmathConverter"]);
+var myApp = angular.module("myApp", ["admMathParser"]);
 ```
 
-In order to convert OpenMath or LaTeX to an admSemanticNode, just use the service below's `convert()` function:
+In order to convert one of the below formats to an admSemanticNode, just use the relevant service's `getAdmSemantic()` function:
 
 ```javascript
-var semanticNode = admOpenmathSemanticConverter.convert(openmath);
+var semanticNode = admOpenmathParser.getAdmSemantic(openmath);
 ```
 
 #### Services
 
-##### admOpenmathSemanticConverter
+##### admLiteralParser
+Convert an admLiteralNode object to an admSemanticNode object
+
+##### admOpenmathParser
 Convert an OpenMath string to an admSemanticNode object
+
+##### adm:atexParser
 Convert a LaTeX string to an admSemanticNode object

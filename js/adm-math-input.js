@@ -1,7 +1,7 @@
 (function() {
 	var CURSOR_FLASHPERIOD	= 530;
 
-	var module = angular.module("admMathInput", ["ngSanitize", "admMathLiteral", "admMathSemantic", "admMathConverter"]);
+	var module = angular.module("admMathInput", ["ngSanitize", "admMathLiteral", "admMathSemantic", "admMathParser"]);
 
 	module.run(["$templateCache", function($templateCache) {
 		var expressionTemplate = "";
@@ -162,8 +162,8 @@
 		};
 	});
 
-	module.directive("admMathInput", ["$interval", "admLiteralNode", "admLiteralParser", "admOpenmathSemanticConverter", "admLatexSemanticConverter",
-			function($interval, admLiteralNode, admLiteralParser, admOpenmathSemanticConverter, admLatexSemanticConverter) {
+	module.directive("admMathInput", ["$interval", "admLiteralNode", "admLiteralParser", "admOpenmathParser", "admLatexParser",
+			function($interval, admLiteralNode, admLiteralParser, admOpenmathParser, admLatexParser) {
 		return {
 			restrict: "E",
 			replace: true,
@@ -237,13 +237,14 @@
 							case "adm":
 								if(!!newModel)	scope.literalTree = newModel.getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
+								break;
 							case "latex":
-								if(!!newModel)	scope.literalTree = admLatexSemanticConverter.convert(newModel).getAdmLiteral();
+								if(!!newModel)	scope.literalTree = admLatexParser.getAdmSemantic(newModel).getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 								break;
 							case "openmath":
 							default:
-								if(!!newModel)	scope.literalTree = admOpenmathSemanticConverter.convert(newModel).getAdmLiteral();
+								if(!!newModel)	scope.literalTree = admOpenmathParser.getAdmSemantic(newModel).getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 						}
 					} catch(e) {
@@ -881,9 +882,7 @@
 					 ******************************************************************/
 					write: function() {
 						try {
-							var literalTreeNodes = scope.literalTree.getNodes();
-							
-							var semantic = admLiteralParser.toSemantic(literalTreeNodes);
+							var semantic = admLiteralParser.getAdmSemantic(scope.literalTree);
 
 							scope.modelAdm = semantic;
 							scope.modelOm = semantic.getOpenMath();

@@ -1,3 +1,12 @@
+/*******************************************************************
+* The admLiteralNode object is a temporary format in which
+*	mathematical expressions are stored when they are entered into an
+*	admMathInput field.
+*	They are continuously converted to admSemanticNode objects as the
+*	user types, and are never converted back unless to display in
+* another admMathInput field.
+*******************************************************************/
+
 (function() {
 	var module = angular.module("admMathLiteral", []);
 
