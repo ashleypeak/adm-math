@@ -180,3 +180,78 @@ Convert an OpenMath string to an admSemanticNode object
 
 ##### adm:atexParser
 Convert a LaTeX string to an admSemanticNode object
+
+---
+### adm-math-plot
+
+A canvas-based plotting tool
+
+#### Usage
+
+First include the module files:
+
+```html
+<link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
+<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+<script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-parser.js"></script>
+<script type="text/javascript" src="bower_components/adm-math/js/adm-math-plot.js"></script>
+```
+
+Then include the module in your Angular.js module:
+
+```javascript
+var myApp = angular.module("myApp", ["admMathPlot"]);
+```
+
+And wherever you want a plot, add
+
+```html
+<canvas adm-plot></canvas>
+```
+
+#### Attributes
+
+| Attribute      | Description             | Type         | Required | Default |
+| -------------- | ----------------------- | ------------ | -------- | ------- |
+| width          | width of canvas         | INT          | yes      |         |
+| height         | height of canvas        | INT          | yes      |         |
+| admXMin        | leftmost x value        | INT          | no       | -10     |
+| admXMax        | rightmost x value       | INT          | no       | 10      |
+| admYMin        | bottommost y value      | INT          | no       | -10     |
+| admYMax        | topmost y value         | INT          | no       | 10      |
+| admNoGridlines | don't plot axes or grid | BOOLEAN      | no       | false   |
+
+#### Subdirectives
+
+These element-level directives go inside your `adm-plot`, and can be used to plot different things:
+
+##### adm-plot-function
+
+Plot a function described by expression in `adm-rule`.
+
+| Attribute      | Description                                                | Type         | Required | Default             |
+| -------------- | ---------------------------------------------------------- | ------------ | -------- | ------------------- |
+| admRule        | a description, of format `admFormat`, of the curve to plot | VAR          | yes      |                     |
+| admFormat      | format of `admRule`, can be `latex`, `openmath` or `adm`   | STRING       | no       | "latex"             |
+| admColour      | colour of the curve                                        | STRING       | no       | "#000000"           |
+| admDomainMin   | the minimum value of the domain                            | INT          | no       | admMathPlot.admXMin |
+| admDomainMax   | the maximum value of the domain                            | INT          | no       | admMathPlot.admXMax |
+
+**Note:** `admRule` takes a variable. If you want to pass it a string, enclose in quotes: `adm-rule="'x^2'"`.
+
+##### adm-plot-label
+
+Plot a function described by expression in `adm-rule`.
+
+| Attribute      | Description                                                          | Type                | Required | Default             |
+| -------------- | -------------------------------------------------------------------- | ------------------- | -------- | ------------------- |
+| admContent     | the expression, of format `admFormat`, to be written on the canvas   | VAR                 | yes      |                     |
+| admPos			   | the position to write at, in the form "(x,y)" (in graph coordinates) | STRING "(INT, INT)" | yes      |                     |
+| admFormat      | format of `admContent`, can be `latex`, `openmath` or `adm`          | STRING              | no       | "latex"             |
+| admTextSize	   | the size of the text, in pixels                                      | INT                 | no       | 25                  |
+| admColour      | the colour of the text                                               | STRING              | no       | "#000000"           |
+
+**Note:** `admContent` takes a variable. If you want to pass it a string, enclose in quotes: `adm-content="'x^2'"`.

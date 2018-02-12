@@ -36,6 +36,26 @@
 
 				getLatex: function() {
 					return this.value;
+				},
+				
+				plot: function(x) {
+					return parseInt(this.value);
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					context.font = textSize+"px "+fontFamily;
+					
+					return context.measureText(this.value).width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(this.value, pos.x, pos.y+textSize);
+					pos.x += context.measureText(this.value).width;
+					
+					return pos;
 				}
 			};
 		};
@@ -60,6 +80,30 @@
 
 				getLatex: function() {
 					return this.name;
+				},
+				
+				//all variables are assumed to be x for the time being for plotting
+				plot: function(x) {
+					if(this.name === "x")
+						return x;
+					else
+						return 0;
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					context.font = textSize+"px "+fontFamily;
+					
+					return context.measureText(this.name).width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(this.name, pos.x, pos.y+textSize);
+					pos.x += context.measureText(this.name).width;
+					
+					return pos;
 				}
 			};
 		};
@@ -104,6 +148,38 @@
 				getLatex: function() {
 					var opSymbol = (this.symbol === "*" ? " \\times " : this.symbol);
 					return this.children[0].getLatex() + opSymbol + this.children[1].getLatex();
+				},
+				
+				plot: function(x) {
+					switch(this.symbol) {
+						case "+":	return this.children[0].plot(x) + this.children[1].plot(x);
+						case "-":	return this.children[0].plot(x) - this.children[1].plot(x);
+						case "*":	return this.children[0].plot(x) * this.children[1].plot(x);
+					}
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var width = this.children[0].getWidthOnCanvas(context, textSize, fontFamily);
+					width += this.children[1].getWidthOnCanvas(context, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					width += context.measureText(this.symbol).width;;
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					pos = this.children[0].writeOnCanvas(context, pos, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(this.symbol, pos.x, pos.y+textSize);
+					pos.x += context.measureText(this.symbol).width;
+					
+					pos = this.children[1].writeOnCanvas(context, pos, textSize, fontFamily);
+					
+					return pos;
 				}
 			};
 		};
@@ -139,6 +215,31 @@
 
 				getLatex: function() {
 					return "-" + this.child.getLatex();
+				},
+				
+				plot: function(x) {
+					return 0-this.child.plot(x);
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var width = this.child.getWidthOnCanvas(context, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					width += context.measureText("-").width;;
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText("-", pos.x, pos.y+textSize);
+					pos.x += context.measureText("-").width;
+					
+					pos = this.child.writeOnCanvas(context, pos, textSize, fontFamily);
+					
+					return pos;
 				}
 			};
 		};
@@ -176,6 +277,28 @@
 
 				getLatex: function() {
 					return this.base.getLatex() + "^{" + this.exponent.getLatex() + "}";
+				},
+				
+				plot: function(x) {
+					return Math.pow(this.base.plot(x), this.exponent.plot(x));
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var width = this.base.getWidthOnCanvas(context, textSize, fontFamily);
+					width += this.exponent.getWidthOnCanvas(context, textSize/2, fontFamily);
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					
+					pos = this.base.writeOnCanvas(context, pos, textSize, fontFamily);
+					pos = this.exponent.writeOnCanvas(context, pos, textSize/2, fontFamily);
+					
+					return pos;
 				}
 			};
 		};
@@ -213,6 +336,46 @@
 
 				getLatex: function() {
 					return "\\frac{" + this.numerator.getLatex() + "}{" + this.denominator.getLatex() + "}";
+				},
+				
+				plot: function(x) {
+					return this.numerator.plot(x)/this.denominator.plot(x);
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var numeratorWidth = this.numerator.getWidthOnCanvas(context, textSize/2, fontFamily);
+					var denominatorWidth = this.denominator.getWidthOnCanvas(context, textSize/2, fontFamily);
+					
+					var width = Math.max(numeratorWidth, denominatorWidth);
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					var numeratorWidth = this.numerator.getWidthOnCanvas(context, textSize/2, fontFamily);
+					var denominatorWidth = this.denominator.getWidthOnCanvas(context, textSize/2, fontFamily);
+					var totalWidth = Math.max(numeratorWidth, denominatorWidth);
+					
+					var numeratorShift = Math.max(0, (denominatorWidth-numeratorWidth)/2);
+					var denominatorShift = Math.max(0, (numeratorWidth-denominatorWidth)/2);
+					
+					this.numerator.writeOnCanvas(context, {x: pos.x+numeratorShift, y: pos.y}, textSize/2, fontFamily);
+					this.denominator.writeOnCanvas(context, {x:  pos.x+denominatorShift, y: pos.y+textSize/2}, textSize/2, fontFamily);
+					
+					//draw middle line
+					context.beginPath();
+					context.moveTo(pos.x, Math.round(pos.y+textSize*0.6)); //no theoretical basis, found experimentally
+					context.lineTo(pos.x+totalWidth, Math.round(pos.y+textSize*0.6));
+					context.lineWidth = Math.round(textSize/15); //no theoretical basis, found experimentally
+					context.stroke();
+					
+					pos = {
+						x: pos.x+totalWidth,
+						y: pos.y};
+					
+					return pos;
 				}
 			};
 		};
@@ -264,6 +427,46 @@
 						return "\\sqrt{" + this.radicand.getLatex() + "}";
 					else
 						return "\\sqrt[" + this.index.getLatex() + "]{" + this.radicand.getLatex() + "}";
+				},
+				
+				plot: function(x) {
+					return Math.pow(this.radicand.plot(x), 1/this.index.plot(x));
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var width = this.radicand.getWidthOnCanvas(context, textSize, fontFamily);
+					
+					width += textSize/2;
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					if(this.index.type !== "numeral" || this.index.value !== "2")
+						this.index.writeOnCanvas(context, pos, textSize/2, fontFamily);
+					
+					var radicandWidth = this.radicand.getWidthOnCanvas(context, textSize, fontFamily);
+					
+					//draw root sign
+					context.beginPath();
+					context.moveTo(pos.x, pos.y+3*textSize/4);
+					context.lineTo(pos.x+textSize/4, pos.y+textSize);
+					context.lineTo(pos.x+textSize/2, pos.y); //no theoretical basis, found experimentally
+					context.lineTo(pos.x+textSize/2+radicandWidth, pos.y);
+					context.lineWidth = Math.round(textSize/15); //no theoretical basis, found experimentally
+					context.stroke();
+					
+					pos.x += textSize/2;
+					
+					this.radicand.writeOnCanvas(context, pos, textSize, fontFamily);
+					
+					pos = {
+						x: pos.x+radicandWidth,
+						y: pos.y};
+					
+					return pos;
 				}
 			};
 		};
@@ -307,6 +510,41 @@
 						return "|" + this.child.getLatex() + "|";
 					
 					return "\\" + this.name + "(" + this.child.getLatex() + ")";
+				},
+				
+				plot: function(x) {
+					switch(this.name) {
+						case "sin":	return Math.sin(this.child.plot(x));
+						case "cos":	return Math.cos(this.child.plot(x));
+						case "tan":	return Math.tan(this.child.plot(x));
+						case "abs":	return Math.abs(this.child.plot(x));
+						case "ln":	return Math.log(this.child.plot(x));
+					}
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var width = this.child.getWidthOnCanvas(context, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					width += context.measureText(this.name+"()").width;
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(this.name+"(", pos.x, pos.y+textSize);
+					pos.x += context.measureText(this.name+"(").width;
+					
+					pos = this.child.writeOnCanvas(context, pos, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(")", pos.x, pos.y+textSize);
+					pos.x += context.measureText(")").width;
+					
+					return pos;
 				}
 			};
 		};
@@ -343,6 +581,43 @@
 				
 				getLatex: function() {
 					return "\\log_{" + this.base.getLatex() + "}(" + this.argument.getLatex() + ")";
+				},
+				
+				plot: function(x) {
+					return Math.log(this.argument.plot(x)) / Math.log(this.base.plot(x));
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var width = this.base.getWidthOnCanvas(context, textSize/2, fontFamily);
+					width += this.argument.getWidthOnCanvas(context, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					width += context.measureText("log()").width;
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText("log", pos.x, pos.y+textSize);
+					pos.x += context.measureText("log").width;
+					
+					var newPos = this.base.writeOnCanvas(context, {x: pos.x, y: pos.y+textSize/2}, textSize/2, fontFamily);
+					pos.x = newPos.x;
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText("(", pos.x, pos.y+textSize);
+					pos.x += context.measureText("(").width;
+					
+					pos = this.argument.writeOnCanvas(context, pos, textSize, fontFamily);
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(")", pos.x, pos.y+textSize);
+					pos.x += context.measureText(")").width;
+					
+					return pos;
 				}
 			};
 		};
@@ -376,6 +651,47 @@
 						case "e":					return "e";				break;
 						case "infinity":	return "\\infty";	break;
 					};
+				},
+				
+				plot: function(x) {
+					switch(this.name) {
+						case "e":					return Math.E;
+						case "pi":				return Math.PI;
+						case "infinity":	return 0;
+					}
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var symbol = "";
+					
+					switch(this.name) {
+						case "e":					symbol = "e";		break;
+						case "pi":				symbol = "π";		break;
+						case "infinity":	symbol = "∞";		break;
+					}
+					
+					context.font = textSize+"px "+fontFamily;
+					var width = context.measureText(symbol).width;
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					var symbol = "";
+					
+					switch(this.name) {
+						case "e":					symbol = "e";		break;
+						case "pi":				symbol = "π";		break;
+						case "infinity":	symbol = "∞";		break;
+					}
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(symbol, pos.x, pos.y+textSize);
+					pos.x += context.measureText(symbol).width;
+					
+					return pos;
 				}
 			};
 		};
@@ -401,6 +717,14 @@
 				
 				getLatex: function() {
 					return this.child.getLatex();
+				},
+				
+				plot: function(x) {
+					return this.child.plot(x);
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					return this.child.writeOnCanvas(context, pos, textSize, fontFamily);
 				}
 			};
 		};
