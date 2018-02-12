@@ -102,7 +102,7 @@
 				this.xMax = typeof $scope.xMax !== "undefined" ? parseFloat($scope.xMax) : 10;
 				this.yMin = typeof $scope.yMin !== "undefined" ? parseFloat($scope.yMin) : -10;
 				this.yMax = typeof $scope.xMax !== "undefined" ? parseFloat($scope.yMax) : 10;
-				this.noGridlines = typeof $scope.noGridlines !== "undefined" ? $scope.noGridlines : false;
+				this.noGridlines = typeof $scope.noGridlines !== "undefined";
 
 				this.context	= $element[0].getContext('2d');
 				this.width		= parseInt($attrs.width);
@@ -134,7 +134,7 @@
 					this.context.stroke();
 				
 					if(!this.noGridlines) {
-						for(var i = this.xMin; i <= this.xMax; i++) {
+						for(var i = Math.ceil(this.xMin); i <= this.xMax; i++) {
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
@@ -163,7 +163,7 @@
 					this.context.stroke();
 				
 					if(!this.noGridlines) {
-						for(var i = this.yMin; i <= this.yMax; i++) {
+						for(var i = Math.ceil(this.yMin); i <= this.yMax; i++) {
 							if(i == 0) //don't draw in y=0 if it's on the centre line
 								continue;
 
@@ -187,7 +187,7 @@
 
 					//draw labels
 					if(!this.noGridlines) {
-						for(var i = this.xMin; i <= this.xMax; i++) {
+						for(var i = Math.ceil(this.xMin); i <= this.xMax; i++) {
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
@@ -198,7 +198,7 @@
 							this.context.fillText(Math.round(i*100)/100, this.scale.x*(i-this.xMin)-4, this.centre.y-7-5);
 						}
 
-						for(var i = this.yMin; i <= this.yMax; i++) {
+						for(var i = Math.ceil(this.yMin); i <= this.yMax; i++) {
 							if(i == 0) //don't draw in y=0 if it's on the centre line
 								continue;
 
