@@ -5,10 +5,11 @@
   ],
   "description": "An Angular.js library for manipulating mathematical expressions",
   "main": [
-    "js/adm-math-core.js",
-    "js/adm-math-openmath-converter.js",
+    "js/adm-math-literal.js",
+    "js/adm-math-semantic.js",
+    "js/adm-math-parser.js",
     "js/adm-math-input.js",
-    "js/adm-math-bind.js",
+    "js/adm-math-plot.js",
     "css/adm-math.css"
   ],
   "license": "MIT",
