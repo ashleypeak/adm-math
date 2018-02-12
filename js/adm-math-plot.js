@@ -240,7 +240,7 @@
 				
 				scope.ruleParsed = admPlotUtils.parseExpression(scope.rule, scope.format);;
 				
-				function plot() {
+				if(scope.ruleParsed && scope.ruleParsed.type !== "error") {
 					plotCtrl.context.save();
 						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);		//move (0,0) to graph centre
 						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
@@ -257,9 +257,6 @@
 					plotCtrl.context.strokeStyle = scope.colour;
 					plotCtrl.context.stroke();
 				}
-				
-				if(scope.ruleParsed && scope.ruleParsed.type !== "error")
-					plot();
 			}
 		};
 	}]);
@@ -293,6 +290,285 @@
 					
 					scope.contentParsed.writeOnCanvas(plotCtrl.context, scope.pos, scope.textSize, fontFamily);
 				}
+			}
+		};
+	}]);
+	
+	module.directive("admPlotPoint", ["admPlotUtils", function(admPlotUtils) {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			replace: true,
+			template: "",
+			scope: {
+				pos: "@admPos",
+				colour: "@admColour"
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				if(!scope.colour) scope.colour = "#000000";
+				
+				scope.pos = admPlotUtils.parsePoint(scope.pos);
+				scope.pos = admPlotUtils.toCanvasCoords(scope.pos, plotCtrl.centre, plotCtrl.scale);
+				
+				if(scope.pos !== null) {
+					plotCtrl.context.fillStyle = scope.colour;
+					plotCtrl.context.beginPath();
+					plotCtrl.context.arc(scope.pos.x, scope.pos.y, 4, 0, 2 * Math.PI);
+					plotCtrl.context.fill();
+				}
+			}
+		};
+	}]);
+	
+	module.directive("admPlotAsymptote", function() {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			replace: true,
+			template: "",
+			scope: {
+				xIntercept: "@admXIntercept",
+				yIntercept: "@admYIntercept",
+				colour: "@admColour"
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				if(!scope.colour) scope.colour = "#000000";
+				
+				var startPoint, endPoint;
+				if(typeof scope.xIntercept !== "undefined") {
+					scope.xIntercept = parseFloat(scope.xIntercept);
+					
+					startPoint = {x: scope.xIntercept, y: plotCtrl.yMin};
+					endPoint = {x: scope.xIntercept, y: plotCtrl.yMax};
+				} else if(typeof scope.yIntercept !== "undefined") {
+					scope.yIntercept = parseFloat(scope.yIntercept);
+					
+					startPoint = {x: plotCtrl.xMin, y: scope.yIntercept};
+					endPoint = {x: plotCtrl.xMax, y: scope.yIntercept};
+				} else {
+					//expand this at some point to allow arbitrary asymptotes
+				}
+
+				plotCtrl.context.save();
+					plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);	//move (0,0) to graph centre
+					plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+			
+					plotCtrl.context.beginPath();
+					
+					plotCtrl.context.moveTo(startPoint.x, startPoint.y);
+					plotCtrl.context.lineTo(endPoint.x, endPoint.y);
+				plotCtrl.context.restore();
+
+				plotCtrl.context.lineJoin = "round";
+				plotCtrl.context.lineWidth = 2;
+				plotCtrl.context.setLineDash([10, 5]);
+				plotCtrl.context.strokeStyle = scope.colour;
+				plotCtrl.context.stroke();
+				plotCtrl.context.setLineDash([]);
+			}
+		};
+	});
+	
+	module.directive("admPlotUnitCircle", function() {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			replace: true,
+			template: "",
+			scope: {
+				colour: "@admColour"
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				if(!scope.colour) scope.colour = "#000000";
+
+				plotCtrl.context.save();
+					plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);	//move (0,0) to graph centre
+					plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+			
+					plotCtrl.context.beginPath();
+					plotCtrl.context.arc(0, 0, 1, 0, 2*Math.PI);
+				plotCtrl.context.restore();
+
+				plotCtrl.context.lineJoin = "round";
+				plotCtrl.context.lineWidth = 2;
+				plotCtrl.context.strokeStyle = scope.colour;
+				plotCtrl.context.stroke();
+			}
+		};
+	});
+	
+	module.directive("admPlotRadialLine", ["admPlotUtils", function(admPlotUtils) {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			replace: true,
+			template: "",
+			scope: {
+				angle: "@admAngle",
+				markAngleFrom: "@admMarkAngleFrom",
+				angleLabel: "@admAngleLabel", //ignored if markAngleFrom undefined
+				colour: "@admColour"
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				if(!scope.colour) scope.colour = "#000000";
+				scope.angle = parseFloat(scope.angle)*Math.PI/180;
+				
+				if(typeof scope.markAngleFrom === "undefined") {
+					scope.markAngle = false;
+				} else {
+					scope.markAngle = true;
+					scope.markAngleFrom = parseFloat(scope.markAngleFrom)*Math.PI/180;
+					if(!scope.angleLabel) scope.angleLabel = "\u03b8"; //theta
+				}
+
+				function plot() {
+					plotCtrl.context.save();
+						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);	//move (0,0) to graph centre
+						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+				
+						plotCtrl.context.beginPath();
+						plotCtrl.context.moveTo(0, 0);
+						plotCtrl.context.lineTo(Math.cos(scope.angle), Math.sin(scope.angle));
+					plotCtrl.context.restore();
+
+					plotCtrl.context.lineWidth = 2;
+					plotCtrl.context.stroke();
+				}
+
+				function drawAngleMarking() {
+						//draw marking
+						plotCtrl.context.beginPath();
+						plotCtrl.context.arc(plotCtrl.centre.x, plotCtrl.centre.y, 30, Math.min(scope.angle, scope.markAngleFrom), Math.max(scope.angle, scope.markAngleFrom))
+						plotCtrl.context.lineWidth = 1;
+						plotCtrl.context.stroke();
+						
+						//draw label
+						var averagedAngle = (scope.angle+scope.markAngleFrom)/2;
+						var labelPos = 	{
+							x: plotCtrl.centre.x + Math.cos(averagedAngle)*45 - plotCtrl.context.measureText(scope.angleLabel).width/2,
+							y: plotCtrl.centre.y + Math.sin(averagedAngle)*45 + 5}
+						
+						plotCtrl.context.fillText(scope.angleLabel, labelPos.x, labelPos.y);
+				}
+				
+				plotCtrl.context.lineJoin = "round";
+				plotCtrl.context.strokeStyle = scope.colour;
+				plotCtrl.context.fillStyle = scope.colour;
+				plotCtrl.context.font = "15px Arial";
+				
+				plot();
+				if(scope.markAngle)
+					drawAngleMarking();
+			}
+		};
+	}]);
+	
+	module.directive("admPlotLine", ["admPlotUtils", function(admPlotUtils) {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			replace: true,
+			template: "",
+			scope: {
+				start: "@admStart",
+				end: "@admEnd",
+				congruencyMarker: "@admCongruencyMarker",
+				colour: "@admColour"
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				if(!scope.colour) scope.colour = "#000000";
+				
+				scope.start = admPlotUtils.parsePoint(scope.start);
+				scope.end = admPlotUtils.parsePoint(scope.end);
+				
+				if(typeof scope.congruencyMarker !== "undefined")
+					scope.congruencyMarker = parseInt(scope.congruencyMarker);
+
+				function plot() {
+					plotCtrl.context.save();
+						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);	//move (0,0) to graph centre
+						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+				
+						plotCtrl.context.beginPath();
+						plotCtrl.context.moveTo(scope.start.x, scope.start.y);
+						plotCtrl.context.lineTo(scope.end.x, scope.end.y);
+					plotCtrl.context.restore();
+
+					plotCtrl.context.lineJoin = "round";
+					plotCtrl.context.lineWidth = 2;
+					plotCtrl.context.strokeStyle = scope.colour;
+					plotCtrl.context.stroke();
+				}
+				
+				function dot(v1, v2) {
+					return v1[0]*v2[0] + v1[1]*v2[1];
+				}
+				
+				//all of this from definition dot(a,b) - |a||b|cos(theta)
+				function angleBetweenVectors(v1, v2) {
+					var dotProd = dot(v1, v2);
+					
+					var v1Magnitude = Math.sqrt(dot(v1, v1));
+					var v2Magnitude = Math.sqrt(dot(v2, v2));
+					
+					return Math.acos(dotProd / (v1Magnitude * v2Magnitude));
+				}
+				
+				function drawCongruencyMarker() {
+					plotCtrl.context.save();
+						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);	//move (0,0) to graph centre
+						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+						
+						//the overall aim of this section is to change the coordinate system so that the line
+						//has coordinates (-1, 0) at one end and (1, 0) at the other.
+						//then we'll draw congruency markers around about (0, 0);
+						
+						//we're going to map the origin onto the line's midpoint
+						var targetPoint = [scope.start.x+(scope.end.x-scope.start.x)/2, scope.start.y+(scope.end.y-scope.start.y)/2];
+						
+						//we're going to map the vector (1, 0) to scope.end-targetPoint
+						var initVector = [1, 0];
+						var targetVector = [scope.end.x-targetPoint[0], scope.end.y-targetPoint[1]];
+						
+						//rotate the coordinate system
+						var angle = angleBetweenVectors(initVector, targetVector);
+						plotCtrl.context.rotate(angle);
+						
+						//the targetPoint needs to be updated with each transform so it continues
+						//to point to the target in the new, transformed coordinate system
+						targetPoint = [Math.cos(-angle)*targetPoint[0]-Math.sin(-angle)*targetPoint[1],
+							Math.sin(-angle)*targetPoint[0]+Math.cos(-angle)*targetPoint[1]];
+						
+						//scale the coordinate system
+						var targetVectorMagnitude = Math.sqrt(dot(targetVector, targetVector));
+						plotCtrl.context.scale(targetVectorMagnitude, targetVectorMagnitude);
+						
+						targetPoint = [targetPoint[0]/targetVectorMagnitude, targetPoint[1]/targetVectorMagnitude];
+						
+						//finally, translate the coordinate system to the targetPoint
+						plotCtrl.context.translate(targetPoint[0], targetPoint[1]);
+						
+						plotCtrl.context.beginPath();
+						
+						//draw markers at spacings of 0.04;
+						var markerDrawPos = (scope.congruencyMarker-1)*-0.02;
+						for(var i = 0; i < scope.congruencyMarker; i++) {
+							plotCtrl.context.moveTo(markerDrawPos/targetVectorMagnitude, -0.05/targetVectorMagnitude); //line has to be scaled to targetVectorMagnitude so that different
+							plotCtrl.context.lineTo(markerDrawPos/targetVectorMagnitude, 0.05/targetVectorMagnitude); // sized lines have the same sized congruency markers
+							
+							markerDrawPos += 0.04;
+						}
+					plotCtrl.context.restore();
+
+					plotCtrl.context.lineJoin = "round";
+					plotCtrl.context.lineWidth = 2;
+					plotCtrl.context.strokeStyle = scope.colour;
+					plotCtrl.context.stroke();
+				}
+				
+				plot();
+				if(typeof scope.congruencyMarker != "undefined")
+					drawCongruencyMarker();
 			}
 		};
 	}]);

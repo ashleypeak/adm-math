@@ -218,10 +218,10 @@ And wherever you want a plot, add
 | -------------- | ----------------------- | ------------ | -------- | ------- |
 | width          | width of canvas         | INT          | yes      |         |
 | height         | height of canvas        | INT          | yes      |         |
-| admXMin        | leftmost x value        | INT          | no       | -10     |
-| admXMax        | rightmost x value       | INT          | no       | 10      |
-| admYMin        | bottommost y value      | INT          | no       | -10     |
-| admYMax        | topmost y value         | INT          | no       | 10      |
+| admXMin        | leftmost x value        | FLOAT        | no       | -10     |
+| admXMax        | rightmost x value       | FLOAT        | no       | 10      |
+| admYMin        | bottommost y value      | FLOAT        | no       | -10     |
+| admYMax        | topmost y value         | FLOAT        | no       | 10      |
 | admNoGridlines | don't plot axes or grid | BOOLEAN      | no       | false   |
 
 #### Subdirectives
@@ -230,28 +230,87 @@ These element-level directives go inside your `adm-plot`, and can be used to plo
 
 ##### adm-plot-function
 
-Plot a function described by expression in `adm-rule`.
+Plot a function described by expression in `admRule`.
 
 | Attribute      | Description                                                | Type         | Required | Default             |
 | -------------- | ---------------------------------------------------------- | ------------ | -------- | ------------------- |
 | admRule        | a description, of format `admFormat`, of the curve to plot | VAR          | yes      |                     |
 | admFormat      | format of `admRule`, can be `latex`, `openmath` or `adm`   | STRING       | no       | "latex"             |
 | admColour      | colour of the curve                                        | STRING       | no       | "#000000"           |
-| admDomainMin   | the minimum value of the domain                            | INT          | no       | admMathPlot.admXMin |
-| admDomainMax   | the maximum value of the domain                            | INT          | no       | admMathPlot.admXMax |
+| admDomainMin   | the minimum value of the domain                            | FLOAT        | no       | admMathPlot.admXMin |
+| admDomainMax   | the maximum value of the domain                            | FLOAT        | no       | admMathPlot.admXMax |
 
 **Note:** `admRule` takes a variable. If you want to pass it a string, enclose in quotes: `adm-rule="'x^2'"`.
 
 ##### adm-plot-label
 
-Plot a function described by expression in `adm-rule`.
+Write the expression stored in `admContent` on the canvas.
 
-| Attribute      | Description                                                          | Type                | Required | Default             |
-| -------------- | -------------------------------------------------------------------- | ------------------- | -------- | ------------------- |
-| admContent     | the expression, of format `admFormat`, to be written on the canvas   | VAR                 | yes      |                     |
-| admPos			   | the position to write at, in the form "(x,y)" (in graph coordinates) | STRING "(INT, INT)" | yes      |                     |
-| admFormat      | format of `admContent`, can be `latex`, `openmath` or `adm`          | STRING              | no       | "latex"             |
-| admTextSize	   | the size of the text, in pixels                                      | INT                 | no       | 25                  |
-| admColour      | the colour of the text                                               | STRING              | no       | "#000000"           |
+| Attribute      | Description                                                          | Type                    | Required | Default             |
+| -------------- | -------------------------------------------------------------------- | ----------------------- | -------- | ------------------- |
+| admContent     | the expression, of format `admFormat`, to be written on the canvas   | VAR                     | yes      |                     |
+| admPos         | the position to write at, in the form "(x,y)" (in graph coordinates) | STRING "(FLOAT, FLOAT)" | yes      |                     |
+| admFormat      | format of `admContent`, can be `latex`, `openmath` or `adm`          | STRING                  | no       | "latex"             |
+| admTextSize	   | the size of the text, in pixels                                      | INT                     | no       | 25                  |
+| admColour      | the colour of the text                                               | STRING                  | no       | "#000000"           |
 
 **Note:** `admContent` takes a variable. If you want to pass it a string, enclose in quotes: `adm-content="'x^2'"`.
+
+##### adm-plot-point
+
+Mark a point at position `adm-pos`.
+
+| Attribute      | Description                                                          | Type                    | Required | Default             |
+| -------------- | -------------------------------------------------------------------- | ----------------------- | -------- | ------------------- |
+| admPos         | the position to write at, in the form "(x,y)" (in graph coordinates) | STRING "(FLOAT, FLOAT)" | yes      |                     |
+| admColour      | the colour of the point                                              | STRING                  | no       | "#000000"           |
+
+##### adm-plot-asymptote
+
+Draw an (vertical or horizontal) asymptote passing through either (`admXIntercept`, 0) or (0, `admYIntercept`).
+
+| Attribute      | Description                                              | Type                | Required | Default             |
+| -------------- | -------------------------------------------------------- | ------------------- | -------- | ------------------- |
+| admXIntercept  | the x intercept of the, if defined, vertical asymptote   | FLOAT               | no       |                     |
+| admYIntercept	 | the y intercept of the, if defined, horizontal asymptote | FLOAT               | no       |                     |
+| admColour      | the colour of the asymptote                              | STRING              | no       | "#000000"           |
+
+**Note:** One and only one of `admXIntercept` and `admYIntercept` must be defined.
+
+##### adm-plot-unit-circle
+
+Draw a circle of radius 1 at (0, 0) (in graph coordinates).
+
+| Attribute      | Description                                                          | Type                    | Required | Default             |
+| -------------- | -------------------------------------------------------------------- | ----------------------- | -------- | ------------------- |
+| admColour      | the colour of the circle                                             | STRING                  | no       | "#000000"           |
+
+##### adm-plot-radial-line
+
+Draw a line out from (0, 0) (in graph coordinates) of length 1 at angle `admAngle` from the positive x direction.
+
+Designed for use in conjunction with `adm-plot-unit-circle`.
+
+| Attribute        | Description                                                                    | Type                | Required | Default             |
+| ---------------- | ------------------------------------------------------------------------------ | ------------------- | -------- | ------------------- |
+| admAngle         | the angle (in radians), from the positive x direction, of the line             | FLOAT               | yes      |                     |
+| admMarkAngleFrom | the angle (in radians), from which the angle of the radial line will be marked | FLOAT               | no       |                     |
+| admLabel	       | the label with which the angle will be marked                                  | STRING              | no       | \theta              |
+| admColour        | the colour of the line                                                         | STRING              | no       | "#000000"           |
+
+**Note:** The angle of the line will only be marked if `admMarkAngleFrom` is set.
+
+##### adm-plot-line
+
+Draw a line from `admStart` to `admEnd`.
+
+Designed for use in conjunction with `adm-plot-unit-circle`.
+
+| Attribute           | Description                                                                         | Type                    | Required | Default   |
+| ------------------- | ----------------------------------------------------------------------------------- | ----------------------- | -------- | --------- |
+| admStart            | one end of the line, in the form "(x,y)" (in graph coordinates)                     | STRING "(FLOAT, FLOAT)" | yes      |           |
+| admStart            | the other end of the line, in the form "(x,y)" (in graph coordinates)               | STRING "(FLOAT, FLOAT)" | yes      |           |
+| admCongruencyMarker | the number of strokes in the congruency marker, showing lines of equivanlent length | INT                     | no       |           |
+| admColour           | the colour of the line                                                              | STRING                  | no       | "#000000" |
+
+**Note:** No congruency marker will be drawn if `admCongruencyMarker` is left blank.
