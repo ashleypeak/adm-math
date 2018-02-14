@@ -95,10 +95,6 @@
 
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
-				
-				if(nodes[i].type == "comma" && depth != 1) //1 because the initial bracket of the list should be open
-					throw "errUnmatchedParenthesis";
-				
 				if(nodes[i].type != "parenthesis")				continue;
 				
 				depth += (nodes[i].isStart ? 1 : -1);
@@ -123,10 +119,6 @@
 			var matched = true;
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
-				
-				if(nodes[i].type == "comma" && !matched)
-					throw "errUnmatchedPipe";
-				
 				if(nodes[i].type != "pipe")								continue;
 				
 				matched = !matched;
@@ -159,29 +151,57 @@
 		}
 		
 		/*******************************************************************
-		 * function:		assertValidList()
+		 * function:		collectList()
 		 *
-		 * description:	takes mixed collection of nodes `nodes` and
-		 *							throws an exception if there is a comma node, but
-		 *							the list does not match the format
-		 *							([expression],[expression],...)
+		 * description:	takes mixed collection of nodes `nodes` and an index
+		 *							`index` where there is known to be a comma.
+		 *							search forward and back to find the parentheses
+		 *							containing the list, and return the indices of
+		 *							the opening and closing parens.
 		 *
 		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *							index:		INT
 		 *
-		 * return:			none
+		 * return:			[INT, INT]
 		 ******************************************************************/
-		function assertValidList(nodes) {
-			if(!isList(nodes))
-				return;
+		function collectList(nodes, index) {
+			var start = null;
+			var end = null;
 			
-			if(nodes[0].expressionType != "literal" || nodes[0].type != "parenthesis" || !nodes[0].isStart)
+			//go backwards, find the left paren around the list
+			var depth = 1;
+			for(var i = index-1; i >= 0; i--) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "parenthesis")				continue;
+				
+				depth += (nodes[i].isStart ? -1 : 1);
+				
+				if(depth == 0) {
+					start = i;
+					break;
+				}
+			}
+			
+			//go forwards, find the right paren around the list
+			depth = 1;
+			for(var i = index+1; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "parenthesis")				continue;
+				
+				depth += (nodes[i].isStart ? 1 : -1);
+				
+				if(depth == 0) {
+					end = i;
+					break;
+				}
+			}
+			
+			if(start === null || end === null)
 				throw "errInvalidList";
 			
-			var lastElement = nodes[nodes.length-1];
-			if(lastElement.expressionType != "literal" || lastElement.type != "parenthesis" || !lastElement.isEnd)
-				throw "errInvalidList";
+			return [start, end];
 		}
-
+		
 		/*******************************************************************
 		 * function:		parseList()
 		 *
@@ -196,28 +216,41 @@
 		 * return:			none
 		 ******************************************************************/
 		function parseList(nodes) {
-			if(!isList(nodes))
-				return;
-			
-			var members = []; //the list of semantic nodes which will comprise the admSemanticList.members
-			var elementNodes = []; //the list of literal nodes which will be combined into a single semantic element
-			for(var i = 1; i < nodes.length-1; i++) {
-				if(nodes[i].expressionType == "literal" && nodes[i].type == "comma") {
-					var elementNode = build(elementNodes);
-					members.push(elementNode);
-					
-					elementNodes = [];
-				} else {
-					elementNodes.push(nodes[i]);
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "comma")	continue;
+				
+				var [start, end] = collectList(nodes, i);
+				
+				var members = []; //the list of semantic nodes which will comprise the admSemanticList.members
+				var elementNodes = []; //the list of literal nodes which will be combined into a single semantic element
+				
+				var depth = 0; //don't collect commas inside brackets, they're sublists
+				for(var j = start+1; j < end; j++) {
+					if(nodes[j].expressionType == "literal" && nodes[j].type == "comma" && depth == 0) {
+						var elementNode = build(elementNodes);
+						members.push(elementNode);
+						
+						elementNodes = [];
+					} else {
+						elementNodes.push(nodes[j]);
+						
+						if(nodes[j].expressionType != "literal")	continue;
+						if(nodes[j].type != "parenthesis")				continue;
+						depth += (nodes[j].isStart ? 1 : -1);
+					}
 				}
+				
+				var elementNode = build(elementNodes);
+				members.push(elementNode);
+				
+				var listNode = admSemanticNode.build("list", members);
+				listNode.assertHasValidChildren();
+				
+				nodes.splice(start, end-start+1, listNode); //splice takes (start, length), not (start, end)
+				
+				i = start;
 			}
-			
-			var elementNode = build(elementNodes);
-			members.push(elementNode);
-			
-			var listNode = admSemanticNode.build("list", members);
-			
-			nodes.splice(0, nodes.length, listNode);
 		}
 		
 		/*******************************************************************
@@ -689,7 +722,6 @@
 				assertNotEmpty(newNodes);
 				assertParenthesesMatched(newNodes);
 				assertPipesMatched(newNodes);
-				assertValidList(newNodes);
 				parseList(newNodes);
 				parseParentheses(newNodes);
 				parsePipes(newNodes);

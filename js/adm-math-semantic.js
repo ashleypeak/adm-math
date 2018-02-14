@@ -16,6 +16,19 @@
 				type: "list",
 				members: members,
 
+				assertHasValidChildren: function() {
+					if(typeof this.members !== "object")	throw "errInvalidArguments";
+					if(!Array.isArray(this.members))			throw "errInvalidArguments";
+					if(this.members.length < 1)						throw "errInvalidArguments";
+					
+					for(var i = 0; i < this.members.length; i++) {
+						if(!this.members[i])																	throw "errInvalidArguments";
+						if(!this.members[i].hasOwnProperty("expressionType"))	throw "errInvalidArguments";
+						if(this.members[i].expressionType != "semantic")			throw "errInvalidArguments";
+						if(this.members[i].type == "error")										throw "errInvalidArguments";
+					}
+				},
+
 				getAdmLiteral: function(parentLiteralNode) {
 					var literalNodes = [];
 					
@@ -225,6 +238,7 @@
 						if(!this.children[i])																		throw "errInvalidArguments";
 						if(!this.children[i].hasOwnProperty("expressionType"))	throw "errInvalidArguments";
 						if(this.children[i].expressionType != "semantic")				throw "errInvalidArguments";
+						if(this.children[i].type == "error")										throw "errInvalidArguments";
 					}
 				},
 
@@ -299,6 +313,7 @@
 					if(!this.child)																		throw "errInvalidArguments";
 					if(!this.child.hasOwnProperty("expressionType"))	throw "errInvalidArguments";
 					if(this.child.expressionType != "semantic")				throw "errInvalidArguments";
+					if(this.child.type == "error")										throw "errInvalidArguments";
 				},
 
 				getAdmLiteral: function(parentLiteralNode) {
