@@ -9,6 +9,109 @@
 (function() {
 	var module = angular.module("admMathSemantic", ["admMathLiteral"]);
 
+	module.service("admSemanticList", ["admLiteralNode", function(admLiteralNode) {
+		this.build = function(members) {
+			return {
+				expressionType: "semantic",
+				type: "list",
+				members: members,
+
+				getAdmLiteral: function(parentLiteralNode) {
+					var literalNodes = [];
+					
+					var node = admLiteralNode.build(parentLiteralNode, "(");
+					literalNodes.push(node);
+					
+					for(var i = 0; i < members.length; i++) {
+						if(i != 0) {
+							var commaNode = admLiteralNode.build(parentLiteralNode, ",");
+							literalNodes.push(commaNode);
+						}
+						
+						var memberNodes = members[i].getAdmLiteral(parentLiteralNode);
+						
+						literalNodes = literalNodes.concat(memberNodes);
+					}
+
+					var node = admLiteralNode.build(parentLiteralNode, ")");
+					literalNodes.push(node);
+
+					return literalNodes;
+				},
+
+				getOpenMath: function() {
+					var openmath = "<OMA><OMS cd='list1' name='list'/>";
+					
+					for(var i = 0; i < this.members.length; i++)
+						openmath += this.members[i].getOpenMath();
+					
+					openmath += "</OMA>";
+					
+					return openmath;
+				},
+
+				getLatex: function() {
+					var latex = "(";
+					
+					for(var i = 0; i < this.members.length; i++) {
+						if(i != 0)
+							latex += ",";
+						
+						latex += this.members[i].getLatex();
+					}
+					
+					latex += ")";
+					
+					return latex;
+				},
+				
+				plot: function(x) {
+					return false;
+				},
+				
+				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					context.font = textSize+"px "+fontFamily;
+					
+					var width = context.measureText("()").width;
+					
+					var commaWidth = context.measureText(",").width;
+					width += (this.members.length-1)*commaWidth;
+					
+					for(var i = 0; i < this.members.length; i++)
+						width += this.members[i].getWidthOnCanvas(context, textSize, fontFamily);
+					
+					return width;
+				},
+				
+				writeOnCanvas: function(context, pos, textSize, fontFamily) {
+					pos = angular.copy(pos); //copy by value, avoid mutating the original
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText("(", pos.x, pos.y+textSize);
+					pos.x += context.measureText("(").width;
+					
+					var commaWidth = context.measureText(",").width;
+					
+					for(var i = 0; i < this.members.length; i++) {
+						if(i != 0) {
+							context.font = textSize+"px "+fontFamily;
+							context.fillText(",", pos.x, pos.y+textSize);
+							pos.x += commaWidth;
+						}
+						
+						pos = this.members[i].writeOnCanvas(context, pos, textSize, fontFamily);
+					}
+					
+					context.font = textSize+"px "+fontFamily;
+					context.fillText(")", pos.x, pos.y+textSize);
+					pos.x += context.measureText(")").width;
+					
+					return pos;
+				}
+			};
+		};
+	}]);
+	
 	module.service("admSemanticNumeral", ["admLiteralNode", function(admLiteralNode) {
 		this.build = function(value) {
 			return {
@@ -756,13 +859,14 @@
 		};
 	});
 
-	module.service("admSemanticNode", ["admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
+	module.service("admSemanticNode", ["admSemanticList", "admSemanticNumeral", "admSemanticVariable", "admSemanticOperator", "admSemanticUnaryMinus",
 		 "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticLogarithm",
 		 "admSemanticConstant", "admSemanticWrapper", "admSemanticError",
-		 function(admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
+		 function(admSemanticList, admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus, admSemanticExponent,
 			 admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticLogarithm, admSemanticConstant, admSemanticWrapper, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
+				case "list":				return admSemanticList.build(arguments[1]);
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
 				case "variable":		return admSemanticVariable.build(arguments[1]);
 				case "operator":		return admSemanticOperator.build(arguments[1], arguments[2]);

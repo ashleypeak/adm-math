@@ -186,6 +186,8 @@
 					addSymbol: function(symbol) {
 						var nodes = [];
 						switch(symbol) {
+							//case "equals":			nodes = [admLiteralNode.build(scope.cursor.expression, "=")];									break;
+							case "comma":				nodes = [admLiteralNode.build(scope.cursor.expression, ",")];									break;
 							case "plus":				nodes = [admLiteralNode.build(scope.cursor.expression, "+")];									break;
 							case "minus":				nodes = [admLiteralNode.build(scope.cursor.expression, "-")];									break;
 							case "times":				nodes = [admLiteralNode.build(scope.cursor.expression, "*")];									break;
@@ -248,7 +250,7 @@
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 						}
 					} catch(e) {
-						console.log("scope.$watch error: "+e);
+						//console.log("scope.$watch error: "+e);
 						//just suppress any errors, user can't do anything about them
 					}
 				});
@@ -312,7 +314,7 @@
 					},
 
 					/*******************************************************************
-					 * function:		blur()
+					 * function:		keypress()
 					 *
 					 * description:	run on ngKeypress of math input field
 					 *							if `e`.which is a valid character, inserts it into
@@ -324,7 +326,7 @@
 					 ******************************************************************/
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
-						if(/[a-zA-Z0-9.+\-*()\^|]/.test(character))
+						if(/[a-zA-Z0-9.+\-*()\^|,]/.test(character))
 							scope.cursor.insert(character);
 
 						scope.output.write();

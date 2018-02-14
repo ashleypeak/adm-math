@@ -9,7 +9,7 @@
 
 (function() {
 	var module = angular.module("admMathLiteral", []);
-
+	
 	module.service("admLiteralExpression", function() {
 		this.build = function(id, parentNode) {
 			return {
@@ -49,6 +49,19 @@
 						if(this.nodes[i].id == node.id)
 							return i;
 				}
+			};
+		};
+	});
+
+	module.service("admLiteralComma", function() {
+		this.build = function(id, parentNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "comma",
+				getVal: function() {	return ",";	},
+				getDisplay: function() {	return ",";	}
 			};
 		};
 	});
@@ -248,12 +261,12 @@
 		};
 	});
 
-	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralNumeral", "admLiteralLetter", "admLiteralPipe", "admLiteralSymbol",
-		 "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot", "admLiteralRoot",
-		 "admLiteralFunction", "admLiteralLogarithm",
-		 function(admLiteralExpression, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol, admLiteralParenthesis,
-			 admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralRoot, admLiteralFunction,
-			 admLiteralLogarithm) {
+	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralComma", "admLiteralNumeral", "admLiteralLetter", "admLiteralPipe",
+			"admLiteralSymbol", "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
+			"admLiteralRoot", "admLiteralFunction", "admLiteralLogarithm",
+		 function(admLiteralExpression, admLiteralComma, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol,
+				admLiteralParenthesis, admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralRoot,
+				admLiteralFunction, admLiteralLogarithm) {
 		var id = 0;
 
 		return {
@@ -266,6 +279,7 @@
 				else if(/^\|$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode, nodeVal); }
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
+				else if(/^,$/.test(nodeVal))			{ return admLiteralComma.build(id++, parentNode, nodeVal); }
 				else if(/^\^$/.test(nodeVal)) {
 					var exponent = admLiteralExpression.build(id++, null);
 					

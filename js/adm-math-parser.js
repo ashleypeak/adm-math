@@ -95,6 +95,10 @@
 
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
+				
+				if(nodes[i].type == "comma" && depth != 1) //1 because the initial bracket of the list should be open
+					throw "errUnmatchedParenthesis";
+				
 				if(nodes[i].type != "parenthesis")				continue;
 				
 				depth += (nodes[i].isStart ? 1 : -1);
@@ -119,6 +123,10 @@
 			var matched = true;
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
+				
+				if(nodes[i].type == "comma" && !matched)
+					throw "errUnmatchedPipe";
+				
 				if(nodes[i].type != "pipe")								continue;
 				
 				matched = !matched;
@@ -126,7 +134,92 @@
 
 			if(!matched)	throw "errUnmatchedPipe";
 		}
+		
+		/*******************************************************************
+		 * function:		isList()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							returns true if there is a comma node (thus the
+		 *							expression is assumed to be a list), or false
+		 *							otherwise.
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			BOOL
+		 ******************************************************************/
+		function isList(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				
+				if(nodes[i].type == "comma")
+					return true;
+			}
+			
+			return false;
+		}
+		
+		/*******************************************************************
+		 * function:		assertValidList()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							throws an exception if there is a comma node, but
+		 *							the list does not match the format
+		 *							([expression],[expression],...)
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function assertValidList(nodes) {
+			if(!isList(nodes))
+				return;
+			
+			if(nodes[0].expressionType != "literal" || nodes[0].type != "parenthesis" || !nodes[0].isStart)
+				throw "errInvalidList";
+			
+			var lastElement = nodes[nodes.length-1];
+			if(lastElement.expressionType != "literal" || lastElement.type != "parenthesis" || !lastElement.isEnd)
+				throw "errInvalidList";
+		}
 
+		/*******************************************************************
+		 * function:		parseList()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and, if it
+		 *							has any commas, parse it as a list, replacing all
+		 *							literal subexpressions between the commas with parsed
+		 *							semantic nodes
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseList(nodes) {
+			if(!isList(nodes))
+				return;
+			
+			var members = []; //the list of semantic nodes which will comprise the admSemanticList.members
+			var elementNodes = []; //the list of literal nodes which will be combined into a single semantic element
+			for(var i = 1; i < nodes.length-1; i++) {
+				if(nodes[i].expressionType == "literal" && nodes[i].type == "comma") {
+					var elementNode = build(elementNodes);
+					members.push(elementNode);
+					
+					elementNodes = [];
+				} else {
+					elementNodes.push(nodes[i]);
+				}
+			}
+			
+			var elementNode = build(elementNodes);
+			members.push(elementNode);
+			
+			var listNode = admSemanticNode.build("list", members);
+			
+			nodes.splice(0, nodes.length, listNode);
+		}
+		
 		/*******************************************************************
 		 * function:		parseExponents()
 		 *
@@ -596,6 +689,8 @@
 				assertNotEmpty(newNodes);
 				assertParenthesesMatched(newNodes);
 				assertPipesMatched(newNodes);
+				assertValidList(newNodes);
+				parseList(newNodes);
 				parseParentheses(newNodes);
 				parsePipes(newNodes);
 				parseDivision(newNodes);
@@ -618,6 +713,7 @@
 					case "errNotFound":							return admSemanticNode.build("error", "Missing number.");
 					case "errUnmatchedParenthesis":	return admSemanticNode.build("error", "Unmatched parenthesis.");
 					case "errUnmatchedPipe":				return admSemanticNode.build("error", "Unmatched pipe.");
+					case "errInvalidList":					return admSemanticNode.build("error", "Invalid list.");
 					case "errMalformedNumeral":			return admSemanticNode.build("error", "Malformed Number.");
 					case "errInvalidArguments":			return admSemanticNode.build("error", "Invalid arguments.");
 					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
@@ -764,6 +860,39 @@
 
 			throw new Error("OMA references unimplemented symbol transc1."+omsNode.attributes.name.nodeValue);
 		}
+		
+		/*******************************************************************
+		 * function:		convertList1()
+		 *
+		 * description:	takes an OMA with OMS in content dictionary `list1`
+		 *							as node `xmlNode`, converts to an admSemanticNode
+		 *							returns
+		 *
+		 * arguments:		`xmlNode` DOM Element
+		 *
+		 * return:			admSemanticNode
+		 ******************************************************************/
+		function convertList1(xmlNode) {
+			omsNode = xmlNode.childNodes[0];
+
+			switch(omsNode.attributes.name.nodeValue) {
+				case "list":
+					if(xmlNode.childNodes.length < 3)	throw new Error("transc1.exp takes at least three children.");
+					
+					var memberNodes = [];
+					
+					for(var i = 1; i < xmlNode.childNodes.length; i++) {
+						var node = convertNode(xmlNode.childNodes[i]);
+						memberNodes.push(node);
+					}
+
+					var listNode = admSemanticNode.build("list", memberNodes);
+
+					return listNode;
+			}
+
+			throw new Error("OMA references unimplemented symbol list1."+omsNode.attributes.name.nodeValue);
+		}
 
 		/*******************************************************************
 		 * function:		convertNums1()
@@ -885,6 +1014,7 @@
 			switch(omsNode.attributes.cd.nodeValue) {
 				case "arith1":	return convertArith1(xmlNode);
 				case "transc1":	return convertTransc1(xmlNode);
+				case "list1":		return convertList1(xmlNode);
 			}
 
 			throw new Error("OMA references unimplemented content dictionary: "+omsNode.attributes.cd.nodeValue);
@@ -1242,9 +1372,9 @@
 				newNode = null;
 				latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
 				
-				if(/^[0-9.a-zA-Z+\-*()\|]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
-				else if(/^\^/.test(latex))							{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
-				else if(/^\\/.test(latex))							{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
+				if(/^[0-9.a-zA-Z+\-*()\|,]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
+				else if(/^\^/.test(latex))								{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
+				else if(/^\\/.test(latex))								{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
 				
 				if(newNode !== null)
 					literalNodes.push(newNode);
