@@ -287,6 +287,7 @@
 				
 				if(scope.contentParsed && scope.contentParsed.type !== "error") {
 					plotCtrl.context.fillStyle = scope.colour;
+					plotCtrl.context.strokeStyle = scope.colour;
 					
 					scope.contentParsed.writeOnCanvas(plotCtrl.context, scope.pos, scope.textSize, fontFamily);
 				}
