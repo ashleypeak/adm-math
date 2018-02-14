@@ -286,7 +286,7 @@
 				var fontFamily = "Arial"
 				
 				if(scope.contentParsed && scope.contentParsed.type !== "error") {
-					plotCtrl.context.strokeStyle = scope.colour;
+					plotCtrl.context.fillStyle = scope.colour;
 					
 					scope.contentParsed.writeOnCanvas(plotCtrl.context, scope.pos, scope.textSize, fontFamily);
 				}
