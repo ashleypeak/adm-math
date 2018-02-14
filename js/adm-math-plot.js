@@ -223,8 +223,8 @@
 			replace: true,
 			template: "",
 			scope: {
-				rule: "=?admRule",
-				format: "@?admFormat",
+				rule: "@admRule",
+				format: "@admFormat",
 				colour: "@admColour",
 				domainMin: "@admDomainMin",
 				domainMax: "@admDomainMax",
@@ -238,7 +238,7 @@
 				scope.domainMin = parseFloat(scope.domainMin);
 				scope.domainMax = parseFloat(scope.domainMax);
 				
-				scope.ruleParsed = admPlotUtils.parseExpression(scope.rule, scope.format);;
+				scope.ruleParsed = admPlotUtils.parseExpression(scope.rule, scope.format);
 				
 				if(scope.ruleParsed && scope.ruleParsed.type !== "error") {
 					plotCtrl.context.save();
@@ -268,8 +268,8 @@
 			replace: true,
 			template: "",
 			scope: {
-				content: "=?admContent",
-				format: "@?admFormat",
+				content: "@admContent",
+				format: "@admFormat",
 				pos: "@admPos",
 				textSize: "@admTextSize",
 				colour: "@admColour"

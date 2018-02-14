@@ -234,13 +234,11 @@ Plot a function described by expression in `admRule`.
 
 | Attribute      | Description                                                | Type         | Required | Default             |
 | -------------- | ---------------------------------------------------------- | ------------ | -------- | ------------------- |
-| admRule        | a description, of format `admFormat`, of the curve to plot | VAR          | yes      |                     |
-| admFormat      | format of `admRule`, can be `latex`, `openmath` or `adm`   | STRING       | no       | "latex"             |
+| admRule        | a description, of format `admFormat`, of the curve to plot | STRING       | yes      |                     |
+| admFormat      | format of `admRule`, can be "latex" or "openmath"          | STRING       | no       | "latex"             |
 | admColour      | colour of the curve                                        | STRING       | no       | "#000000"           |
 | admDomainMin   | the minimum value of the domain                            | FLOAT        | no       | admMathPlot.admXMin |
 | admDomainMax   | the maximum value of the domain                            | FLOAT        | no       | admMathPlot.admXMax |
-
-**Note:** `admRule` takes a variable. If you want to pass it a string, enclose in quotes: `adm-rule="'x^2'"`.
 
 ##### adm-plot-label
 
@@ -248,13 +246,11 @@ Write the expression stored in `admContent` on the canvas.
 
 | Attribute      | Description                                                          | Type                    | Required | Default             |
 | -------------- | -------------------------------------------------------------------- | ----------------------- | -------- | ------------------- |
-| admContent     | the expression, of format `admFormat`, to be written on the canvas   | VAR                     | yes      |                     |
+| admContent     | the expression, of format `admFormat`, to be written on the canvas   | STRING                  | yes      |                     |
 | admPos         | the position to write at, in the form "(x,y)" (in graph coordinates) | STRING "(FLOAT, FLOAT)" | yes      |                     |
-| admFormat      | format of `admContent`, can be `latex`, `openmath` or `adm`          | STRING                  | no       | "latex"             |
+| admFormat      | format of `admContent`, can be "latex" or "openmath"                 | STRING                  | no       | "latex"             |
 | admTextSize	   | the size of the text, in pixels                                      | INT                     | no       | 25                  |
 | admColour      | the colour of the text                                               | STRING                  | no       | "#000000"           |
-
-**Note:** `admContent` takes a variable. If you want to pass it a string, enclose in quotes: `adm-content="'x^2'"`.
 
 ##### adm-plot-point
 
