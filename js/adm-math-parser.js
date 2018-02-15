@@ -570,6 +570,36 @@
 				nodes.splice(i, 1, semanticVar);
 			}
 		}
+		
+		/*******************************************************************
+		 * function:		parsePrimes()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and
+		 *							remove all admLiteralPrimes, while increasing the
+		 *							number of primes on the admSemanticVariable to the
+		 *							left.
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parsePrimes(nodes) {
+			for(var i = 0; i < nodes.length; i++) {
+				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "prime")							continue;
+				
+				if(i == 0)																	throw "errMisplacedPrime";
+				if(nodes[i-1].expressionType != "semantic")	throw "errMisplacedPrime";
+				if(nodes[i-1].type != "variable")						throw "errMisplacedPrime";
+				
+				nodes[i-1].prime++;
+
+				nodes.splice(i, 1); //just remove the prime node
+				
+				i--;
+			}
+		}
 
 		/*******************************************************************
 		 * function:		parseSymbols()
@@ -738,6 +768,7 @@
 				parseMulticharacterSymbols(newNodes);	//parse symbols made of multiple characters, like sin, cos, pi
 				parseNumerals(newNodes);
 				parseVariables(newNodes);
+				parsePrimes(newNodes);
 				parseSymbols(newNodes);
 				parseFunctions(newNodes);
 				parseLogarithms(newNodes);
@@ -758,6 +789,7 @@
 					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
 					case "errMissingBase":					return admSemanticNode.build("error", "Exponent has no base.");
 					case "errMissingArgument":			return admSemanticNode.build("error", "Function has no argument.");
+					case "errMisplacedPrime":				return admSemanticNode.build("error", "There is a prime (') in an illegal position.");
 					default:												return admSemanticNode.build("error", "Unidentified error.");
 				}
 			}
@@ -1056,10 +1088,20 @@
 		function convertOMV(xmlNode) {
 			if(xmlNode.childNodes.length !== 0)								throw new Error("Node has incorrect number of children.");
 			if(typeof xmlNode.attributes.name == "undefined")	throw new Error("OMV must have attribute `name`.");
-
-			var semanticNode = admSemanticNode.build("variable", xmlNode.attributes.name.nodeValue);
-
-			return semanticNode;
+			
+			var varName = xmlNode.attributes.name.nodeValue;
+			var varParts = null;
+			
+			if((varParts = /^(.+)_prime(\d+)$/.exec(varName)) !== null) {
+				var semanticNode = admSemanticNode.build("variable", varParts[1]);
+				semanticNode.prime = parseInt(varParts[2]);
+				
+				return semanticNode;
+			} else {
+				var semanticNode = admSemanticNode.build("variable", varName);
+				
+				return semanticNode;
+			}	
 		}
 
 		/*******************************************************************
@@ -1442,9 +1484,9 @@
 				newNode = null;
 				latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
 				
-				if(/^[0-9.a-zA-Z+\-*()\|,=]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
-				else if(/^\^/.test(latex))								{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
-				else if(/^\\/.test(latex))								{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
+				if(/^[0-9.a-zA-Z+\-*()\|,=']/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
+				else if(/^\^/.test(latex))									{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
+				else if(/^\\/.test(latex))									{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
 				
 				if(newNode !== null)
 					literalNodes.push(newNode);

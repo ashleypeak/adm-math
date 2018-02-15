@@ -252,24 +252,40 @@
 				expressionType: "semantic",
 				type: "variable",
 				name: name,
+				prime: 0, //number of primes on variable i.e. x' (1) or x''' (3) or x (0)
 
 				getAdmLiteral: function(parentLiteralNode) {
-					var literalNode = admLiteralNode.build(parentLiteralNode, this.name);
+					var nodes = [];
+					
+					var nameNode = admLiteralNode.build(parentLiteralNode, this.name);
+					nodes.push(nameNode);
+					
+					for(var i = 0; i < this.prime; i++) {
+						var primeNode = admLiteralNode.build(parentLiteralNode, "'");
+						nodes.push(primeNode);
+					}
 
-					return [literalNode];
+					return nodes;
 				},
 
 				getOpenMath: function() {
-					return "<OMV name='"+this.name+"'/>";
+					if(this.prime === 0)
+						return "<OMV name='"+this.name+"'/>";
+					else
+						return "<OMV name='"+this.name+"_prime"+this.prime+"'/>";
 				},
 
 				getLatex: function() {
-					return this.name;
+					var latex = this.name;
+					
+					for(var i = 0; i < this.prime; i++)
+						latex += "'";
+					
+					return latex;
 				},
 				
-				//all variables are assumed to be x for the time being for plotting
 				plot: function(x) {
-					if(this.name === "x")
+					if(this.name === "x" && this.prime === 0)
 						return x;
 					else
 						return 0;
@@ -278,15 +294,25 @@
 				getWidthOnCanvas: function(context, textSize, fontFamily) {
 					context.font = textSize+"px "+fontFamily;
 					
-					return context.measureText(this.name).width;
+					var content = this.name;
+					
+					for(var i = 0; i < this.prime; i++)
+						content += "'";
+					
+					return context.measureText(content).width;
 				},
 				
 				writeOnCanvas: function(context, pos, textSize, fontFamily) {
 					pos = angular.copy(pos); //copy by value, avoid mutating the original
 					
+					var content = this.name;
+					
+					for(var i = 0; i < this.prime; i++)
+						content += "'";
+					
 					context.font = textSize+"px "+fontFamily;
-					context.fillText(this.name, pos.x, pos.y+textSize);
-					pos.x += context.measureText(this.name).width;
+					context.fillText(content, pos.x, pos.y+textSize);
+					pos.x += context.measureText(content).width;
 					
 					return pos;
 				}

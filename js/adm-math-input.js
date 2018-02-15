@@ -212,8 +212,8 @@
 								nodes = [node];
 								break;
 							default:
-								if(/^[0-9.a-zA-Z+\-*()\^\/\|,=]$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
-								else																						alert(symbol + ": Symbol not supported.");
+								if(/^[0-9.a-zA-Z+\-*()\^\/\|,=']$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
+								else																							alert(symbol + ": Symbol not supported.");
 						}
 						
 						angular.forEach(nodes, function(node) {
