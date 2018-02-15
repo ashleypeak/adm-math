@@ -128,26 +128,32 @@
 		}
 		
 		/*******************************************************************
-		 * function:		isList()
+		 * function:		parseEquality()
 		 *
-		 * description:	takes mixed collection of nodes `nodes` and
-		 *							returns true if there is a comma node (thus the
-		 *							expression is assumed to be a list), or false
-		 *							otherwise.
+		 * description:	takes mixed collection of nodes `nodes` and replaces
+		 *							all admLiteralEquals nodes with an admSemanticEquals
+		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
+		 *							condition:	REGEX
 		 *
-		 * return:			BOOL
+		 * return:			none
 		 ******************************************************************/
-		function isList(nodes) {
+		function parseEquality(nodes) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
+				if(nodes[i].type != "equals")							continue;
 				
-				if(nodes[i].type == "comma")
-					return true;
+				var leftNode = build(nodes.slice(0, i));
+				var rightNode = build(nodes.slice(i+1));
+				
+				var eqNode = admSemanticNode.build("equality", [leftNode, rightNode]);
+				eqNode.assertHasValidChildren();
+				
+				nodes.splice(0, nodes.length, eqNode);
+
+				return;
 			}
-			
-			return false;
 		}
 		
 		/*******************************************************************
@@ -722,6 +728,7 @@
 				assertNotEmpty(newNodes);
 				assertParenthesesMatched(newNodes);
 				assertPipesMatched(newNodes);
+				parseEquality(newNodes);
 				parseList(newNodes);
 				parseParentheses(newNodes);
 				parsePipes(newNodes);
@@ -925,6 +932,36 @@
 
 			throw new Error("OMA references unimplemented symbol list1."+omsNode.attributes.name.nodeValue);
 		}
+		
+		/*******************************************************************
+		 * function:		convertRelation1()
+		 *
+		 * description:	takes an OMA with OMS in content dictionary `relation1`
+		 *							as node `xmlNode`, converts to an admSemanticNode
+		 *							returns
+		 *
+		 * arguments:		`xmlNode` DOM Element
+		 *
+		 * return:			admSemanticNode
+		 ******************************************************************/
+		function convertRelation1(xmlNode) {
+			omsNode = xmlNode.childNodes[0];
+
+			switch(omsNode.attributes.name.nodeValue) {
+				case "eq":
+					if(xmlNode.childNodes.length != 3)	throw new Error("relation1.eq takes two children.");
+
+					var childNodes = [
+						convertNode(xmlNode.childNodes[1]),
+						convertNode(xmlNode.childNodes[2])
+					];
+					var eqNode = admSemanticNode.build("equality", childNodes);
+
+					return eqNode;
+			}
+
+			throw new Error("OMA references unimplemented symbol relation1."+omsNode.attributes.name.nodeValue);
+		}
 
 		/*******************************************************************
 		 * function:		convertNums1()
@@ -1044,9 +1081,10 @@
 			if(typeof omsNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 			switch(omsNode.attributes.cd.nodeValue) {
-				case "arith1":	return convertArith1(xmlNode);
-				case "transc1":	return convertTransc1(xmlNode);
-				case "list1":		return convertList1(xmlNode);
+				case "arith1":		return convertArith1(xmlNode);
+				case "transc1":		return convertTransc1(xmlNode);
+				case "list1":			return convertList1(xmlNode);
+				case "relation1":	return convertRelation1(xmlNode);
 			}
 
 			throw new Error("OMA references unimplemented content dictionary: "+omsNode.attributes.cd.nodeValue);
@@ -1404,7 +1442,7 @@
 				newNode = null;
 				latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
 				
-				if(/^[0-9.a-zA-Z+\-*()\|,]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
+				if(/^[0-9.a-zA-Z+\-*()\|,=]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
 				else if(/^\^/.test(latex))								{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
 				else if(/^\\/.test(latex))								{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
 				

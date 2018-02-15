@@ -53,6 +53,19 @@
 		};
 	});
 
+	module.service("admLiteralEquals", function() {
+		this.build = function(id, parentNode) {
+			return {
+				id: id,
+				parentNode: parentNode,
+				expressionType: "literal",
+				type: "equals",
+				getVal: function() {	return "=";	},
+				getDisplay: function() {	return "=";	}
+			};
+		};
+	});
+
 	module.service("admLiteralComma", function() {
 		this.build = function(id, parentNode) {
 			return {
@@ -261,10 +274,10 @@
 		};
 	});
 
-	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralComma", "admLiteralNumeral", "admLiteralLetter", "admLiteralPipe",
-			"admLiteralSymbol", "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision", "admLiteralSquareRoot",
-			"admLiteralRoot", "admLiteralFunction", "admLiteralLogarithm",
-		 function(admLiteralExpression, admLiteralComma, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol,
+	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralEquals", "admLiteralComma", "admLiteralNumeral", "admLiteralLetter",
+			"admLiteralPipe", "admLiteralSymbol", "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent", "admLiteralDivision",
+			"admLiteralSquareRoot", "admLiteralRoot", "admLiteralFunction", "admLiteralLogarithm",
+		 function(admLiteralExpression, admLiteralEquals, admLiteralComma, admLiteralNumeral, admLiteralLetter, admLiteralPipe, admLiteralSymbol,
 				admLiteralParenthesis, admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralRoot,
 				admLiteralFunction, admLiteralLogarithm) {
 		var id = 0;
@@ -276,10 +289,11 @@
 			build: function(parentNode, nodeVal) {
 				if(/^[0-9.]$/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
 				else if(/^[a-zA-Z]$/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
-				else if(/^\|$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode, nodeVal); }
+				else if(/^\|$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode); }
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
-				else if(/^,$/.test(nodeVal))			{ return admLiteralComma.build(id++, parentNode, nodeVal); }
+				else if(/^,$/.test(nodeVal))			{ return admLiteralComma.build(id++, parentNode); }
+				else if(/^=$/.test(nodeVal))			{ return admLiteralEquals.build(id++, parentNode); }
 				else if(/^\^$/.test(nodeVal)) {
 					var exponent = admLiteralExpression.build(id++, null);
 					

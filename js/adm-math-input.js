@@ -186,12 +186,6 @@
 					addSymbol: function(symbol) {
 						var nodes = [];
 						switch(symbol) {
-							//case "equals":			nodes = [admLiteralNode.build(scope.cursor.expression, "=")];									break;
-							case "comma":				nodes = [admLiteralNode.build(scope.cursor.expression, ",")];									break;
-							case "plus":				nodes = [admLiteralNode.build(scope.cursor.expression, "+")];									break;
-							case "minus":				nodes = [admLiteralNode.build(scope.cursor.expression, "-")];									break;
-							case "times":				nodes = [admLiteralNode.build(scope.cursor.expression, "*")];									break;
-							case "divide":			nodes = [admLiteralNode.build(scope.cursor.expression, "/")];									break;
 							case "squareRoot":	nodes = [admLiteralNode.buildByName(scope.cursor.expression, "squareRoot")];	break;
 							case "pi":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "pi")];					break;
 							case "e":						nodes = [admLiteralNode.buildByName(scope.cursor.expression, "e")];						break;
@@ -218,8 +212,8 @@
 								nodes = [node];
 								break;
 							default:
-								if(/^[0-9.a-zA-Z+\-*()\^\/\|]$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
-								else																					alert(symbol + ": Symbol not supported.");
+								if(/^[0-9.a-zA-Z+\-*()\^\/\|,=]$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
+								else																						alert(symbol + ": Symbol not supported.");
 						}
 						
 						angular.forEach(nodes, function(node) {
@@ -326,7 +320,7 @@
 					 ******************************************************************/
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
-						if(/[a-zA-Z0-9.+\-*()\^|,]/.test(character))
+						if(/[a-zA-Z0-9.+\-*()\^|,=]/.test(character))
 							scope.cursor.insert(character);
 
 						scope.output.write();

@@ -121,10 +121,6 @@ For example, the following button would insert the character &pi; into an `admIn
 ```
 
 A full list of supported values for `adm-symbol` follows:
-* `plus` A plus symbol
-* `minus` A minus symbol
-* `times` A times symbol
-* `divide` An empty fraction
 * `squareRoot` An empty square root
 * `pi` The symbol &pi;
 * `e` The constant e
@@ -139,7 +135,9 @@ A full list of supported values for `adm-symbol` follows:
 * `power` An exponent field
 * `exponent` The constant e raised to an empty exponent field
 * `root` An empty root with an empty field for an index
-* `/^[0-9.a-zA-Z+\-*()\^\/\|,]$/` The result that a similar keypress would give
+* `/^[0-9.a-zA-Z+\-*()\^\/\|,=]$/` The result that a similar keypress would give
+
+**Note:** You can make a division button using  `adm-symbol="/"`
 
 ---
 
