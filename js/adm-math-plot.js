@@ -276,7 +276,7 @@
 			},
 			link: function(scope, element, attrs, plotCtrl) {
 				if(!scope.format)		scope.format = "latex";
-				if(!scope.textSize)	scope.textSize = 25;
+				if(!scope.textSize)	scope.textSize = 16;
 				if(!scope.colour)		scope.colour = "#000000";
 				
 				scope.contentParsed = admPlotUtils.parseExpression(scope.content, scope.format);

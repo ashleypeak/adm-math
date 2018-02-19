@@ -3,6 +3,7 @@
 	- should an empty expression really be an error?
 	- can't click on empty nodes above/below division
 	- output of (1+2)x is wrong - brackets need to be included
+				- (1+2)x is correct in admSemantic, OpenMath, not in Latex, admLiteral
 		- also -2x
 		- also implicit times, I'm going to need to build on top of pure OpenMath
 		- although brackets shouldn't require altering the OpenMath, they can be determined programatically
@@ -11,6 +12,12 @@
 	- any type of error inside parentheses is reported as an empty expression
 	- exponent node should probably disappear if it loses focus while empty
 	- nodeClick (and goToPos, possibly others) don't handle nested Expressions
+	
+	- using admHook to insert object (e.g. pressing button on admFullMathInput) moves cursor to end
+	- repro:
+		- type "12"
+		- move cursor between '1' and '2'
+		- press "\pi" button
 
 MATH FEATURES NEEDING IMPLEMENTING
 	- DONE!! (for the time being)
