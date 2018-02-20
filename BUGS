@@ -22,7 +22,7 @@
 	- f(x) can't be converted to f*x (at least on admPlot, it's a very difficult problem to solve in terms of actual parsing)
 	
 	- admPlot replace admXMin/Max with admXRange, admYMin/Max with admYRange?
+	- admPlotFunction replace admDomainMin/Max with admDomain
 
 MATH FEATURES NEEDING IMPLEMENTING
 	- arcsin, arccos, arctan (including plotting)
-	- fill in area of graph (or intersection between two lines?)

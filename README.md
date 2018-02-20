@@ -310,3 +310,27 @@ Designed for use in conjunction with `adm-plot-unit-circle`.
 | admColour           | the colour of the line                                                              | STRING                  | no       | "#000000" |
 
 **Note:** No congruency marker will be drawn if `admCongruencyMarker` is left blank.
+
+##### adm-plot-fill
+
+Fill the space bordered by the child `adm-plot-fill-border`s.
+
+| Attribute   | Description                                                                         | Type                    | Required | Default   |
+| ----------- | ----------------------------------------------------------------------------------- | ----------------------- | -------- | --------- |
+| admBorders  | the number of child `adm-plot-fill-border`s                                         | INT                     | yes      |           |
+| admFormat   | format of child `adm-plot-fill-border`s' `admRule`s, can be "latex" or "openmath"   | STRING                  | no       | "latex"   |
+| admColour   | the colour of the filled region                                                     | STRING                  | no       | "#bce8f1" |
+| admOpacity  | the opacity of the filled region                                                    | INT                     | no       | 0.7       |
+
+##### adm-plot-fill-border
+
+One of the borders of parent `adm-plot-fill`.
+
+| Attribute  | Description                                                                         | Type                    | Required | Default   |
+| ---------- | ----------------------------------------------------------------------------------- | ----------------------- | -------- | --------- |
+| admOrder   | 1-indexed order in which these borders will be drawn (see note)                     | INT                     | yes      |           |
+| admRule    | a description, of format `^adm-plot-fill`.`admFormat`, of the curve of the border   | STRING                  | no       | "latex"   |
+| admStart   | the starting x value of the border (see note)                                       | STRING                  | no       | "#bce8f1" |
+| admEnd     | the starting x value of the border (see note)                                       | INT                     | no       | 0.7       |
+
+**Note:** Following these, in `admOrder` order, from `admStart` to `admEnd`, must form a contiguous line. Thus sometimes `admStart` will be to the right of `admEnd`. _`admStart` cannot just be the leftpost point._

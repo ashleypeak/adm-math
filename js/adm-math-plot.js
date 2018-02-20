@@ -220,8 +220,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				rule: "@admRule",
 				format: "@admFormat",
@@ -265,8 +263,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				content: "@admContent",
 				format: "@admFormat",
@@ -299,8 +295,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				pos: "@admPos",
 				colour: "@admColour"
@@ -325,8 +319,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				xIntercept: "@admXIntercept",
 				yIntercept: "@admYIntercept",
@@ -374,8 +366,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				colour: "@admColour"
 			},
@@ -402,8 +392,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				angle: "@admAngle",
 				markAngleFrom: "@admMarkAngleFrom",
@@ -468,8 +456,6 @@
 		return {
 			require: "^admPlot",
 			restrict: "E",
-			replace: true,
-			template: "",
 			scope: {
 				start: "@admStart",
 				end: "@admEnd",
@@ -573,4 +559,93 @@
 			}
 		};
 	}]);
+	
+	module.directive("admPlotFill", ["admPlotUtils", function(admPlotUtils) {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			scope: {
+				borders: "@admBorders",
+				format: "@admFormat",
+				colour: "@admColour",
+				opacity: "@admOpacity"
+			},
+			controller: function($scope, $element, $attrs) {
+				if(!$scope.format)	$scope.format = "latex";
+				if(!$scope.colour)	$scope.colour = "#bce8f1";
+				if(!$scope.opacity)	$scope.opacity = 0.7;
+				
+				$scope.borderList = new Array();
+				
+				this.addBorder = function(order, rule, start, end) {
+					$scope.borderList[order-1] = {rule: rule, start: start, end: end};
+				}
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				function getRGBA() {
+					var r = parseInt(scope.colour.substr(1,2), 16);
+					var g = parseInt(scope.colour.substr(3,2), 16);
+					var b = parseInt(scope.colour.substr(5,2), 16);
+					
+					return "rgba("+r+", "+g+", "+b+", "+scope.opacity+")";
+				}
+				
+				function fill() {
+					plotCtrl.context.save();
+						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);		//move (0,0) to graph centre
+						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+						plotCtrl.context.beginPath();
+					
+						for(var i = 0; i < scope.borderList.length; i++) {
+							var border = scope.borderList[i];
+							var ruleParsed = admPlotUtils.parseExpression(border.rule, scope.format);
+						
+							if(!ruleParsed || ruleParsed.type === "error") {
+								plotCtrl.context.restore();
+								return;
+							}
+							
+							if(i == 0)
+								plotCtrl.context.moveTo(border.start, ruleParsed.plot(border.start));
+							
+							if(border.start < border.end) {
+								for(var x = border.start+plotCtrl.step; x <= border.end; x += plotCtrl.step)
+									plotCtrl.context.lineTo(x, ruleParsed.plot(x));
+							} else {
+								for(var x = border.start-plotCtrl.step; x >= border.end; x -= plotCtrl.step)
+									plotCtrl.context.lineTo(x, ruleParsed.plot(x));
+							}
+						}
+					plotCtrl.context.restore();
+					
+					plotCtrl.context.fillStyle = getRGBA();
+					plotCtrl.context.fill();
+				}
+				
+				scope.$watch("borderList", function(newBorderList) {
+					for(var i = 0; i < scope.borders; i++)
+						if(typeof newBorderList[i] === "undefined")
+							return;
+					
+					fill();
+				}, true);
+			}
+		};
+	}]);
+	
+	module.directive("admPlotFillBorder", function() {
+		return {
+			require: "^admPlotFill",
+			restrict: "E",
+			scope: {
+				order: "@admOrder",
+				rule: "@admRule",
+				start: "@admStart",
+				end: "@admEnd"
+			},
+			link: function(scope, element, attrs, fillCtrl) {
+				fillCtrl.addBorder(scope.order, scope.rule, parseFloat(scope.start), parseFloat(scope.end));
+			}
+		};
+	});
 })();
