@@ -359,6 +359,11 @@
 						node.argument = admLiteralExpression.build(id++, node);
 
 						return node;
+					default: //handle f, g, f', g', etc
+						var node = admLiteralFunction.build(id++, parentNode, nodeName, null);
+						node.child = admLiteralExpression.build(id++, node);
+
+						return node;
 				}
 			}
 		};

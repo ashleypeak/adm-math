@@ -510,7 +510,7 @@
 			for(var i = nodes.length-1; i >= 0; i--) {
 				if(nodes[i].expressionType != "semantic")	continue;
 				if(nodes[i].type != "function")						continue;
-				if(nodes[i].child !== null)								continue; //some functions are parsed by parseFunctions()
+				if(nodes[i].child !== null)								continue; //some functions are parsed by parseNamedFunctions()
 
 				if(i+1 == nodes.length) throw "errMissingArgument";
 
@@ -624,7 +624,7 @@
 		}
 
 		/*******************************************************************
-		 * function:		parseFunctions()
+		 * function:		parseNamedFunctions()
 		 *
 		 * description:	takes mixed collection of nodes `nodes` and
 		 *							replaces all admLiteralFunctions with
@@ -635,7 +635,7 @@
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseFunctions(nodes) {
+		function parseNamedFunctions(nodes) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "function")						continue;
@@ -674,6 +674,39 @@
 			}
 		}
 
+		/*******************************************************************
+		 * function:		parseFunctions()
+		 *
+		 * description:	takes mixed collection of nodes `nodes` and,
+		 *							wherever there are two semantic.nodeTypes.[any]
+		 *							side-by-side, replaces them with a multiplication
+		 *							semantic node
+		 *							WARNING: mutates `nodes`
+		 *
+		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
+		 *
+		 * return:			none
+		 ******************************************************************/
+		function parseFunctions(nodes) {
+			for(var i = 0; i < nodes.length-1; i++) {
+				if(nodes[i].expressionType != "semantic")		continue;
+				if(nodes[i+1].expressionType != "semantic")	continue;
+				
+				if(nodes[i].type == "variable" && (nodes[i].name == "f" || nodes[i].name == "g")) {
+					var functionName = nodes[i].name;
+					
+					for(var j = 0; j < nodes[i].prime; j++)
+						functionName += "'";
+					
+					var fnNode = admSemanticNode.build("function", functionName, nodes[i+1]);
+					fnNode.assertHasValidChildren();
+					
+					nodes.splice(i, 2, fnNode);
+					i--;	//necessary if there are two implied times in a row e.g. "2ab"
+				}
+			}
+		}
+		
 		/*******************************************************************
 		 * function:		parseImpliedMultiplication()
 		 *
@@ -770,11 +803,14 @@
 				parseVariables(newNodes);
 				parsePrimes(newNodes);
 				parseSymbols(newNodes);
-				parseFunctions(newNodes);
+				parseNamedFunctions(newNodes);
 				parseLogarithms(newNodes);
 
 				applyExponents(newNodes);							//fill in bases of exponent semantic nodes
 				applyMulticharacterSymbols(newNodes);
+				
+				parseFunctions(newNodes);
+				
 				parseImpliedMultiplication(newNodes);
 				parseOperators(newNodes, /[*]/);
 				parseOperators(newNodes, /[+\-]/);

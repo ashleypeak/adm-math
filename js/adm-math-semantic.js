@@ -709,8 +709,15 @@
 					var cd;
 
 					switch(this.name) {
-						case "abs":	cd = "arith1";	break;
-						default:		cd = "transc1";
+						case "abs":
+							cd = "arith1";
+							break;
+						case "sin":
+						case "cos":
+						case "tan":
+						case "ln":
+							cd = "transc1";
+							break;
 					}
 
 					return "<OMA><OMS cd='"+cd+"' name='"+this.name+"'/>"
@@ -721,6 +728,9 @@
 				getLatex: function() {
 					if(this.name === "abs")
 						return "|" + this.child.getLatex() + "|";
+					
+					if(/^([fg])('*)$/.test(this.name))
+						return this.name + "(" + this.child.getLatex() + ")";
 					
 					return "\\" + this.name + "(" + this.child.getLatex() + ")";
 				},
