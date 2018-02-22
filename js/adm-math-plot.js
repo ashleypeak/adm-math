@@ -154,12 +154,13 @@
 					this.context.stroke();
 				
 					if(!this.noGridlines) {
-						for(var i = Math.ceil(this.xMin); i <= this.xMax; i++) {
+						var firstLine = Math.ceil(this.xMin);
+						for(var i = firstLine; i <= this.xMax; i++) {
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
 							if(this.xMax-this.xMin > 10) //if there are more than ten markings
-								if((i-this.xMin)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
+								if((i-firstLine)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
 							this.context.strokeStyle = "#f0f0f0";
@@ -183,12 +184,13 @@
 					this.context.stroke();
 				
 					if(!this.noGridlines) {
-						for(var i = Math.ceil(this.yMin); i <= this.yMax; i++) {
+						var firstLine = Math.ceil(this.yMin);
+						for(var i = firstLine; i <= this.yMax; i++) {
 							if(i == 0) //don't draw in y=0 if it's on the centre line
 								continue;
 
 							if(this.yMax-this.yMin > 10) //if there are more than ten markings
-								if((i-this.yMin)%(Math.round((this.yMax-this.yMin)/10)) != 0) //if there are thirty markings, only show every third etc.
+								if((i-firstLine)%(Math.round((this.yMax-this.yMin)/10)) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
 							this.context.strokeStyle = "#f0f0f0";
@@ -207,23 +209,25 @@
 
 					//draw labels
 					if(!this.noGridlines) {
-						for(var i = Math.ceil(this.xMin); i <= this.xMax; i++) {
+						var firstLine = Math.ceil(this.xMin);
+						for(var i = firstLine; i <= this.xMax; i++) {
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
 							if(this.xMax-this.xMin > 10) //if there are more than ten markings
-								if((i-this.xMin)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
+								if((i-firstLine)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
 							this.context.fillText(Math.round(i*100)/100, this.scale.x*(i-this.xMin)-4, this.centre.y-7-5);
 						}
 
-						for(var i = Math.ceil(this.yMin); i <= this.yMax; i++) {
+						var firstLine = Math.ceil(this.yMin);
+						for(var i = firstLine; i <= this.yMax; i++) {
 							if(i == 0) //don't draw in y=0 if it's on the centre line
 								continue;
 
 							if(this.yMax-this.yMin > 10) //if there are more than ten markings
-								if((i-this.yMin)%(Math.round((this.yMax-this.yMin)/10)) != 0) //if there are thirty markings, only show every third etc.
+								if((i-firstLine)%(Math.round((this.yMax-this.yMin)/10)) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
 							this.context.fillText(i, this.centre.x+7+5, this.height-this.scale.y*(i-this.yMin)+4);
