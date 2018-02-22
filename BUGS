@@ -21,6 +21,10 @@
 	
 	- admPlot replace admXMin/Max with admXRange, admYMin/Max with admYRange?
 	- admPlotFunction replace admDomainMin/Max with admDomain
+	
+	- delete bower.json
+	
+	- can't type 0.5x as latex into admPlotFunction
 
 MATH FEATURES NEEDING IMPLEMENTING
 	- arcsin, arccos, arctan (including plotting)

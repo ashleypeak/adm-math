@@ -320,7 +320,7 @@ Fill the space bordered by the child `adm-plot-fill-border`s.
 | admBorders  | the number of child `adm-plot-fill-border`s                                         | INT                     | yes      |           |
 | admFormat   | format of child `adm-plot-fill-border`s' `admRule`s, can be "latex" or "openmath"   | STRING                  | no       | "latex"   |
 | admColour   | the colour of the filled region                                                     | STRING                  | no       | "#bce8f1" |
-| admOpacity  | the opacity of the filled region                                                    | INT                     | no       | 0.7       |
+| admOpacity  | the opacity of the filled region                                                    | FLOAT                     | no       | 0.7       |
 
 ##### adm-plot-fill-border
 
@@ -330,7 +330,21 @@ One of the borders of parent `adm-plot-fill`.
 | ---------- | ----------------------------------------------------------------------------------- | ----------------------- | -------- | --------- |
 | admOrder   | 1-indexed order in which these borders will be drawn (see note)                     | INT                     | yes      |           |
 | admRule    | a description, of format `^adm-plot-fill`.`admFormat`, of the curve of the border   | STRING                  | no       | "latex"   |
-| admStart   | the starting x value of the border (see note)                                       | STRING                  | no       | "#bce8f1" |
+| admStart   | the starting x value of the border (see note)                                       | STRING                  | no       | "#d9edf7" |
 | admEnd     | the starting x value of the border (see note)                                       | INT                     | no       | 0.7       |
 
 **Note:** Following these, in `admOrder` order, from `admStart` to `admEnd`, must form a contiguous line. Thus sometimes `admStart` will be to the right of `admEnd`. _`admStart` cannot just be the leftpost point._
+
+##### adm-plot-normal
+
+Draw a normal curve of mean `admMean` and standard deviation `admStdDev`, filled between `admMin` and `admMax` to show some proportion of the curve.
+
+| Attribute      | Description                                     | Type      | Required | Default             |
+| -------------- | ----------------------------------------------- | --------- | -------- | ------------------- |
+| admMean        | the mean of the distribution                    | FLOAT     | no       | 0                   |
+| admStdDev      | the standard deviation of the distribution      | FLOAT     | no       | 1                   |
+| admMin         | the leftmost x value end of the filled section  | FLOAT     | no       | admMathPlot.admXMin |
+| admMax         | the rightmost x value end of the filled section | FLOAT     | no       | admMathPlot.admXMax |
+| admCurveColour | the colour of the curve                         | STRING    | no       | "#31708f"           |
+| admFillColour  | the colour of the filled region                 | STRING    | no       | "#d9edf7"           |
+| admOpacity     | the opacity of the filled region                | FLOAT     | no       | 0.7                 |

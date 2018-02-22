@@ -81,6 +81,26 @@
 			
 			return expressionParsed;
 		}
+		
+		/*******************************************************************
+		 * function:		getRGBA()
+		 *
+		 * description:	takes `colour` in hex format (#000000), opacity as
+		 *							a float (0, 1), and converts them into an rgba format
+		 *							colour
+		 *
+		 * arguments:		`colour` STRING
+		 *							`opacity` FLOAT
+		 *
+		 * return:			STRING
+		 ******************************************************************/
+		this.getRGBA = function(colour, opacity) {
+			var r = parseInt(colour.substr(1,2), 16);
+			var g = parseInt(colour.substr(3,2), 16);
+			var b = parseInt(colour.substr(5,2), 16);
+			
+			return "rgba("+r+", "+g+", "+b+", "+opacity+")";
+		}
 	}]);
 	
 	module.directive("admPlot", function() {
@@ -572,7 +592,7 @@
 			},
 			controller: function($scope, $element, $attrs) {
 				if(!$scope.format)	$scope.format = "latex";
-				if(!$scope.colour)	$scope.colour = "#bce8f1";
+				if(!$scope.colour)	$scope.colour = "#d9edf7";
 				if(!$scope.opacity)	$scope.opacity = 0.7;
 				
 				$scope.borderList = new Array();
@@ -582,14 +602,6 @@
 				}
 			},
 			link: function(scope, element, attrs, plotCtrl) {
-				function getRGBA() {
-					var r = parseInt(scope.colour.substr(1,2), 16);
-					var g = parseInt(scope.colour.substr(3,2), 16);
-					var b = parseInt(scope.colour.substr(5,2), 16);
-					
-					return "rgba("+r+", "+g+", "+b+", "+scope.opacity+")";
-				}
-				
 				function fill() {
 					plotCtrl.context.save();
 						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);		//move (0,0) to graph centre
@@ -618,7 +630,7 @@
 						}
 					plotCtrl.context.restore();
 					
-					plotCtrl.context.fillStyle = getRGBA();
+					plotCtrl.context.fillStyle = admPlotUtils.getRGBA(scope.colour, scope.opacity);
 					plotCtrl.context.fill();
 				}
 				
@@ -648,4 +660,80 @@
 			}
 		};
 	});
+	
+	module.directive("admPlotNormal", ["admPlotUtils", function(admPlotUtils) {
+		return {
+			require: "^admPlot",
+			restrict: "E",
+			scope: {
+				mean: "@admMean",
+				stdDev: "@admStdDev",
+				min: "@admMin",
+				max: "@admMax",
+				curveColour: "@admCurveColour",
+				fillColour: "@admFillColour",
+				opacity: "@admOpacity"
+			},
+			link: function(scope, element, attrs, plotCtrl) {
+				if(!scope.mean)					scope.mean = 0;
+				if(!scope.stdDev)				scope.stdDev = 1;
+				if(!scope.min)					scope.min = plotCtrl.xMin;
+				if(!scope.max)					scope.max = plotCtrl.xMax;
+				if(!scope.curveColour)	scope.curveColour = "#31708f";
+				if(!scope.fillColour)		scope.fillColour = "#d9edf7";
+				if(!scope.opacity)			scope.opacity = 0.7;
+				
+				//get [[y]] value of Gaussian - see https://en.wikipedia.org/wiki/Gaussian_function for details
+				function getNormalY(x) {
+					var a = 1/(scope.stdDev*Math.sqrt(2*Math.PI));
+					var p = -0.5*Math.pow((x-scope.mean)/scope.stdDev, 2)
+					
+					return a * Math.pow(Math.E, p);
+				}
+				
+				function outline() {
+					plotCtrl.context.save();
+						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);		//move (0,0) to graph centre
+						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+						
+						plotCtrl.context.beginPath();
+						plotCtrl.context.moveTo(plotCtrl.xMin, getNormalY(plotCtrl.xMin));
+						
+						for(var x = plotCtrl.xMin+plotCtrl.step; x <= plotCtrl.xMax; x += plotCtrl.step)
+							plotCtrl.context.lineTo(x, getNormalY(x));
+					plotCtrl.context.restore();
+					
+					plotCtrl.context.lineJoin = "round";
+					plotCtrl.context.lineWidth = 2;
+					plotCtrl.context.strokeStyle = scope.curveColour;
+					plotCtrl.context.stroke();
+				}
+				
+				function fill() {
+					var xMin = Math.max(plotCtrl.xMin, scope.min);
+					var xMax = Math.min(plotCtrl.xMax, scope.max);
+					plotCtrl.context.save();
+						plotCtrl.context.translate(plotCtrl.centre.x, plotCtrl.centre.y);		//move (0,0) to graph centre
+						plotCtrl.context.scale(plotCtrl.scale.x, -plotCtrl.scale.y);			//change scale from pixels to graph units, and invert y axis
+						
+						plotCtrl.context.beginPath();
+						plotCtrl.context.moveTo(xMin, 0);
+						plotCtrl.context.lineTo(xMin, getNormalY(xMin));
+						
+						for(var x = xMin+plotCtrl.step; x <= xMax; x += plotCtrl.step)
+							plotCtrl.context.lineTo(x, getNormalY(x));
+						
+						plotCtrl.context.lineTo(xMax, 0);
+						plotCtrl.context.lineTo(xMin, 0);
+					plotCtrl.context.restore();
+					
+					plotCtrl.context.fillStyle = admPlotUtils.getRGBA(scope.fillColour, scope.opacity);
+					plotCtrl.context.fill();
+				}
+				
+				fill();
+				outline();
+			}
+		};
+	}]);
 })();
