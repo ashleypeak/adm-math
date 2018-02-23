@@ -137,11 +137,13 @@ A full list of supported values for `adm-symbol` follows:
 * `power` An exponent field
 * `exponent` The constant e raised to an empty exponent field
 * `root` An empty root with an empty field for an index
-* `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>]$/` The result that a similar keypress would give
+* `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>~]$/` The result that a similar keypress would give
 
 **Note:** You can make a division button using  `adm-symbol="/"`.
 
 **Note:** When tying primes `a'`, due to the apparent lack of a standard format for primes in OpenMath, it will be stored as `<OMV name='a_prime1'/>`.
+
+**Note:** Typing ~ is stored in OpenMath as the nonexistent symbol `relation1.sim`. To be fixed.
 
 ---
 

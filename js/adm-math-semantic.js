@@ -53,6 +53,7 @@
 						case "=":	name = "eq";	break;
 						case "<":	name = "lt";	break;
 						case ">":	name = "gt";	break;
+						case "~":	name = "sim";	break;
 						case "leq":	name = "leq";	break;
 						case "geq":	name = "geq";	break;
 						default:	throw "errInvalidArguments"
@@ -69,6 +70,7 @@
 					switch(this.symbol) {
 						case "leq":	symbolLatex = " \\leq ";	break;
 						case "geq":	symbolLatex = " \\geq ";	break;
+						case "~":		symbolLatex = " \\sim ";	break;
 						default:		symbolLatex = this.symbol;
 					}
 					

@@ -1023,11 +1023,12 @@
 				case "gt":
 				case "leq":
 				case "geq":
+				case "sim":
 					var symbolName = omsNode.attributes.name.nodeValue;
 					
 					if(xmlNode.childNodes.length != 3)	throw new Error("relation1."+symbolName+" takes two children.");
 					
-					var symbol = {"eq": "=", "lt": "<", "gt": ">", "leq": "leq", "geq": "geq"}[symbolName];
+					var symbol = {"eq": "=", "lt": "<", "gt": ">", "leq": "leq", "geq": "geq", "sim": "~"}[symbolName];
 
 					var childNodes = [
 						convertNode(xmlNode.childNodes[1]),
@@ -1481,6 +1482,7 @@
 			switch(command) {
 				case "leq":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "leq");					break;
 				case "geq":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "geq");					break;
+				case "sim":				commandNode = admLiteralNode.build(parentLiteralNode, "~");									break;
 				case "times":			commandNode = admLiteralNode.build(parentLiteralNode, "*");									break;
 				case "pi":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "pi");					break;
 				case "infty":			commandNode = admLiteralNode.buildByName(parentLiteralNode, "infinity");		break;
