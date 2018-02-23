@@ -268,7 +268,7 @@
 				},
 				
 				plot: function(x) {
-					return parseInt(this.value);
+					return parseFloat(this.value);
 				},
 				
 				getWidthOnCanvas: function(context, textSize, fontFamily) {
