@@ -186,6 +186,8 @@
 					addSymbol: function(symbol) {
 						var nodes = [];
 						switch(symbol) {
+							case "leq":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "leq")];					break;
+							case "geq":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "geq")];					break;
 							case "squareRoot":	nodes = [admLiteralNode.buildByName(scope.cursor.expression, "squareRoot")];	break;
 							case "pi":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "pi")];					break;
 							case "e":						nodes = [admLiteralNode.buildByName(scope.cursor.expression, "e")];						break;

@@ -27,7 +27,16 @@
 				},
 
 				getAdmLiteral: function(parentLiteralNode) {
-					var symbolNode = admLiteralNode.build(parentLiteralNode, symbol);
+					var symbolNode = null;
+					
+					switch(this.symbol) {
+						case "leq":
+						case "geq":
+							symbolNode = admLiteralNode.buildByName(parentLiteralNode, this.symbol);
+							break;
+						default:
+							symbolNode = admLiteralNode.build(parentLiteralNode, this.symbol);
+					}
 
 					var childLiteralNodes = [
 						children[0].getAdmLiteral(parentLiteralNode),
@@ -44,7 +53,8 @@
 						case "=":	name = "eq";	break;
 						case "<":	name = "lt";	break;
 						case ">":	name = "gt";	break;
-						//case "=":	name = "eq";	break;
+						case "leq":	name = "leq";	break;
+						case "geq":	name = "geq";	break;
 						default:	throw "errInvalidArguments"
 					}
 					
@@ -55,7 +65,14 @@
 				},
 
 				getLatex: function() {
-					return this.children[0].getLatex() + this.symbol + this.children[1].getLatex();
+					var symbolLatex = null;
+					switch(this.symbol) {
+						case "leq":	symbolLatex = " \\leq ";	break;
+						case "geq":	symbolLatex = " \\geq ";	break;
+						default:		symbolLatex = this.symbol;
+					}
+					
+					return this.children[0].getLatex() + symbolLatex + this.children[1].getLatex();
 				},
 				
 				plot: function(x) {
@@ -63,11 +80,18 @@
 				},
 				
 				getWidthOnCanvas: function(context, textSize, fontFamily) {
+					var symbolDrawn = null;
+					switch(this.symbol) {
+						case "leq":	symbolDrawn = "≤";	break;
+						case "geq":	symbolDrawn = "≥";	break;
+						default:		symbolDrawn = this.symbol;
+					}
+					
 					var width = this.children[0].getWidthOnCanvas(context, textSize, fontFamily);
 					width += this.children[1].getWidthOnCanvas(context, textSize, fontFamily);
 					
 					context.font = textSize+"px "+fontFamily;
-					width += context.measureText(this.symbol).width;;
+					width += context.measureText(symbolDrawn).width;;
 					
 					return width;
 				},
@@ -77,9 +101,16 @@
 					
 					pos = this.children[0].writeOnCanvas(context, pos, textSize, fontFamily);
 					
+					var symbolDrawn = null;
+					switch(this.symbol) {
+						case "leq":	symbolDrawn = "≤";	break;
+						case "geq":	symbolDrawn = "≥";	break;
+						default:		symbolDrawn = this.symbol;
+					}
+					
 					context.font = textSize+"px "+fontFamily;
-					context.fillText(this.symbol, pos.x, pos.y+textSize);
-					pos.x += context.measureText(this.symbol).width;
+					context.fillText(symbolDrawn, pos.x, pos.y+textSize);
+					pos.x += context.measureText(symbolDrawn).width;
 					
 					pos = this.children[1].writeOnCanvas(context, pos, textSize, fontFamily);
 					

@@ -121,6 +121,8 @@ For example, the following button would insert the character &pi; into an `admIn
 ```
 
 A full list of supported values for `adm-symbol` follows:
+* `leq` A less-than-or-equals sign &le;
+* `geq` A greater-than-or-equals sign &ge;
 * `squareRoot` An empty square root
 * `pi` The symbol &pi;
 * `e` The constant e

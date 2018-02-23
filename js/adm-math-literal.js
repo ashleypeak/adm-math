@@ -62,7 +62,16 @@
 				type: "relation",
 				symbol: symbol,
 				getVal: function() {	return symbol;	},
-				getDisplay: function() {	return symbol;	}
+				getDisplay: function() {
+					switch(symbol) {
+						case "leq":
+							return "&le;";
+						case "geq":
+							return "&ge;";
+						default:
+							return symbol;
+					}
+				}
 			};
 		};
 	});
@@ -330,6 +339,9 @@
 			},
 			buildByName: function(parentNode, nodeName) {
 				switch(nodeName) {
+					case "leq":
+					case "geq":
+						return admLiteralRelation.build(id++, parentNode, nodeName);
 					case "pi":
 					case "e":
 					case "infinity":
