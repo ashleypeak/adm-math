@@ -212,7 +212,7 @@
 								nodes = [node];
 								break;
 							default:
-								if(/^[0-9.a-zA-Z+\-*()\^\/\|,=']$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
+								if(/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,=']$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
 								else																							alert(symbol + ": Symbol not supported.");
 						}
 						

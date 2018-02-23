@@ -135,7 +135,7 @@ A full list of supported values for `adm-symbol` follows:
 * `power` An exponent field
 * `exponent` The constant e raised to an empty exponent field
 * `root` An empty root with an empty field for an index
-* `/^[0-9.a-zA-Z+\-*()\^\/\|,=']$/` The result that a similar keypress would give
+* `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,=']$/` The result that a similar keypress would give
 
 **Note:** You can make a division button using  `adm-symbol="/"`.
 
@@ -291,7 +291,7 @@ Designed for use in conjunction with `adm-plot-unit-circle`.
 | ---------------- | ------------------------------------------------------------------------------ | ------------------- | -------- | ------------------- |
 | admAngle         | the angle (in radians), from the positive x direction, of the line             | FLOAT               | yes      |                     |
 | admMarkAngleFrom | the angle (in radians), from which the angle of the radial line will be marked | FLOAT               | no       |                     |
-| admLabel	       | the label with which the angle will be marked                                  | STRING              | no       | \theta              |
+| admLabel	       | the label with which the angle will be marked                                  | STRING              | no       | θ                   |
 | admColour        | the colour of the line                                                         | STRING              | no       | "#000000"           |
 
 **Note:** The angle of the line will only be marked if `admMarkAngleFrom` is set.

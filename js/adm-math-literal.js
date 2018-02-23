@@ -301,7 +301,7 @@
 			},
 			build: function(parentNode, nodeVal) {
 				if(/^[0-9.]$/.test(nodeVal))				{ return admLiteralNumeral.build(id++, parentNode, nodeVal); }
-				else if(/^[a-zA-Z]$/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
+				else if(/^[a-zA-ZΑ-Ωα-ω]$/.test(nodeVal))	{ return admLiteralLetter.build(id++, parentNode, nodeVal); }
 				else if(/^\|$/.test(nodeVal))			{ return admLiteralPipe.build(id++, parentNode); }
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }

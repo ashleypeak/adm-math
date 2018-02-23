@@ -276,7 +276,59 @@
 				},
 
 				getLatex: function() {
-					var latex = this.name;
+					var latex = "";
+					
+					switch(this.name) {
+						case "Α":		latex = "\\Alpha";		break; //these are different character codes to latin A, B etc.
+						case "Β":		latex = "\\Beta";			break;
+						case "Γ":		latex = "\\Gamma";		break;
+						case "Δ":		latex = "\\Delta";		break;
+						case "Ε":		latex = "\\Epsilon";	break;
+						case "Ζ":		latex = "\\Zeta";			break;
+						case "Η":		latex = "\\Eta";			break;
+						case "Θ":		latex = "\\Theta";		break;
+						case "Ι":		latex = "\\Iota";			break;
+						case "Κ":		latex = "\\Kappa";		break;
+						case "Λ":		latex = "\\Lambda";		break;
+						case "Μ":		latex = "\\Mu";				break;
+						case "Ν":		latex = "\\Nu";				break;
+						case "Ξ":		latex = "\\Xi";				break;
+						case "Ο":		latex = "\\Omicron";	break;
+						case "Π":		latex = "\\Pi";				break;
+						case "Ρ":		latex = "\\Rho";			break;
+						case "Σ":		latex = "\\Sigma";		break;
+						case "Τ":		latex = "\\Tau";			break;
+						case "Υ":		latex = "\\Upsilon";	break;
+						case "Φ":		latex = "\\Phi";			break;
+						case "Χ":		latex = "\\Chi";			break;
+						case "Ψ":		latex = "\\Psi";			break;
+						case "Ω":		latex = "\\Omega";		break;
+						case "α":		latex = "\\alpha";		break;
+						case "β":		latex = "\\beta";			break;
+						case "γ":		latex = "\\gamma";		break;
+						case "δ":		latex = "\\delta";		break;
+						case "ε":		latex = "\\epsilon";	break;
+						case "ζ":		latex = "\\zeta";			break;
+						case "η":		latex = "\\eta";			break;
+						case "θ":		latex = "\\theta";		break;
+						case "ι":		latex = "\\iota";			break;
+						case "κ":		latex = "\\kappa";		break;
+						case "λ":		latex = "\\lambda";		break;
+						case "μ":		latex = "\\mu";				break;
+						case "ν":		latex = "\\nu";				break;
+						case "ξ":		latex = "\\xi";				break;
+						case "ο":		latex = "\\omicron";	break;
+						case "π":		latex = "\\pi";				break;
+						case "ρ":		latex = "\\rho";			break;
+						case "σ":		latex = "\\sigma";		break;
+						case "τ":		latex = "\\tau";			break;
+						case "υ":		latex = "\\upsilon";	break;
+						case "φ":		latex = "\\phi";			break;
+						case "χ":		latex = "\\chi";			break;
+						case "ψ":		latex = "\\psi";			break;
+						case "ω":		latex = "\\omega";		break;
+						default:		latex = this.name;
+					}
 					
 					for(var i = 0; i < this.prime; i++)
 						latex += "'";

@@ -488,6 +488,7 @@
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /tan/, ["function", "tan"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /ln/, ["function", "ln"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /pi/, ["constant", "pi"]);
+			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /π/, ["constant", "pi"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /e/, ["constant", "e"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /abs/, ["function", "abs"]);
 		}
@@ -1465,33 +1466,68 @@
 			var command = "";
 			var commandNode = null;
 			
-			[, command, latex] = /^\\([a-z]+)(.*)$/.exec(latex);
+			[, command, latex] = /^\\([a-zA-Z]+)(.*)$/.exec(latex);
 			
 			switch(command) {
-				case "times":
-					commandNode = admLiteralNode.build(parentLiteralNode, "*");
-					break;
-				case "pi":
-					commandNode = admLiteralNode.buildByName(parentLiteralNode, "pi");
-					break;
-				case "infty":
-					commandNode = admLiteralNode.buildByName(parentLiteralNode, "infinity");
-					break;
+				case "times":			commandNode = admLiteralNode.build(parentLiteralNode, "*");									break;
+				case "pi":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "pi");					break;
+				case "infty":			commandNode = admLiteralNode.buildByName(parentLiteralNode, "infinity");		break;
 				case "sin":
 				case "cos":
 				case "tan":
-				case "ln":
-					[commandNode, latex] = collectFunction(parentLiteralNode, latex, command);
-					break;
-				case "sqrt":
-					[commandNode, latex] = collectRoot(parentLiteralNode, latex);
-					break;
-				case "log":
-					[commandNode, latex] = collectLog(parentLiteralNode, latex);
-					break;
-				case "frac":
-					[commandNode, latex] = collectFraction(parentLiteralNode, latex);
-					break;
+				case "ln":				[commandNode, latex] = collectFunction(parentLiteralNode, latex, command);	break;
+				case "sqrt":			[commandNode, latex] = collectRoot(parentLiteralNode, latex);								break;
+				case "log":				[commandNode, latex] = collectLog(parentLiteralNode, latex);								break;
+				case "frac":			[commandNode, latex] = collectFraction(parentLiteralNode, latex);						break;
+				
+				case "Alpha":		commandNode = admLiteralNode.build(parentLiteralNode, "Α");									break;
+				case "Beta":		commandNode = admLiteralNode.build(parentLiteralNode, "Β");									break;
+				case "Gamma":		commandNode = admLiteralNode.build(parentLiteralNode, "Γ");									break;
+				case "Delta":		commandNode = admLiteralNode.build(parentLiteralNode, "Δ");									break;
+				case "Epsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "Ε");									break;
+				case "Zeta":		commandNode = admLiteralNode.build(parentLiteralNode, "Ζ");									break;
+				case "Eta":			commandNode = admLiteralNode.build(parentLiteralNode, "Η");									break;
+				case "Theta":		commandNode = admLiteralNode.build(parentLiteralNode, "Θ");									break;
+				case "Iota":		commandNode = admLiteralNode.build(parentLiteralNode, "Ι");									break;
+				case "Kappa":		commandNode = admLiteralNode.build(parentLiteralNode, "Κ");									break;
+				case "Lambda":	commandNode = admLiteralNode.build(parentLiteralNode, "Λ");									break;
+				case "Mu":			commandNode = admLiteralNode.build(parentLiteralNode, "Μ");									break;
+				case "Nu":			commandNode = admLiteralNode.build(parentLiteralNode, "Ν");									break;
+				case "Xi":			commandNode = admLiteralNode.build(parentLiteralNode, "Ξ");									break;
+				case "Omicron":	commandNode = admLiteralNode.build(parentLiteralNode, "Ο");									break;
+				case "Pi":			commandNode = admLiteralNode.build(parentLiteralNode, "Π");									break;
+				case "Rho":			commandNode = admLiteralNode.build(parentLiteralNode, "Ρ");									break;
+				case "Sigma":		commandNode = admLiteralNode.build(parentLiteralNode, "Σ");									break;
+				case "Tau":			commandNode = admLiteralNode.build(parentLiteralNode, "Τ");									break;
+				case "Upsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "Υ");									break;
+				case "Phi":			commandNode = admLiteralNode.build(parentLiteralNode, "Φ");									break;
+				case "Chi":			commandNode = admLiteralNode.build(parentLiteralNode, "Χ");									break;
+				case "Psi":			commandNode = admLiteralNode.build(parentLiteralNode, "Ψ");									break;
+				case "Omega":		commandNode = admLiteralNode.build(parentLiteralNode, "Ω");									break;
+				case "alpha":		commandNode = admLiteralNode.build(parentLiteralNode, "α");									break;
+				case "beta":		commandNode = admLiteralNode.build(parentLiteralNode, "β");									break;
+				case "gamma":		commandNode = admLiteralNode.build(parentLiteralNode, "γ");									break;
+				case "delta":		commandNode = admLiteralNode.build(parentLiteralNode, "δ");									break;
+				case "epsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "ε");									break;
+				case "zeta":		commandNode = admLiteralNode.build(parentLiteralNode, "ζ");									break;
+				case "eta":			commandNode = admLiteralNode.build(parentLiteralNode, "η");									break;
+				case "theta":		commandNode = admLiteralNode.build(parentLiteralNode, "θ");									break;
+				case "iota":		commandNode = admLiteralNode.build(parentLiteralNode, "ι");									break;
+				case "kappa":		commandNode = admLiteralNode.build(parentLiteralNode, "κ");									break;
+				case "lambda":	commandNode = admLiteralNode.build(parentLiteralNode, "λ");									break;
+				case "mu":			commandNode = admLiteralNode.build(parentLiteralNode, "μ");									break;
+				case "nu":			commandNode = admLiteralNode.build(parentLiteralNode, "ν");									break;
+				case "xi":			commandNode = admLiteralNode.build(parentLiteralNode, "ξ");									break;
+				case "omicron":	commandNode = admLiteralNode.build(parentLiteralNode, "ο");									break;
+				case "pi":			commandNode = admLiteralNode.build(parentLiteralNode, "π");									break;
+				case "rho":			commandNode = admLiteralNode.build(parentLiteralNode, "ρ");									break;
+				case "sigma":		commandNode = admLiteralNode.build(parentLiteralNode, "σ");									break;
+				case "tau":			commandNode = admLiteralNode.build(parentLiteralNode, "τ");									break;
+				case "upsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "υ");									break;
+				case "phi":			commandNode = admLiteralNode.build(parentLiteralNode, "φ");									break;
+				case "chi":			commandNode = admLiteralNode.build(parentLiteralNode, "χ");									break;
+				case "psi":			commandNode = admLiteralNode.build(parentLiteralNode, "ψ");									break;
+				case "omega":		commandNode = admLiteralNode.build(parentLiteralNode, "ω");									break;
 			}
 			
 			if(commandNode !== null)
