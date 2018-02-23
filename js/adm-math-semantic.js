@@ -9,11 +9,12 @@
 (function() {
 	var module = angular.module("admMathSemantic", ["admMathLiteral"]);
 
-	module.service("admSemanticEquality", ["admLiteralNode", function(admLiteralNode) {
-		this.build = function(children) {
+	module.service("admSemanticRelation", ["admLiteralNode", function(admLiteralNode) {
+		this.build = function(symbol, children) {
 			return {
 				expressionType: "semantic",
-				type: "equals",
+				type: "relation",
+				symbol: symbol,
 				children: children,
 
 				assertHasValidChildren: function() {
@@ -26,7 +27,7 @@
 				},
 
 				getAdmLiteral: function(parentLiteralNode) {
-					var symbolNode = admLiteralNode.build(parentLiteralNode, "=");
+					var symbolNode = admLiteralNode.build(parentLiteralNode, symbol);
 
 					var childLiteralNodes = [
 						children[0].getAdmLiteral(parentLiteralNode),
@@ -37,14 +38,24 @@
 				},
 
 				getOpenMath: function() {
-					return "<OMA><OMS cd='relation1' name='eq'/>"
+					var name = "";
+					
+					switch(this.symbol) {
+						case "=":	name = "eq";	break;
+						case "<":	name = "lt";	break;
+						case ">":	name = "gt";	break;
+						//case "=":	name = "eq";	break;
+						default:	throw "errInvalidArguments"
+					}
+					
+					return "<OMA><OMS cd='relation1' name='"+name+"'/>"
 						+ this.children[0].getOpenMath()
 						+ this.children[1].getOpenMath()
 						+ "</OMA>";
 				},
 
 				getLatex: function() {
-					return this.children[0].getLatex() + "=" + this.children[1].getLatex();
+					return this.children[0].getLatex() + this.symbol + this.children[1].getLatex();
 				},
 				
 				plot: function(x) {
@@ -56,7 +67,7 @@
 					width += this.children[1].getWidthOnCanvas(context, textSize, fontFamily);
 					
 					context.font = textSize+"px "+fontFamily;
-					width += context.measureText("=").width;;
+					width += context.measureText(this.symbol).width;;
 					
 					return width;
 				},
@@ -67,8 +78,8 @@
 					pos = this.children[0].writeOnCanvas(context, pos, textSize, fontFamily);
 					
 					context.font = textSize+"px "+fontFamily;
-					context.fillText("=", pos.x, pos.y+textSize);
-					pos.x += context.measureText("=").width;
+					context.fillText(this.symbol, pos.x, pos.y+textSize);
+					pos.x += context.measureText(this.symbol).width;
 					
 					pos = this.children[1].writeOnCanvas(context, pos, textSize, fontFamily);
 					
@@ -1031,15 +1042,15 @@
 		};
 	});
 
-	module.service("admSemanticNode", ["admSemanticEquality", "admSemanticList", "admSemanticNumeral", "admSemanticVariable", "admSemanticOperator",
+	module.service("admSemanticNode", ["admSemanticRelation", "admSemanticList", "admSemanticNumeral", "admSemanticVariable", "admSemanticOperator",
 			"admSemanticUnaryMinus", "admSemanticExponent", "admSemanticDivision", "admSemanticRoot", "admSemanticFunction", "admSemanticLogarithm",
 			"admSemanticConstant", "admSemanticWrapper", "admSemanticError",
-		 function(admSemanticEquality, admSemanticList, admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus,
+		 function(admSemanticRelation, admSemanticList, admSemanticNumeral, admSemanticVariable, admSemanticOperator, admSemanticUnaryMinus,
 				admSemanticExponent, admSemanticDivision, admSemanticRoot, admSemanticFunction, admSemanticLogarithm, admSemanticConstant,
 				admSemanticWrapper, admSemanticError) {
 		this.build = function(type) {
 			switch(type) {
-				case "equality":		return admSemanticEquality.build(arguments[1]);
+				case "relation":		return admSemanticRelation.build(arguments[1], arguments[2]);
 				case "list":				return admSemanticList.build(arguments[1]);
 				case "numeral":			return admSemanticNumeral.build(arguments[1]);
 				case "variable":		return admSemanticVariable.build(arguments[1]);

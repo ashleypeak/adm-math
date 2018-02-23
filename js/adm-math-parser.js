@@ -128,10 +128,11 @@
 		}
 		
 		/*******************************************************************
-		 * function:		parseEquality()
+		 * function:		parseRelations()
 		 *
 		 * description:	takes mixed collection of nodes `nodes` and replaces
-		 *							all admLiteralEquals nodes with an admSemanticEquals
+		 *							all admLiteralRelation nodes with an
+		 *							admSemanticRelation
 		 *							WARNING: mutates `nodes`
 		 *
 		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
@@ -139,18 +140,18 @@
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseEquality(nodes) {
+		function parseRelations(nodes) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
-				if(nodes[i].type != "equals")							continue;
+				if(nodes[i].type != "relation")						continue;
 				
 				var leftNode = build(nodes.slice(0, i));
 				var rightNode = build(nodes.slice(i+1));
 				
-				var eqNode = admSemanticNode.build("equality", [leftNode, rightNode]);
-				eqNode.assertHasValidChildren();
+				var relNode = admSemanticNode.build("relation", nodes[i].symbol, [leftNode, rightNode]);
+				relNode.assertHasValidChildren();
 				
-				nodes.splice(0, nodes.length, eqNode);
+				nodes.splice(0, nodes.length, relNode);
 
 				return;
 			}
@@ -792,7 +793,7 @@
 				assertNotEmpty(newNodes);
 				assertParenthesesMatched(newNodes);
 				assertPipesMatched(newNodes);
-				parseEquality(newNodes);
+				parseRelations(newNodes);
 				parseList(newNodes);
 				parseParentheses(newNodes);
 				parsePipes(newNodes);
@@ -1018,15 +1019,22 @@
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "eq":
-					if(xmlNode.childNodes.length != 3)	throw new Error("relation1.eq takes two children.");
+				case "lt":
+				case "gt":
+					var symbolName = omsNode.attributes.name.nodeValue;
+					
+					if(xmlNode.childNodes.length != 3)	throw new Error("relation1."+symbolName+" takes two children.");
+					
+					var symbol = {"eq": "=", "lt": "<", "gt": ">"}[symbolName];
 
 					var childNodes = [
 						convertNode(xmlNode.childNodes[1]),
 						convertNode(xmlNode.childNodes[2])
 					];
-					var eqNode = admSemanticNode.build("equality", childNodes);
+					
+					var relNode = admSemanticNode.build("relation", symbol, childNodes);
 
-					return eqNode;
+					return relNode;
 			}
 
 			throw new Error("OMA references unimplemented symbol relation1."+omsNode.attributes.name.nodeValue);
@@ -1556,9 +1564,9 @@
 				newNode = null;
 				latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
 				
-				if(/^[0-9.a-zA-Z+\-*()\|,=']/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
-				else if(/^\^/.test(latex))									{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
-				else if(/^\\/.test(latex))									{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
+				if(/^[0-9.a-zA-Z+\-*()\|,='<>]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
+				else if(/^\^/.test(latex))										{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
+				else if(/^\\/.test(latex))										{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
 				
 				if(newNode !== null)
 					literalNodes.push(newNode);

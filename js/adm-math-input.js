@@ -212,8 +212,8 @@
 								nodes = [node];
 								break;
 							default:
-								if(/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,=']$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
-								else																							alert(symbol + ": Symbol not supported.");
+								if(/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>]$/.test(symbol))	nodes = [admLiteralNode.build(scope.cursor.expression, symbol)];
+								else																											alert(symbol + ": Symbol not supported.");
 						}
 						
 						angular.forEach(nodes, function(node) {
@@ -320,7 +320,7 @@
 					 ******************************************************************/
 					keypress: function(e) {
 						var character = String.fromCharCode(e.which);
-						if(/[a-zA-Z0-9.+\-*()\^|,=]/.test(character))
+						if(/[a-zA-Z0-9.+\-*()\^|,='<>]/.test(character))
 							scope.cursor.insert(character);
 
 						scope.output.write();

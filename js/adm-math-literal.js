@@ -53,15 +53,16 @@
 		};
 	});
 
-	module.service("admLiteralEquals", function() {
-		this.build = function(id, parentNode) {
+	module.service("admLiteralRelation", function() {
+		this.build = function(id, parentNode, symbol) {
 			return {
 				id: id,
 				parentNode: parentNode,
 				expressionType: "literal",
-				type: "equals",
-				getVal: function() {	return "=";	},
-				getDisplay: function() {	return "=";	}
+				type: "relation",
+				symbol: symbol,
+				getVal: function() {	return symbol;	},
+				getDisplay: function() {	return symbol;	}
 			};
 		};
 	});
@@ -287,10 +288,10 @@
 		};
 	});
 
-	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralEquals", "admLiteralComma", "admLiteralNumeral", "admLiteralLetter",
+	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralRelation", "admLiteralComma", "admLiteralNumeral", "admLiteralLetter",
 			"admLiteralPrime", "admLiteralPipe", "admLiteralSymbol", "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent",
 			"admLiteralDivision", "admLiteralSquareRoot", "admLiteralRoot", "admLiteralFunction", "admLiteralLogarithm",
-		 function(admLiteralExpression, admLiteralEquals, admLiteralComma, admLiteralNumeral, admLiteralLetter, admLiteralPrime, admLiteralPipe,
+		 function(admLiteralExpression, admLiteralRelation, admLiteralComma, admLiteralNumeral, admLiteralLetter, admLiteralPrime, admLiteralPipe,
 				admLiteralSymbol, admLiteralParenthesis, admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralRoot,
 				admLiteralFunction, admLiteralLogarithm) {
 		var id = 0;
@@ -306,7 +307,7 @@
 				else if(/^[+\-*]$/.test(nodeVal))		{ return admLiteralOperator.build(id++, parentNode, nodeVal); }
 				else if(/^[()]$/.test(nodeVal))			{ return admLiteralParenthesis.build(id++, parentNode, nodeVal); }
 				else if(/^,$/.test(nodeVal))			{ return admLiteralComma.build(id++, parentNode); }
-				else if(/^=$/.test(nodeVal))			{ return admLiteralEquals.build(id++, parentNode); }
+				else if(/^[=<>]$/.test(nodeVal))			{ return admLiteralRelation.build(id++, parentNode, nodeVal); }
 				else if(/^'$/.test(nodeVal))			{ return admLiteralPrime.build(id++, parentNode); }
 				else if(/^\^$/.test(nodeVal)) {
 					var exponent = admLiteralExpression.build(id++, null);

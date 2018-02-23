@@ -135,7 +135,7 @@ A full list of supported values for `adm-symbol` follows:
 * `power` An exponent field
 * `exponent` The constant e raised to an empty exponent field
 * `root` An empty root with an empty field for an index
-* `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,=']$/` The result that a similar keypress would give
+* `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>]$/` The result that a similar keypress would give
 
 **Note:** You can make a division button using  `adm-symbol="/"`.
 
