@@ -4,10 +4,10 @@ An Angular.js library for manipulating mathematical expressions
 
 ## Installation
 
-To install using bower:
+To install using [yarn](https://yarnpkg.com/):
 
 ```
-$ bower install https://github.com/wyattpeak/adm-math.git
+$ yarn add adm-math
 ```
 
 ## Components
@@ -22,13 +22,13 @@ A mathematical expression input field
 First include the module files:
 
 ```html
-<link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
-<script type="text/javascript" src="bower_components/angular/angular.js"></script>
-<script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-parser.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-input.js"></script>
+<link rel="stylesheet" href="node_modules/adm-math/css/adm-math.css">
+<script type="text/javascript" src="node_modules/angular/angular.js"></script>
+<script type="text/javascript" src="node_modules/angular-sanitize/angular-sanitize.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-literal.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-semantic.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-parser.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-input.js"></script>
 ```
 
 Then include the module in your Angular.js module:
@@ -156,10 +156,10 @@ A service for converting OpenMath or LaTeX into an admSemanticNode
 First include the module files:
 
 ```html
-<script type="text/javascript" src="bower_components/angular/angular.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-parser.js"></script>
+<script type="text/javascript" src="node_modules/angular/angular.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-literal.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-semantic.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-parser.js"></script>
 ```
 
 Then include the module in your Angular.js module:
@@ -195,13 +195,13 @@ A canvas-based plotting tool
 First include the module files:
 
 ```html
-<link rel="stylesheet" href="bower_components/adm-math/css/adm-math.css">
-<script type="text/javascript" src="bower_components/angular/angular.js"></script>
-<script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-literal.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-semantic.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-parser.js"></script>
-<script type="text/javascript" src="bower_components/adm-math/js/adm-math-plot.js"></script>
+<link rel="stylesheet" href="node_modules/adm-math/css/adm-math.css">
+<script type="text/javascript" src="node_modules/angular/angular.js"></script>
+<script type="text/javascript" src="node_modules/angular-sanitize/angular-sanitize.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-literal.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-semantic.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-parser.js"></script>
+<script type="text/javascript" src="node_modules/adm-math/js/adm-math-plot.js"></script>
 ```
 
 Then include the module in your Angular.js module:
