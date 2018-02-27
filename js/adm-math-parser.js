@@ -299,6 +299,7 @@
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "semantic")	continue;
 				if(nodes[i].type != "exponent")						continue;
+				if(nodes[i].base !== null)								continue; //ignore exponents already applied to a base, e.g. if they were in a subexpression
 
 				if(i === 0) throw "errMissingBase";
 
