@@ -802,21 +802,24 @@
 				},
 
 				getOpenMath: function() {
-					var cd;
-
+					var symbol;
+					
 					switch(this.name) {
 						case "abs":
-							cd = "arith1";
+							symbol = "<OMS cd='arith1' name='"+this.name+"'/>";
 							break;
 						case "sin":
 						case "cos":
 						case "tan":
 						case "ln":
-							cd = "transc1";
+							symbol = "<OMS cd='transc1' name='"+this.name+"'/>";
 							break;
+						default:
+						symbol = "<OMV name='"+this.name+"'/>";
 					}
 
-					return "<OMA><OMS cd='"+cd+"' name='"+this.name+"'/>"
+					return "<OMA>"
+						+ symbol
 						+ this.child.getOpenMath()
 						+ "</OMA>";
 				},

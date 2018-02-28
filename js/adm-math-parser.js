@@ -859,7 +859,7 @@
 		 * return:			admSemanticNode
 		 ******************************************************************/
 		function convertArith1(xmlNode) {
-			omsNode = xmlNode.childNodes[0];
+			var omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "abs":
@@ -932,7 +932,7 @@
 		 * return:			admSemanticNode
 		 ******************************************************************/
 		function convertTransc1(xmlNode) {
-			omsNode = xmlNode.childNodes[0];
+			var omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "exp":
@@ -978,7 +978,7 @@
 		 * return:			admSemanticNode
 		 ******************************************************************/
 		function convertList1(xmlNode) {
-			omsNode = xmlNode.childNodes[0];
+			var omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "list":
@@ -1011,7 +1011,7 @@
 		 * return:			admSemanticNode
 		 ******************************************************************/
 		function convertRelation1(xmlNode) {
-			omsNode = xmlNode.childNodes[0];
+			var omsNode = xmlNode.childNodes[0];
 
 			switch(omsNode.attributes.name.nodeValue) {
 				case "eq":
@@ -1038,7 +1038,7 @@
 
 			throw new Error("OMA references unimplemented symbol relation1."+omsNode.attributes.name.nodeValue);
 		}
-
+		
 		/*******************************************************************
 		 * function:		convertNums1()
 		 *
@@ -1061,6 +1061,27 @@
 			}
 
 			throw new Error("OMA references unimplemented symbol nums."+xmlNode.attributes.name.nodeValue);
+		}
+
+		/*******************************************************************
+		 * function:		convertArbitraryFunction()
+		 *
+		 * description:	takes an OMA with an OMV as first argument (i.e. a
+		 *							function like f(x) or N(m,s)) as node `xmlNode`,
+		 *							converts to an admSemanticNode returns
+		 *
+		 * arguments:		`xmlNode` DOM Element
+		 *
+		 * return:			admSemanticNode
+		 ******************************************************************/
+		function convertArbitraryFunction(xmlNode) {
+			var appNode = xmlNode.childNodes[0];
+			
+			if(xmlNode.childNodes.length != 2)	throw new Error("Arbitrary function OMA takes two children.");
+
+			var childNode = convertNode(xmlNode.childNodes[1]);
+			
+			return admSemanticNode.build("function", appNode.attributes.name.nodeValue, childNode);
 		}
 
 		/*******************************************************************
@@ -1161,19 +1182,22 @@
 		function convertOMA(xmlNode) {
 			if(xmlNode.childNodes.length === 0) throw new Error("OMA requires at least one child.");
 
-			omsNode = xmlNode.childNodes[0];
-			if(omsNode.nodeName !== "OMS")										throw new Error("OMA must have OMS as first child.");
-			if(typeof omsNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
-			if(typeof omsNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
+			appNode = xmlNode.childNodes[0];
+			if(appNode.nodeName == "OMS") {
+				if(typeof appNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
+				if(typeof appNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
-			switch(omsNode.attributes.cd.nodeValue) {
-				case "arith1":		return convertArith1(xmlNode);
-				case "transc1":		return convertTransc1(xmlNode);
-				case "list1":			return convertList1(xmlNode);
-				case "relation1":	return convertRelation1(xmlNode);
+				switch(appNode.attributes.cd.nodeValue) {
+					case "arith1":		return convertArith1(xmlNode);
+					case "transc1":		return convertTransc1(xmlNode);
+					case "list1":			return convertList1(xmlNode);
+					case "relation1":	return convertRelation1(xmlNode);
+				}
+
+				throw new Error("OMA references unimplemented content dictionary: "+appNode.attributes.cd.nodeValue);
+			} else {
+				return convertArbitraryFunction(xmlNode);
 			}
-
-			throw new Error("OMA references unimplemented content dictionary: "+omsNode.attributes.cd.nodeValue);
 		}
 
 		/*******************************************************************
