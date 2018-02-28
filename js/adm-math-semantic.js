@@ -825,10 +825,10 @@
 					if(this.name === "abs")
 						return "|" + this.child.getLatex() + "|";
 					
-					if(/^([fg])('*)$/.test(this.name))
-						return this.name + "(" + this.child.getLatex() + ")";
+					if(/^(sin|cos|tan|ln)$/.test(this.name))
+						return "\\" + this.name + "(" + this.child.getLatex() + ")";
 					
-					return "\\" + this.name + "(" + this.child.getLatex() + ")";
+					return this.name + "(" + this.child.getLatex() + ")";
 				},
 				
 				plot: function(x) {

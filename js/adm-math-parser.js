@@ -341,8 +341,6 @@
 					
 					subExpressionNodes.push(nodes[j]);
 				}
-				
-				console.log(subExpressionNodes);
 
 				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
 				var semanticNode = build(subExpressionNodes, registeredFunctions);

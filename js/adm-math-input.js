@@ -246,12 +246,12 @@
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 								break;
 							case "latex":
-								if(!!newModel)	scope.literalTree = admLatexParser.getAdmSemantic(newModel).getAdmLiteral();
+								if(!!newModel)	scope.literalTree = admLatexParser.getAdmSemantic(newModel, registeredFunctions).getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 								break;
 							case "openmath":
 							default:
-								if(!!newModel)	scope.literalTree = admOpenmathParser.getAdmSemantic(newModel).getAdmLiteral();
+								if(!!newModel)	scope.literalTree = admOpenmathParser.getAdmSemantic(newModel, registeredFunctions).getAdmLiteral();
 								else						scope.literalTree = admLiteralNode.buildBlankExpression(null);
 						}
 					} catch(e) {
