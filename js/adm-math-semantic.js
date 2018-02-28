@@ -795,10 +795,20 @@
 				},
 
 				getAdmLiteral: function(parentLiteralNode) {
-					var functionNode = admLiteralNode.buildByName(parentLiteralNode, this.name);
-					functionNode.child.nodes = this.child.getAdmLiteral(functionNode);
+					var nodes = [];
+					
+					for(var i = 0; i < this.name.length; i++)
+						nodes.push(admLiteralNode.build(parentLiteralNode, this.name.substr(i,1)));
+					
+					if(this.child.type != "list")
+						nodes.push(admLiteralNode.build(parentLiteralNode, "("));
+					
+					nodes = nodes.concat(this.child.getAdmLiteral(parentLiteralNode));
+					
+					if(this.child.type != "list")
+						nodes.push(admLiteralNode.build(parentLiteralNode, ")"));
 
-					return [functionNode];
+					return nodes;
 				},
 
 				getOpenMath: function() {
@@ -815,7 +825,7 @@
 							symbol = "<OMS cd='transc1' name='"+this.name+"'/>";
 							break;
 						default:
-						symbol = "<OMV name='"+this.name+"'/>";
+							symbol = "<OMV name='"+this.name+"'/>";
 					}
 
 					return "<OMA>"
@@ -825,13 +835,15 @@
 				},
 				
 				getLatex: function() {
-					if(this.name === "abs")
+					if(this.name === "abs") {
 						return "|" + this.child.getLatex() + "|";
-					
-					if(/^(sin|cos|tan|ln)$/.test(this.name))
+					} else if(/^(sin|cos|tan|ln)$/.test(this.name)) {
 						return "\\" + this.name + "(" + this.child.getLatex() + ")";
-					
-					return this.name + "(" + this.child.getLatex() + ")";
+					} else if(this.child.type == "list") {
+						return this.name + this.child.getLatex();
+					} else {
+						return this.name + "(" + this.child.getLatex() + ")";
+					}
 				},
 				
 				plot: function(x) {
@@ -848,7 +860,9 @@
 					var width = this.child.getWidthOnCanvas(context, textSize, fontFamily);
 					
 					context.font = textSize+"px "+fontFamily;
-					width += context.measureText(this.name+"()").width;
+					
+					if(this.child.type != "list")
+						width += context.measureText(this.name+"()").width;
 					
 					return width;
 				},
@@ -857,14 +871,22 @@
 					pos = angular.copy(pos); //copy by value, avoid mutating the original
 					
 					context.font = textSize+"px "+fontFamily;
-					context.fillText(this.name+"(", pos.x, pos.y+textSize);
-					pos.x += context.measureText(this.name+"(").width;
+					
+					if(this.child.type != "list") {
+						context.fillText(this.name+"(", pos.x, pos.y+textSize);
+						pos.x += context.measureText(this.name+"(").width;
+					} else {
+						context.fillText(this.name, pos.x, pos.y+textSize);
+						pos.x += context.measureText(this.name).width;
+					}
 					
 					pos = this.child.writeOnCanvas(context, pos, textSize, fontFamily);
 					
-					context.font = textSize+"px "+fontFamily;
-					context.fillText(")", pos.x, pos.y+textSize);
-					pos.x += context.measureText(")").width;
+					if(this.child.type != "list") {
+						context.font = textSize+"px "+fontFamily;
+						context.fillText(")", pos.x, pos.y+textSize);
+						pos.x += context.measureText(")").width;
+					}
 					
 					return pos;
 				}
