@@ -788,6 +788,7 @@
 				type: "function",
 				name: name,
 				prime: 0, //number of primes on variable i.e. x' (1) or x''' (3) or x (0)
+				inverse: false, //e.g. f^{-1}(x)
 				child: typeof child !== "undefined" ? child : null,
 
 				assertHasValidChildren: function() {
@@ -800,6 +801,14 @@
 					
 					for(var i = 0; i < this.name.length; i++)
 						nodes.push(admLiteralNode.build(parentLiteralNode, this.name.substr(i,1)));
+					
+					if(this.inverse) {
+						var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
+						exponentNode.exponent.nodes.push(admLiteralNode.build(exponentNode, "-"));
+						exponentNode.exponent.nodes.push(admLiteralNode.build(exponentNode, "1"));
+
+						nodes.push(exponentNode);
+					}
 					
 					for(var i = 0; i < this.prime; i++)
 						nodes.push(admLiteralNode.build(parentLiteralNode, "'"));
@@ -834,7 +843,10 @@
 						default:
 							symbol = "<OMV name='"+name+"'/>";
 					}
-
+					
+					if(this.inverse)
+						symbol = "<OMA><OMS cd='arith2' name='inverse'/>"+symbol+"</OMA>";
+					
 					return "<OMA>"
 						+ symbol
 						+ this.child.getOpenMath()
@@ -842,19 +854,28 @@
 				},
 				
 				getLatex: function() {
-					if(this.name === "abs") {
+					if(this.name === "abs")
 						return "|" + this.child.getLatex() + "|";
-					} else if(/^(sin|cos|tan|ln)$/.test(this.name)) {
-						return "\\" + this.name + "(" + this.child.getLatex() + ")";
-					} else if(this.child.type == "list") {
-						return this.name + this.child.getLatex();
-					} else {
-						var primeString = "";
-						for(var i = 0; i < this.prime; i++)
-							primeString += "'";
-						
-						return this.name + primeString + "(" + this.child.getLatex() + ")";
-					}
+					
+					var latex = "";
+					
+					if(/^(sin|cos|tan|ln)$/.test(this.name))
+						latex += "\\";
+					
+					latex += this.name;
+					
+					if(this.inverse)
+						latex += "^{-1}";
+					
+					for(var i = 0; i < this.prime; i++)
+						latex += "'";
+					
+					if(this.child.type == "list")
+						latex += this.child.getLatex();
+					else
+						latex += "(" + this.child.getLatex() + ")";
+					
+					return latex;
 				},
 				
 				plot: function(x) {
@@ -877,6 +898,11 @@
 					context.font = textSize+"px "+fontFamily;
 					width += context.measureText(content).width;
 					
+					if(this.inverse) {
+						context.font = (textSize/2)+"px "+fontFamily;
+					width += context.measureText("-1").width;
+					}
+					
 					return width;
 				},
 				
@@ -887,6 +913,15 @@
 					
 					context.fillText(this.name, pos.x, pos.y+textSize);
 					pos.x += context.measureText(this.name).width;
+					
+					if(this.inverse) {
+						context.font = (textSize/2)+"px "+fontFamily;
+						
+						context.fillText("-1", pos.x, pos.y+textSize/2);
+						pos.x += context.measureText("-1").width;
+						
+						context.font = textSize+"px "+fontFamily;
+					}
 					
 					for(var i = 0; i < this.prime; i++) {
 						context.fillText("'", pos.x, pos.y+textSize);

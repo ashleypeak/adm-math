@@ -303,11 +303,21 @@
 				if(nodes[i].type != "exponent")						continue;
 				if(nodes[i].base !== null)								continue; //ignore exponents already applied to a base, e.g. if they were in a subexpression
 
-				if(i === 0) throw "errMissingBase";
-
-				nodes[i].base = nodes[i-1];
-				nodes[i].assertHasValidChildren();
-				nodes.splice(i-1, 1);
+				if(i === 0)																	throw "errMissingBase";
+				if(nodes[i-1].expressionType != "semantic")	throw "errInvalidBase";
+				
+				if(nodes[i-1].type != "function") {
+					nodes[i].base = nodes[i-1];
+					nodes[i].assertHasValidChildren();
+					nodes.splice(i-1, 1);
+				} else {
+					if(nodes[i].exponent.type != "unaryMinus")		throw "errInvalidFunctionPower";
+					if(nodes[i].exponent.child.type != "numeral")	throw "errInvalidFunctionPower";
+					if(nodes[i].exponent.child.value != "1")			throw "errInvalidFunctionPower";
+					
+					nodes[i-1].inverse = true;
+					nodes.splice(i, 1);
+				}
 			}
 		}
 
@@ -822,6 +832,8 @@
 					case "errInvalidArguments":			return admSemanticNode.build("error", "Invalid arguments.");
 					case "errEmptyExpression":			return admSemanticNode.build("error", "Empty expression.");
 					case "errMissingBase":					return admSemanticNode.build("error", "Exponent has no base.");
+					case "errInvalidBase":					return admSemanticNode.build("error", "Exponent has an invalid base.");
+					case "errInvalidFunctionPower":	return admSemanticNode.build("error", "Functions can't be raised to a power, only inverted.");
 					case "errMissingArgument":			return admSemanticNode.build("error", "Function has no argument.");
 					case "errMisplacedPrime":				return admSemanticNode.build("error", "There is a prime (') in an illegal position.");
 					default:												return admSemanticNode.build("error", "Unidentified error.");
@@ -1094,6 +1106,48 @@
 				return semanticNode;
 			}
 		}
+		
+		/*******************************************************************
+		 * function:		convertInverseFunction()
+		 *
+		 * description:	takes an OMA with an OMA as first argument (which
+		 *							currently means it has to be an inverse function) as
+		 *							node `xmlNode`, converts to an admSemanticNode
+		 *							and returns
+		 *							NOTE:	this is very hacky, but I don't really yet
+		 *										understand how OMAs can generally be the
+		 *										first argument of another OMA, so hard to
+		 *										generalise
+		 *										
+		 *
+		 * arguments:		`xmlNode` DOM Element
+		 *
+		 * return:			admSemanticNode
+		 ******************************************************************/
+		function convertInverseFunction(xmlNode) {
+			if(xmlNode.childNodes.length != 2)	throw new Error("Inverse function OMA takes two children.");
+
+			var invNode = xmlNode.childNodes[0];
+			var childNode = convertNode(xmlNode.childNodes[1]);
+			
+			if(invNode.childNodes.length != 2)	throw new Error("Inverse: expected two children.");
+			
+			var omsNode = invNode.childNodes[0];
+			var varNode = invNode.childNodes[1];
+			
+			if(omsNode.nodeName != "OMS")												throw new Error("Inverse: expected OMS, got "+omsNode.nodeName);
+			if(omsNode.attributes.cd.nodeValue != "arith2")			throw new Error("Inverse: expected CD arith2, got "+omsNode.attributes.cd.nodeValue);
+			if(omsNode.attributes.name.nodeValue != "inverse")	throw new Error("Inverse: expected name inverse, got "+omsNode.attributes.name.nodeValue);
+			if(varNode.nodeName != "OMV")												throw new Error("Inverse: expected OMV, got "+varNode.nodeName);
+			
+			
+			var fnName = varNode.attributes.name.nodeValue;
+			
+			var semanticNode = admSemanticNode.build("function", fnName, childNode);
+			semanticNode.inverse = true;
+			
+			return semanticNode;
+		}
 
 		/*******************************************************************
 		 * function:		convertOMOBJ()
@@ -1193,19 +1247,22 @@
 		function convertOMA(xmlNode) {
 			if(xmlNode.childNodes.length === 0) throw new Error("OMA requires at least one child.");
 
-			appNode = xmlNode.childNodes[0];
+			var appNode = xmlNode.childNodes[0];
 			if(appNode.nodeName == "OMS") {
 				if(typeof appNode.attributes.cd == "undefined")		throw new Error("OMS must define a content dictionary.");
 				if(typeof appNode.attributes.name == "undefined")	throw new Error("OMS must define a name.");
 
 				switch(appNode.attributes.cd.nodeValue) {
 					case "arith1":		return convertArith1(xmlNode);
+					case "arith2":		return convertArith2(xmlNode);
 					case "transc1":		return convertTransc1(xmlNode);
 					case "list1":			return convertList1(xmlNode);
 					case "relation1":	return convertRelation1(xmlNode);
 				}
 
 				throw new Error("OMA references unimplemented content dictionary: "+appNode.attributes.cd.nodeValue);
+			} else if(appNode.nodeName == "OMA") {
+				return convertInverseFunction(xmlNode); //currently the only way an OMA can have another OMA as its first child
 			} else {
 				return convertArbitraryFunction(xmlNode);
 			}
