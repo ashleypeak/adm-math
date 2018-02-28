@@ -1,6 +1,6 @@
 {
   "name": "adm-math",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "An AngularJS library for manipulating mathematical expressions",
   "main": "js/adm-math-input.js",
   "repository": "https://github.com/wyattpeak/adm-math.git",
