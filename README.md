@@ -53,12 +53,14 @@ And wherever you want a math input, add
 | admModelAdm   | a read-only variable containing an admSemanticNode representation of the mathematical expression       | VAR    | no       |        |
 | admModelOm    | a read-only variable containing an OpenMath representation of the mathematical expression              | VAR    | no       |        |
 | admModelLatex | a read-only variable containing an LaTeX representation of the mathematical expression                 | VAR    | no       |        |
-| admFunctions  | an array of strings which will be parsed as functions rather than variables (so e.g. 'f(x)', not 'f*x' | ARRAY  | no       | []     |
+| admFunctions  | an array (see format below) which will be parsed as functions rather than variables                    | STRING | no       | ""     |
 | admFocus      | a function (local to parent controller scope) which is called the the input field gains focus          | VAR    | no       |        |
 | admBlur       | a function (local to parent controller scope) which is called the the input field loses focus          | VAR    | no       |        |
 | admHook       | a label used by and `admInputControl` to programmatically insert characters                            | VAR    | no       |        |
-                                                                                                                       
+
 **Note:** Using the format "adm" gives you an admSemanticNode object (verbose object literal, not for storage)
+
+**Note:** The format for `admFunctions` is `[f,g,df,...]` - using this will interpret e.g. "f(x)" as a function, not as "f*x"
 
 ##### admHook usage
 
@@ -148,13 +150,16 @@ Plot a function described by expression in `admRule`.
 
 Write the expression stored in `admContent` on the canvas.
 
-| Attribute      | Description                                                          | Type                    | Required | Default             |
-| -------------- | -------------------------------------------------------------------- | ----------------------- | -------- | ------------------- |
-| admContent     | the expression, of format `admFormat`, to be written on the canvas   | STRING                  | yes      |                     |
-| admPos         | the position to write at, in the form "(x,y)" (in graph coordinates) | STRING "(FLOAT, FLOAT)" | yes      |                     |
-| admFormat      | format of `admContent`, can be "latex" or "openmath"                 | STRING                  | no       | "latex"             |
-| admTextSize	   | the size of the text, in pixels                                      | INT                     | no       | 25                  |
-| admColour      | the colour of the text                                               | STRING                  | no       | "#000000"           |
+| Attribute      | Description                                                                         | Type                    | Required | Default   |
+| -------------- | ----------------------------------------------------------------------------------- | ----------------------- | -------- | --------- |
+| admContent     | the expression, of format `admFormat`, to be written on the canvas                  | STRING                  | yes      |           |
+| admPos         | the position to write at, in the form "(x,y)" (in graph coordinates)                | STRING "(FLOAT, FLOAT)" | yes      |           |
+| admFormat      | format of `admContent`, can be "latex" or "openmath"                                | STRING                  | no       | "latex"   |
+| admFunctions   | an array (see format below) which will be parsed as functions rather than variables | STRING                  | no       | ""        |
+| admTextSize	   | the size of the text, in pixels                                                     | INT                     | no       | 25        |
+| admColour      | the colour of the text                                                              | STRING                  | no       | "#000000" |
+
+**Note:** The format for `admFunctions` is `[f,g,df,...]` - using this will print e.g. "f(x)" as "f(x)", not as "f*x"
 
 ##### adm-plot-point
 

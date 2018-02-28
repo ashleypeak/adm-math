@@ -103,6 +103,30 @@
 			
 			return "rgba("+r+", "+g+", "+b+", "+opacity+")";
 		}
+		
+		/*******************************************************************
+		 * function:		parseRegisteredFunctions()
+		 *
+		 * description:	takes a string `functionsString` of format
+		 *							/^\[[a-zA-Z]+(,[a-zA-Z]+)*\]$/ and returns an array
+		 *							of strings
+		 *
+		 * arguments:		`functionsString` STRING
+		 *
+		 * return:			ARRAY
+		 ******************************************************************/
+		this.parseRegisteredFunctions = function(functionsString) {
+			var registeredFunctions = []; //see description for admLiteralParser.build()
+			
+			if(typeof functionsString !== "undefined") {
+				var functionsString = functionsString.replace(/\s/g, "");
+				
+				if(/^\[[a-zA-Z]+(,[a-zA-Z]+)*\]$/.test(functionsString))
+					registeredFunctions = functionsString.slice(1,-1).split(',');
+			}
+			
+			return registeredFunctions;
+		}
 	}]);
 	
 	module.directive("admPlot", function() {
@@ -292,6 +316,7 @@
 			scope: {
 				content: "@admContent",
 				format: "@admFormat",
+				functions: "@?admFunctions",
 				pos: "@admPos",
 				textSize: "@admTextSize",
 				colour: "@admColour"
@@ -301,7 +326,9 @@
 				if(!scope.textSize)	scope.textSize = 16;
 				if(!scope.colour)		scope.colour = "#000000";
 				
-				scope.contentParsed = admPlotUtils.parseExpression(scope.content, scope.format);
+				var registeredFunctions = admPlotUtils.parseRegisteredFunctions(scope.functions);
+				
+				scope.contentParsed = admPlotUtils.parseExpression(scope.content, scope.format, registeredFunctions);
 				scope.pos = admPlotUtils.parsePoint(scope.pos);
 				scope.pos = admPlotUtils.toCanvasCoords(scope.pos, plotCtrl.centre, plotCtrl.scale);
 				
