@@ -67,16 +67,18 @@
 		 *
 		 * return:			admSemanticNode | NULL
 		 ******************************************************************/
-		this.parseExpression = function(expression, format) {
+		this.parseExpression = function(expression, format, registeredFunctions) {
 			if(typeof expression === "undefined")
 				return null;
+			
+			registeredFunctions = (typeof registeredFunctions !== "undefined") ? registeredFunctions : [];
 			
 			var expressionParsed = null;
 			
 			switch(format) {
-				case "adm":				expressionParsed = expression;																		break;
-				case "openmath":	expressionParsed = admOpenmathParser.getAdmSemantic(expression);	break;
-				case "latex":			expressionParsed = admLatexParser.getAdmSemantic(expression);			break;
+				case "adm":				expressionParsed = expression;																												break;
+				case "openmath":	expressionParsed = admOpenmathParser.getAdmSemantic(expression, registeredFunctions);	break;
+				case "latex":			expressionParsed = admLatexParser.getAdmSemantic(expression, registeredFunctions);		break;
 			}
 			
 			return expressionParsed;

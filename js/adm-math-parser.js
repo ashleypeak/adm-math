@@ -135,18 +135,18 @@
 		 *							admSemanticRelation
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
-		 *							condition:	REGEX
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseRelations(nodes) {
+		function parseRelations(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "relation")						continue;
 				
-				var leftNode = build(nodes.slice(0, i));
-				var rightNode = build(nodes.slice(i+1));
+				var leftNode = build(nodes.slice(0, i), registeredFunctions);
+				var rightNode = build(nodes.slice(i+1), registeredFunctions);
 				
 				var relNode = admSemanticNode.build("relation", nodes[i].symbol, [leftNode, rightNode]);
 				relNode.assertHasValidChildren();
@@ -218,11 +218,12 @@
 		 *							semantic nodes
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseList(nodes) {
+		function parseList(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "comma")	continue;
@@ -235,7 +236,7 @@
 				var depth = 0; //don't collect commas inside brackets, they're sublists
 				for(var j = start+1; j < end; j++) {
 					if(nodes[j].expressionType == "literal" && nodes[j].type == "comma" && depth == 0) {
-						var elementNode = build(elementNodes);
+						var elementNode = build(elementNodes, registeredFunctions);
 						members.push(elementNode);
 						
 						elementNodes = [];
@@ -248,7 +249,7 @@
 					}
 				}
 				
-				var elementNode = build(elementNodes);
+				var elementNode = build(elementNodes, registeredFunctions);
 				members.push(elementNode);
 				
 				var listNode = admSemanticNode.build("list", members);
@@ -269,16 +270,17 @@
 		 *							leaves the semantic node's `base` as null
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseExponents(nodes) {
+		function parseExponents(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "exponent")						continue;
 				
-				var semanticExp = build(nodes[i].exponent.getNodes());
+				var semanticExp = build(nodes[i].exponent.getNodes(), registeredFunctions);
 				nodes.splice(i, 1, admSemanticNode.build("exponent", null, semanticExp));
 			}
 		}
@@ -317,22 +319,33 @@
 		 *							by parentheses with appropriate semantic nodes
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseParentheses(nodes) {
+		function parseParentheses(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "parenthesis")				continue;
 				if(!nodes[i].isStart)											continue;
 
+				var depth = 1;
 				var subExpressionNodes = [];
-				for(var j = i+1; nodes[j].type != "parenthesis" || !nodes[j].isEnd; j++)
+				for(var j = i+1; j < nodes.length; j++) {
+					if(nodes[j].type == "parenthesis" && nodes[j].isEnd && --depth === 0)
+						break;
+					
+					if(nodes[j].type == "parenthesis" && nodes[j].isStart)
+						depth++;
+					
 					subExpressionNodes.push(nodes[j]);
+				}
+				
+				console.log(subExpressionNodes);
 
 				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
-				var semanticNode = build(subExpressionNodes);
+				var semanticNode = build(subExpressionNodes, registeredFunctions);
 				if(semanticNode.type == "error")	throw "errEmptyExpression";
 
 				nodes.splice(i, literalLength, semanticNode);
@@ -347,11 +360,12 @@
 		 *							by pipes with absolute semantic nodes
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parsePipes(nodes) {
+		function parsePipes(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "pipe")								continue;
@@ -362,7 +376,7 @@
 
 				var literalLength = subExpressionNodes.length+2; //number of nodes that have to be replaced in `nodes`
 
-				var semanticChild = build(subExpressionNodes);
+				var semanticChild = build(subExpressionNodes, registeredFunctions);
 				var semanticAbs = admSemanticNode.build("function", "abs", semanticChild);
 				semanticAbs.assertHasValidChildren();
 
@@ -379,17 +393,18 @@
 		 *							leaves the semantic node's `base` as null
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseDivision(nodes) {
+		function parseDivision(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "division")						continue;
 
-				var semanticNumerator = build(nodes[i].numerator.getNodes());
-				var semanticDenominator = build(nodes[i].denominator.getNodes());
+				var semanticNumerator = build(nodes[i].numerator.getNodes(), registeredFunctions);
+				var semanticDenominator = build(nodes[i].denominator.getNodes(), registeredFunctions);
 
 				var semanticDiv = admSemanticNode.build("division", semanticNumerator, semanticDenominator);
 				semanticDiv.assertHasValidChildren();
@@ -406,20 +421,21 @@
 		 *							with an equivalent semanticRoots
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseRoots(nodes) {
+		function parseRoots(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")											continue;
 				if(nodes[i].type != "squareRoot" && nodes[i].type != "root")	continue;
 				
 				var semanticIndex;
 				if(nodes[i].type == "squareRoot")	semanticIndex = admSemanticNode.build("numeral", "2");
-				else															semanticIndex = build(nodes[i].index.getNodes());
+				else															semanticIndex = build(nodes[i].index.getNodes(), registeredFunctions);
 
-				var semanticRadicand = build(nodes[i].radicand.getNodes());
+				var semanticRadicand = build(nodes[i].radicand.getNodes(), registeredFunctions);
 				var semanticRoot = admSemanticNode.build("root", semanticIndex, semanticRadicand);
 				semanticRoot.assertHasValidChildren();
 
@@ -472,27 +488,35 @@
 		 *							anything which shouldn't be turned into a variable
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseMulticharacterSymbols(nodes) {
+		function parseMulticharacterSymbols(nodes, registeredFunctions) {
 			var nodeString = "";
 			angular.forEach(nodes, function(node, index) {
 				if(node.expressionType != "literal")	nodeString += "_";
 				else if(node.type != "letter")				nodeString += "_";
 				else																	nodeString += node.getVal();
 			});
+			
+			registeredFunctions = (typeof registeredFunctions !== "undefined") ? registeredFunctions : []; //this shouldn't happen but we'll see
+			var inbuiltFunctions = ["sin", "cos", "tan", "ln", "abs"];
+			
+			var allFunctions = inbuiltFunctions.concat(registeredFunctions);
+			allFunctions.sort(function (a, b) { //sort longest first, so e.g. 'sin(x)' doesn't get parsed as 's*i*n(x)' if 'n' is in registeredFunctions
+				return b.length - a.length;
+			});
+			
+			allFunctions.forEach(function(fnName) {
+				nodeString = replaceMulticharacterSymbols(nodes, nodeString, new RegExp(fnName), ["function", fnName]);
+			});
 
 			//if one symbol is a substring of another, the longer symbol MUST go first
-			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /sin/, ["function", "sin"]);
-			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /cos/, ["function", "cos"]);
-			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /tan/, ["function", "tan"]);
-			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /ln/, ["function", "ln"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /pi/, ["constant", "pi"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /π/, ["constant", "pi"]);
 			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /e/, ["constant", "e"]);
-			nodeString = replaceMulticharacterSymbols(nodes, nodeString, /abs/, ["function", "abs"]);
 		}
 
 		/*******************************************************************
@@ -634,16 +658,17 @@
 		 *							admSemanticFunctions
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseNamedFunctions(nodes) {
+		function parseNamedFunctions(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "function")						continue;
 
-				var semanticChild = build(nodes[i].child.getNodes());
+				var semanticChild = build(nodes[i].child.getNodes(), registeredFunctions);
 				var semanticFunction = admSemanticNode.build("function", nodes[i].name, semanticChild);
 				semanticFunction.assertHasValidChildren();
 
@@ -659,17 +684,18 @@
 		 *							admSemanticLogarithms
 		 *							WARNING: mutates `nodes`
 		 *
-		 * arguments:		nodes:		[admLiteralNode | admSemanticNode]
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
 		 *
 		 * return:			none
 		 ******************************************************************/
-		function parseLogarithms(nodes) {
+		function parseLogarithms(nodes, registeredFunctions) {
 			for(var i = 0; i < nodes.length; i++) {
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "logarithm")					continue;
 
-				var semanticBase = build(nodes[i].base.getNodes());
-				var semanticArgument = build(nodes[i].argument.getNodes());
+				var semanticBase = build(nodes[i].base.getNodes(), registeredFunctions);
+				var semanticArgument = build(nodes[i].argument.getNodes(), registeredFunctions);
 				var semanticLogarithm = admSemanticNode.build("logarithm", semanticBase, semanticArgument);
 				semanticLogarithm.assertHasValidChildren();
 
@@ -677,39 +703,6 @@
 			}
 		}
 
-		/*******************************************************************
-		 * function:		parseFunctions()
-		 *
-		 * description:	takes mixed collection of nodes `nodes` and,
-		 *							wherever there are two semantic.nodeTypes.[any]
-		 *							side-by-side, replaces them with a multiplication
-		 *							semantic node
-		 *							WARNING: mutates `nodes`
-		 *
-		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
-		 *
-		 * return:			none
-		 ******************************************************************/
-		function parseFunctions(nodes) {
-			for(var i = 0; i < nodes.length-1; i++) {
-				if(nodes[i].expressionType != "semantic")		continue;
-				if(nodes[i+1].expressionType != "semantic")	continue;
-				
-				if(nodes[i].type == "variable" && (nodes[i].name == "f" || nodes[i].name == "g")) {
-					var functionName = nodes[i].name;
-					
-					for(var j = 0; j < nodes[i].prime; j++)
-						functionName += "'";
-					
-					var fnNode = admSemanticNode.build("function", functionName, nodes[i+1]);
-					fnNode.assertHasValidChildren();
-					
-					nodes.splice(i, 2, fnNode);
-					i--;	//necessary if there are two implied times in a row e.g. "2ab"
-				}
-			}
-		}
-		
 		/*******************************************************************
 		 * function:		parseImpliedMultiplication()
 		 *
@@ -780,13 +773,19 @@
 		 * description:	takes mixed collection of nodes `nodes` and parses
 		 *							into a single semantic node. Adds an admSemanticWrapper
 		 *							around it if `hasParent` is false
+		 *							`registeredFunctions` is an array of single/multichar
+		 *							symbols which will be interpreted as functions and
+		 *							parsed as such (e.g. if "f" is in registeredFunctions,
+		 *							"f(x)" will be interpreted as a function rather than
+		 *							as f*x
 		 *
-		 * arguments:		nodes:			[admLiteralNode | admSemanticNode]
-		 *							hasParent:	BOOLEAN
+		 * arguments:		nodes:								[admLiteralNode | admSemanticNode]
+		 *							registeredFunctions:	ARRAY
+		 *							hasParent:						BOOLEAN
 		 *
 		 * return:			admSemanticNode
 		 ******************************************************************/
-		function build(nodes, hasParent) {
+		function build(nodes, registeredFunctions, hasParent) {
 			hasParent = (typeof hasParent !== "undefined") ? hasParent : true;
 			var newNodes = nodes.slice(); //use slice() to copy by value, not reference
 			
@@ -794,25 +793,23 @@
 				assertNotEmpty(newNodes);
 				assertParenthesesMatched(newNodes);
 				assertPipesMatched(newNodes);
-				parseRelations(newNodes);
-				parseList(newNodes);
-				parseParentheses(newNodes);
-				parsePipes(newNodes);
-				parseDivision(newNodes);
-				parseRoots(newNodes);
-				parseExponents(newNodes);							//create exponent semantic nodes, leave base empty for now
-				parseMulticharacterSymbols(newNodes);	//parse symbols made of multiple characters, like sin, cos, pi
+				parseRelations(newNodes, registeredFunctions);
+				parseList(newNodes, registeredFunctions);
+				parseParentheses(newNodes, registeredFunctions);
+				parsePipes(newNodes, registeredFunctions);
+				parseDivision(newNodes, registeredFunctions);
+				parseRoots(newNodes, registeredFunctions);
+				parseExponents(newNodes, registeredFunctions);							//create exponent semantic nodes, leave base empty for now
+				parseMulticharacterSymbols(newNodes, registeredFunctions);	//parse symbols made of multiple characters, like sin, cos, pi
 				parseNumerals(newNodes);
 				parseVariables(newNodes);
 				parsePrimes(newNodes);
 				parseSymbols(newNodes);
-				parseNamedFunctions(newNodes);
-				parseLogarithms(newNodes);
+				parseNamedFunctions(newNodes, registeredFunctions);
+				parseLogarithms(newNodes, registeredFunctions);
 
 				applyExponents(newNodes);							//fill in bases of exponent semantic nodes
 				applyMulticharacterSymbols(newNodes);
-				
-				parseFunctions(newNodes);
 				
 				parseImpliedMultiplication(newNodes);
 				parseOperators(newNodes, /[*]/);
@@ -841,10 +838,10 @@
 		}
 
 		return {
-			getAdmSemantic: function(literalNode) {
+			getAdmSemantic: function(literalNode, registeredFunctions) {
 				var literalNodes = literalNode.getNodes();
 				
-				var semantic = build(literalNodes, false);
+				var semantic = build(literalNodes, registeredFunctions, false);
 				
 				return semantic;
 			}
@@ -1234,10 +1231,11 @@
 			 *							admSemanticNode
 			 *
 			 * arguments:		`openmath` STRING
+			 *							`registeredFunctions` ARRAY
 			 *
 			 * return:			admSemanticNode
 			 ******************************************************************/
-			getAdmSemantic: function(openmath) {
+			getAdmSemantic: function(openmath, registeredFunctions) {
 				//remove all whitespace between tags
 				openmath = openmath.replace(/>\s+</g, "><");
 
@@ -1592,14 +1590,15 @@
 			 *							admSemanticNode
 			 *
 			 * arguments:		`latex` STRING
+			 *							`registeredFunctions` ARRAY
 			 *
 			 * return:			admSemanticNode
 			 ******************************************************************/
-			getAdmSemantic: function(latex) {
+			getAdmSemantic: function(latex, registeredFunctions) {
 				var literalNode = admLiteralNode.buildBlankExpression(null);
 				literalNode.nodes = collectExpression(literalNode, latex);
 				
-				var semanticNode = admLiteralParser.getAdmSemantic(literalNode);
+				var semanticNode = admLiteralParser.getAdmSemantic(literalNode, registeredFunctions);
 
 				return semanticNode;
 			}

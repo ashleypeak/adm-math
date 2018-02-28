@@ -1,6 +1,6 @@
 # adm-math
 
-An Angular.js library for manipulating mathematical expressions
+An AngularJS library for manipulating mathematical expressions
 
 ## Installation
 
@@ -45,145 +45,45 @@ And wherever you want a math input, add
 
 #### Attributes
 
-##### adm-format
-_Optional_
+| Attribute     | Description                                                                                            | Type   | Required | Default   |
+| ------------- | ------------------------------------------------------------------------------------------------------ | ------ | -------- | --------- |
+| admFormat     | defines output format - accepts "[openmath](http://openmath.org/)", "[latex](https://www.latex-project.org/)" and "[adm](http://github.com/wyattpeak/adm-math)" | STRING | no | "openmath" |
+| name          | the name of the form element containing output                                                         | STRING | no       | ""     |
+| ngModel       | a two-way-bound variable containing the mathematical expression in the format defined by `admFormat`   | VAR    | no       |        |
+| admModelAdm   | a read-only variable containing an admSemanticNode representation of the mathematical expression       | VAR    | no       |        |
+| admModelOm    | a read-only variable containing an OpenMath representation of the mathematical expression              | VAR    | no       |        |
+| admModelLatex | a read-only variable containing an LaTeX representation of the mathematical expression                 | VAR    | no       |        |
+| admFunctions  | an array of strings which will be parsed as functions rather than variables (so e.g. 'f(x)', not 'f*x' | ARRAY  | no       | []     |
+| admFocus      | a function (local to parent controller scope) which is called the the input field gains focus          | VAR    | no       |        |
+| admBlur       | a function (local to parent controller scope) which is called the the input field loses focus          | VAR    | no       |        |
+| admHook       | a label used by and `admInputControl` to programmatically insert characters                            | VAR    | no       |        |
+                                                                                                                       
+**Note:** Using the format "adm" gives you an admSemanticNode object (verbose object literal, not for storage)
 
-Type: `String`
+##### admHook usage
 
-Defines output format.
-
-Values:
-* 'openmath' - _(default)_ Use [OpenMath](http://openmath.org/) format
-* 'latex' - Use [LaTeX](https://www.latex-project.org/) math mode format
-* 'adm' - Use [ADM](http://github.com/wyattpeak/adm-math) admSemanticNode format (verbose object literal, not for storage)
-
-##### name
-_Optional_
-
-Type: `String`
-
-The name of the form element containing output.
-
-##### ng-model
-_Optional_
-
-Type: `Variable`
-
-A two-way-bound variable containing a representation of the mathematical expression in the format defined by admFormat.
-
-Guarantees semantic equivalence but not literal equivalence to input (e.g. may render '(1)(2)' as '1*2').
-
-##### ng-model-adm
-_Optional_
-
-Type: `Variable`
-
-A read-only variable containing an admSemanticNode representation of the mathematical expression.
-
-##### ng-model-openmath
-_Optional_
-
-Type: `Variable`
-
-A read-only variable containing an OpenMath representation of the mathematical expression.
-
-##### ng-model-latex
-_Optional_
-
-Type: `Variable`
-
-A read-only variable containing a LaTeX representation of the mathematical expression.
-
-##### adm-focus
-_Optional_
-
-Type: `Function`
-
-A function (local to the scope of the parent controller) which is to be called the the input field gains focus.
-
-##### adm-blur
-_Optional_
-
-Type: `Function`
-
-A function (local to the scope of the parent controller) which is to be called the the input field loses focus.
-
-##### adm-hook
-_Optional_
-
-Type: `Variable`
-
-A label used by and `admInputControl` to programmatically insert characters.
-For example, the following button would insert the character &pi; into an `admInputField` with `admHook="field1"`
+The following button would insert the character &pi; into an `admMathInput` with `admHook="field1"`
 
 ```html
 <button adm-input-control adm-target="field1" adm-symbol="pi">&pi;</button>
 ```
 
 A full list of supported values for `adm-symbol` follows:
-* `leq` A less-than-or-equals sign &le;
-* `geq` A greater-than-or-equals sign &ge;
-* `squareRoot` An empty square root
-* `pi` The symbol &pi;
-* `e` The constant e
-* `infinity` The symbol &infin;
-* `sin` The function sin()
-* `cos` The function cos()
-* `tan` The function tan()
-* `ln` A natural logarithm
-* `absolute` An empty absolute function | |
-* `log10` A base-10 logarithm
-* `log` A logarithm with an empty base
-* `power` An exponent field
-* `exponent` The constant e raised to an empty exponent field
-* `root` An empty root with an empty field for an index
-* `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>~]$/` The result that a similar keypress would give
+
+| Type          | Symbols                                    |
+| ------------- | ------------------------------------------ |
+| circular      | `sin` `cos` `tan`                          |
+| exponential   | `exponent` `ln` `log` `log10`              |
+| relations     | `leq` (≤) `geq` (≥)                        |
+| constants     | `e` `pi` `infinity`                        |
+| miscellaneous | `absolute` `power` `root` `squareRoot`     |
+| other symbols | `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>~]$/` |
 
 **Note:** You can make a division button using  `adm-symbol="/"`.
 
 **Note:** When tying primes `a'`, due to the apparent lack of a standard format for primes in OpenMath, it will be stored as `<OMV name='a_prime1'/>`.
 
 **Note:** Typing ~ is stored in OpenMath as the nonexistent symbol `relation1.sim`. To be fixed.
-
----
-
-### adm-math-parser
-
-A service for converting OpenMath or LaTeX into an admSemanticNode
-
-#### Usage
-
-First include the module files:
-
-```html
-<script type="text/javascript" src="node_modules/angular/angular.js"></script>
-<script type="text/javascript" src="node_modules/adm-math/js/adm-math-literal.js"></script>
-<script type="text/javascript" src="node_modules/adm-math/js/adm-math-semantic.js"></script>
-<script type="text/javascript" src="node_modules/adm-math/js/adm-math-parser.js"></script>
-```
-
-Then include the module in your Angular.js module:
-
-```javascript
-var myApp = angular.module("myApp", ["admMathParser"]);
-```
-
-In order to convert one of the below formats to an admSemanticNode, just use the relevant service's `getAdmSemantic()` function:
-
-```javascript
-var semanticNode = admOpenmathParser.getAdmSemantic(openmath);
-```
-
-#### Services
-
-##### admLiteralParser
-Convert an admLiteralNode object to an admSemanticNode object
-
-##### admOpenmathParser
-Convert an OpenMath string to an admSemanticNode object
-
-##### adm:atexParser
-Convert a LaTeX string to an admSemanticNode object
 
 ---
 ### adm-math-plot

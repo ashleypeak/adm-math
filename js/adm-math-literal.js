@@ -171,7 +171,7 @@
 				expressionType: "literal",
 				type: "parenthesis",
 				isStart: (paren == "(" ? true : false),
-				isEnd: !this.isStart,
+				isEnd: (paren == ")" ? true : false),
 				getVal: function() {	return (this.isStart ? "(" : ")");	},
 				getDisplay: function() {	return (this.isStart ? "(" : ")");	}
 			};

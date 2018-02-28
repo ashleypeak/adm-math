@@ -172,6 +172,7 @@
 				modelAdm: "=?admModelAdm",
 				modelOm: "=?admModelOm",
 				modelLatex: "=?admModelLatex",
+				functions: "@?admFunctions",
 				hook: "=?admHook",
 				onFocus: "&?admFocus",
 				onBlur: "&?admBlur"
@@ -181,6 +182,14 @@
 				scope.format = angular.isDefined(attrs.admFormat) ? attrs.admFormat : "openmath";
 				scope.name = angular.isDefined(attrs.name) ? attrs.name : null;
 				scope.literalTree = admLiteralNode.buildBlankExpression(null); //the parent admLiteralExpression of the admMathInput
+				
+				var registeredFunctions = []; //see description for admLiteralParser.build()
+				if(typeof scope.functions !== "undefined") {
+					var fns = scope.functions.replace(/\s/g, "");
+					
+					if(/^\[[a-zA-Z]+(,[a-zA-Z]+)*\]$/.test(fns))
+						registeredFunctions = fns.slice(1,-1).split(',');
+				}
 
 				scope.hook = {
 					addSymbol: function(symbol) {
@@ -882,7 +891,7 @@
 					 ******************************************************************/
 					write: function() {
 						try {
-							var semantic = admLiteralParser.getAdmSemantic(scope.literalTree);
+							var semantic = admLiteralParser.getAdmSemantic(scope.literalTree, registeredFunctions);
 
 							scope.modelAdm = semantic;
 							scope.modelOm = semantic.getOpenMath();
