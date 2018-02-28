@@ -510,7 +510,7 @@
 			});
 			
 			registeredFunctions = (typeof registeredFunctions !== "undefined") ? registeredFunctions : []; //this shouldn't happen but we'll see
-			var inbuiltFunctions = ["sin", "cos", "tan", "ln", "abs"];
+			var inbuiltFunctions = ["sin", "cos", "tan", "arcsin", "arccos", "arctan", "ln", "abs"];
 			
 			var allFunctions = inbuiltFunctions.concat(registeredFunctions);
 			allFunctions.sort(function (a, b) { //sort longest first, so e.g. 'sin(x)' doesn't get parsed as 's*i*n(x)' if 'n' is in registeredFunctions
@@ -967,6 +967,9 @@
 				case "sin":
 				case "cos":
 				case "tan":
+				case "arcsin":
+				case "arccos":
+				case "arctan":
 					var functionName = omsNode.attributes.name.nodeValue;
 
 					var childNode = convertNode(xmlNode.childNodes[1]);
@@ -1490,7 +1493,7 @@
 		}
 		
 		/*******************************************************************
-		 * function:		collectRoot()
+		 * function:		collectLog()
 		 *
 		 * description:	takes a LaTeX string `latex`, which has just had a
 		 *							\log command removed from the start. grab its
@@ -1578,6 +1581,9 @@
 				case "sin":
 				case "cos":
 				case "tan":
+				case "arcsin":
+				case "arccos":
+				case "arctan":
 				case "ln":				[commandNode, latex] = collectFunction(parentLiteralNode, latex, command);	break;
 				case "sqrt":			[commandNode, latex] = collectRoot(parentLiteralNode, latex);								break;
 				case "log":				[commandNode, latex] = collectLog(parentLiteralNode, latex);								break;

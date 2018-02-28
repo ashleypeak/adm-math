@@ -837,6 +837,9 @@
 						case "sin":
 						case "cos":
 						case "tan":
+						case "arcsin":
+						case "arccos":
+						case "arctan":
 						case "ln":
 							symbol = "<OMS cd='transc1' name='"+name+"'/>";
 							break;
@@ -859,7 +862,7 @@
 					
 					var latex = "";
 					
-					if(/^(sin|cos|tan|ln)$/.test(this.name))
+					if(/^(sin|cos|tan|arcsin|arccos|arctan|ln)$/.test(this.name))
 						latex += "\\";
 					
 					latex += this.name;
@@ -880,11 +883,14 @@
 				
 				plot: function(x) {
 					switch(this.name) {
-						case "sin":	return Math.sin(this.child.plot(x));
-						case "cos":	return Math.cos(this.child.plot(x));
-						case "tan":	return Math.tan(this.child.plot(x));
-						case "abs":	return Math.abs(this.child.plot(x));
-						case "ln":	return Math.log(this.child.plot(x));
+						case "sin":			return Math.sin(this.child.plot(x));
+						case "cos":			return Math.cos(this.child.plot(x));
+						case "tan":			return Math.tan(this.child.plot(x));
+						case "arcsin":	return Math.asin(this.child.plot(x));
+						case "arccos":	return Math.acos(this.child.plot(x));
+						case "arctan":	return Math.atan(this.child.plot(x));
+						case "abs":			return Math.abs(this.child.plot(x));
+						case "ln":			return Math.log(this.child.plot(x));
 					}
 				},
 				

@@ -72,14 +72,14 @@ The following button would insert the character &pi; into an `admMathInput` with
 
 A full list of supported values for `adm-symbol` follows:
 
-| Type          | Symbols                                    |
-| ------------- | ------------------------------------------ |
-| circular      | `sin` `cos` `tan`                          |
-| exponential   | `exponent` `ln` `log` `log10`              |
-| relations     | `leq` (≤) `geq` (≥)                        |
-| constants     | `e` `pi` `infinity`                        |
-| miscellaneous | `absolute` `power` `root` `squareRoot`     |
-| other symbols | `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>~]$/` |
+| Type          | Symbols                                      |
+| ------------- | -------------------------------------------- |
+| circular      | `sin` `cos` `tan` `arcsin` `arccos` `arctan` |
+| exponential   | `exponent` `ln` `log` `log10`                |
+| relations     | `leq` (≤) `geq` (≥)                          |
+| constants     | `e` `pi` `infinity`                          |
+| miscellaneous | `absolute` `power` `root` `squareRoot`       |
+| other symbols | `/^[0-9.a-zA-ZΑ-Ωα-ω+\-*()\^\/\|,='<>~]$/`   |
 
 **Note:** You can make a division button using  `adm-symbol="/"`.
 
