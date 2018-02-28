@@ -614,9 +614,9 @@
 				if(nodes[i].expressionType != "literal")	continue;
 				if(nodes[i].type != "prime")							continue;
 				
-				if(i == 0)																	throw "errMisplacedPrime";
-				if(nodes[i-1].expressionType != "semantic")	throw "errMisplacedPrime";
-				if(nodes[i-1].type != "variable")						throw "errMisplacedPrime";
+				if(i == 0)																													throw "errMisplacedPrime";
+				if(nodes[i-1].expressionType != "semantic")													throw "errMisplacedPrime";
+				if(nodes[i-1].type != "variable" && nodes[i-1].type != "function")	throw "errMisplacedPrime";
 				
 				nodes[i-1].prime++;
 
@@ -1075,13 +1075,24 @@
 		 * return:			admSemanticNode
 		 ******************************************************************/
 		function convertArbitraryFunction(xmlNode) {
-			var appNode = xmlNode.childNodes[0];
-			
 			if(xmlNode.childNodes.length != 2)	throw new Error("Arbitrary function OMA takes two children.");
 
+			var fnNode = xmlNode.childNodes[0];
 			var childNode = convertNode(xmlNode.childNodes[1]);
 			
-			return admSemanticNode.build("function", appNode.attributes.name.nodeValue, childNode);
+			var fnName = fnNode.attributes.name.nodeValue;
+			var fnParts = null;
+			
+			if((fnParts = /^(.+)_prime(\d+)$/.exec(fnName)) !== null) {
+				var semanticNode = admSemanticNode.build("function", fnParts[1], childNode);
+				semanticNode.prime = parseInt(fnParts[2]);
+				
+				return semanticNode;
+			} else {
+				var semanticNode = admSemanticNode.build("function", fnName, childNode);
+				
+				return semanticNode;
+			}
 		}
 
 		/*******************************************************************
@@ -1166,7 +1177,7 @@
 				var semanticNode = admSemanticNode.build("variable", varName);
 				
 				return semanticNode;
-			}	
+			}
 		}
 
 		/*******************************************************************

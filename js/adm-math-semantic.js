@@ -787,6 +787,7 @@
 				expressionType: "semantic",
 				type: "function",
 				name: name,
+				prime: 0, //number of primes on variable i.e. x' (1) or x''' (3) or x (0)
 				child: typeof child !== "undefined" ? child : null,
 
 				assertHasValidChildren: function() {
@@ -800,6 +801,9 @@
 					for(var i = 0; i < this.name.length; i++)
 						nodes.push(admLiteralNode.build(parentLiteralNode, this.name.substr(i,1)));
 					
+					for(var i = 0; i < this.prime; i++)
+						nodes.push(admLiteralNode.build(parentLiteralNode, "'"));
+					
 					if(this.child.type != "list")
 						nodes.push(admLiteralNode.build(parentLiteralNode, "("));
 					
@@ -812,20 +816,23 @@
 				},
 
 				getOpenMath: function() {
-					var symbol;
+					var name = this.name;
+					if(this.prime !== 0)
+						name += "_prime"+this.prime;
 					
+					var symbol;
 					switch(this.name) {
 						case "abs":
-							symbol = "<OMS cd='arith1' name='"+this.name+"'/>";
+							symbol = "<OMS cd='arith1' name='"+name+"'/>";
 							break;
 						case "sin":
 						case "cos":
 						case "tan":
 						case "ln":
-							symbol = "<OMS cd='transc1' name='"+this.name+"'/>";
+							symbol = "<OMS cd='transc1' name='"+name+"'/>";
 							break;
 						default:
-							symbol = "<OMV name='"+this.name+"'/>";
+							symbol = "<OMV name='"+name+"'/>";
 					}
 
 					return "<OMA>"
@@ -842,7 +849,11 @@
 					} else if(this.child.type == "list") {
 						return this.name + this.child.getLatex();
 					} else {
-						return this.name + "(" + this.child.getLatex() + ")";
+						var primeString = "";
+						for(var i = 0; i < this.prime; i++)
+							primeString += "'";
+						
+						return this.name + primeString + "(" + this.child.getLatex() + ")";
 					}
 				},
 				
@@ -859,10 +870,12 @@
 				getWidthOnCanvas: function(context, textSize, fontFamily) {
 					var width = this.child.getWidthOnCanvas(context, textSize, fontFamily);
 					
-					context.font = textSize+"px "+fontFamily;
+					var content = this.name;					
+					if(this.child.type != "list")				content += "()";
+					for(var i = 0; i < this.prime; i++)	content += "'";
 					
-					if(this.child.type != "list")
-						width += context.measureText(this.name+"()").width;
+					context.font = textSize+"px "+fontFamily;
+					width += context.measureText(content).width;
 					
 					return width;
 				},
@@ -872,12 +885,17 @@
 					
 					context.font = textSize+"px "+fontFamily;
 					
+					context.fillText(this.name, pos.x, pos.y+textSize);
+					pos.x += context.measureText(this.name).width;
+					
+					for(var i = 0; i < this.prime; i++) {
+						context.fillText("'", pos.x, pos.y+textSize);
+						pos.x += context.measureText("'").width;
+					}
+					
 					if(this.child.type != "list") {
-						context.fillText(this.name+"(", pos.x, pos.y+textSize);
-						pos.x += context.measureText(this.name+"(").width;
-					} else {
-						context.fillText(this.name, pos.x, pos.y+textSize);
-						pos.x += context.measureText(this.name).width;
+						context.fillText("(", pos.x, pos.y+textSize);
+						pos.x += context.measureText("(").width;
 					}
 					
 					pos = this.child.writeOnCanvas(context, pos, textSize, fontFamily);
