@@ -9,7 +9,7 @@
 		expressionTemplate += " 'cursor-inside': (cursor.expression == expression)}\">";
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === 0 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick(-1)\">&nbsp;</span>";
+		expressionTemplate += " ng-click=\"control.nodeClick(expression, -1)\">&nbsp;</span>";
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-repeat=\"node in expression.nodes track by $index\"";
 		expressionTemplate += " ng-switch on=\"node.type\">";
@@ -17,8 +17,7 @@
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"exponent\"";
 		expressionTemplate += " class=\"superscript\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
 		expressionTemplate += " expression=\"node.exponent\"";
@@ -28,8 +27,7 @@
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"division\"";
 		expressionTemplate += " class=\"division\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
 		expressionTemplate += "<span class=\"numerator\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
@@ -47,8 +45,7 @@
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"squareRoot\"";
 		expressionTemplate += " class=\"root\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
 		expressionTemplate += " expression=\"node.radicand\"";
@@ -57,8 +54,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"root\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " class=\"superscript\"";
 		expressionTemplate += " cursor=\"cursor\"";
@@ -75,8 +71,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"function\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
 		expressionTemplate += "{{node.getDisplay().start}}";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
@@ -87,8 +82,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"logarithm\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\">";
+		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
 		expressionTemplate += "log";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " class=\"subscript\"";
@@ -107,7 +101,7 @@
 		expressionTemplate += " ng-switch-default";
 		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
 		expressionTemplate += "  'exponent': node.type == 'exponent'}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick($index)\" ng-bind-html=\"node.getDisplay()\"></span>";
+		expressionTemplate += " ng-click=\"control.nodeClick(expression, $index)\" ng-bind-html=\"node.getDisplay()\"></span>";
 
 		expressionTemplate += "</span>";
 		expressionTemplate += "</span>";
@@ -400,15 +394,14 @@
 					 *							moves cursor over the node at `nodeIndex` rather
 					 *							than at the end of the math input field
 					 *
-					 * arguments:		nodeIndex	INT
+					 * arguments:		node admLiteralNode
+					 *							nodeIndex	INT
 					 *
 					 * return:			none
 					 ******************************************************************/
-					nodeClick: function(nodeIndex) {
+					nodeClick: function(node, nodeIndex) {
 						//due to differing indices, position must be 1 higher than nodeIndex
-						var position = nodeIndex + 1;
-
-						scope.cursor.goToPos(position);
+						scope.cursor.moveIntoNode(node, nodeIndex+1);
 					}
 				};
 
@@ -870,9 +863,22 @@
 						this.show();
 					},
 
-					moveIntoNode: function(node) {
+					/*******************************************************************
+					 * function:		moveIntoNode()
+					 *
+					 * description:	moves the cursor into `node` (e.g. a sqrt, or just
+													the main expression) at position `position`
+					 *
+					 * arguments:		`node` AdmLiteralNode
+					 *							`position` INT
+					 *
+					 * return:			none
+					 ******************************************************************/
+					moveIntoNode: function(node, position) {
+						if(typeof position === "undefined")	position = 0;
+						
 						this.expression = node;
-						this.position = 0;
+						this.position = position;
 						this.show();
 					},
 					
