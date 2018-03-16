@@ -433,7 +433,6 @@
 				 *							`moveUp`									returns none
 				 *							`moveRight`								returns none
 				 *							`moveDown`								returns none
-				 *							`goToPos`									returns none
 				 *							`goToEnd`									returns none
 				 ******************************************************************/
 				scope.cursor = {
@@ -882,20 +881,6 @@
 						this.show();
 					},
 					
-					/*******************************************************************
-					 * function:		goToPos()
-					 *
-					 * description:	place cursor at position `pos` in expression.
-					 *
-					 * arguments:		pos: INT
-					 *
-					 * return:			none
-					 ******************************************************************/
-					goToPos: function(pos) {
-						this.position = pos;
-						this.show();
-					},
-
 					/*******************************************************************
 					 * function:		goToEnd()
 					 *
