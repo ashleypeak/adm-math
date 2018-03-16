@@ -231,8 +231,24 @@
 							scope.cursor.insertNode(node);
 						});
 						scope.output.write();
-
+						
 						element[0].focus();
+						
+						switch(symbol) {
+							case "squareRoot":	scope.cursor.moveIntoNode(nodes[0].radicand);		break;
+							case "sin":					scope.cursor.moveIntoNode(nodes[0].child);			break;
+							case "cos":					scope.cursor.moveIntoNode(nodes[0].child);			break;
+							case "tan":					scope.cursor.moveIntoNode(nodes[0].child);			break;
+							case "absolute":		scope.cursor.moveIntoNode(nodes[0].child);			break;
+							case "ln":					scope.cursor.moveIntoNode(nodes[0].child);			break;
+							case "log":					scope.cursor.moveIntoNode(nodes[0].base);				break;
+							case "root":				scope.cursor.moveIntoNode(nodes[0].index);			break;
+							case "power":				scope.cursor.moveIntoNode(nodes[0].exponent);		break;
+							case "exponent":		scope.cursor.moveIntoNode(nodes[1].exponent);		break;
+							case "log10":				scope.cursor.moveIntoNode(nodes[0].argument);		break;
+							case "^":						scope.cursor.moveIntoNode(nodes[0].exponent);		break;
+							case "/":						scope.cursor.moveIntoNode(nodes[0].numerator);	break;
+						}
 					}
 				};
 
@@ -292,8 +308,13 @@
 					 * return:			none
 					 ******************************************************************/
 					focus: function() {
-						scope.cursor.expression = scope.literalTree;
-						scope.cursor.goToEnd();
+						if(scope.cursor.expression === null)
+							scope.cursor.expression = scope.literalTree;
+						
+						if(scope.cursor.position === null)
+							scope.cursor.goToEnd();
+						else
+							scope.cursor.show();
 
 						if(typeof scope.onFocus != "undefined") {
 							scope.onFocus();
@@ -340,7 +361,7 @@
 					},
 
 					/*******************************************************************
-					 * function:		blur()
+					 * function:		keydown()
 					 *
 					 * description:	run on ngKeydown of math input field
 					 *							principally used when preventDefault is needed
@@ -473,6 +494,8 @@
 					 ******************************************************************/
 					insertDivision: function() {
 						var node = admLiteralNode.build(this.expression, "/");
+						
+						var numeratorEmpty = true;
 
 						//when figuring out what should go in the numerator, don't break up bracketed terms
 						var bracketDepth = 0;
@@ -489,11 +512,13 @@
 							node.numerator.insert(0, nodeToCollect);
 							this.expression.deleteAt(this.position-1);
 
+							numeratorEmpty = false;
 							this.position--;
 						}
 						this.expression.insert(this.position, node);
 
-						this.expression = node.denominator;
+						if(numeratorEmpty)	this.expression = node.numerator;
+						else								this.expression = node.denominator;
 						this.position = 0;
 					},
 					
@@ -845,6 +870,12 @@
 						this.show();
 					},
 
+					moveIntoNode: function(node) {
+						this.expression = node;
+						this.position = 0;
+						this.show();
+					},
+					
 					/*******************************************************************
 					 * function:		goToPos()
 					 *
