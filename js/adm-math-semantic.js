@@ -435,13 +435,23 @@
 
 				getAdmLiteral: function(parentLiteralNode) {
 					var symbolNode = admLiteralNode.build(parentLiteralNode, this.symbol);
-
-					var childLiteralNodes = [
+					
+					var literalNodes = [
 						children[0].getAdmLiteral(parentLiteralNode),
 						children[1].getAdmLiteral(parentLiteralNode)
 					];
+					
+					//if operator is *, need to put brackets around children if they are operators + or -
+					if(this.symbol === "*") {
+						this.children.forEach(function(child, index) {
+							if(child.type === "operator" && (child.symbol === "+" || child.symbol === "-")) {
+								literalNodes[index].unshift(admLiteralNode.build(parentLiteralNode, "("));
+								literalNodes[index].push(admLiteralNode.build(parentLiteralNode, ")"));
+							}
+						});
+					}
 
-					return childLiteralNodes[0].concat(symbolNode, childLiteralNodes[1]);
+					return literalNodes[0].concat(symbolNode, literalNodes[1]);
 				},
 
 				getOpenMath: function() {
@@ -455,7 +465,21 @@
 
 				getLatex: function() {
 					var opSymbol = (this.symbol === "*" ? " \\times " : this.symbol);
-					return this.children[0].getLatex() + opSymbol + this.children[1].getLatex();
+					
+					var childrenLatex = [
+						this.children[0].getLatex(),
+						this.children[1].getLatex()
+					];
+					
+					//if operator is *, need to put brackets around children if they are operators + or -
+					if(this.symbol === "*") {
+						this.children.forEach(function(child, index) {
+							if(child.type === "operator" && (child.symbol === "+" || child.symbol === "-"))
+								childrenLatex[index] = "(" + childrenLatex[index] + ")";
+						});
+					}
+					
+					return childrenLatex[0] + opSymbol + childrenLatex[1];
 				},
 				
 				plot: function(x) {
