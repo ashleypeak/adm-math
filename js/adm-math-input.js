@@ -565,8 +565,9 @@
 						
 						if(this.position === 0)	return;
 
-						this.moveLeft();
 						this.expression.deleteAt(nodeIndex);
+						this.position--; //can't use this.moveLeft(), as this will run tryMoveIntoChild(), which can result in unexpected behaviour
+						this.show();
 					},
 					
 					/*******************************************************************
