@@ -306,7 +306,7 @@
 							scope.cursor.expression = scope.literalTree;
 						
 						if(scope.cursor.position === null)
-							scope.cursor.goToEnd();
+							scope.cursor.goToExpressionEnd();
 						else
 							scope.cursor.show();
 
@@ -371,6 +371,8 @@
 						
 						switch(e.keyCode) {
 							case 8:		/*backspace*/				scope.cursor.backspace();								break;
+							case 35:	/*end*/							scope.cursor.goToEnd();									break;
+							case 36:	/*home*/						scope.cursor.goToStart();								break;
 							case 37:	/*left arrow*/			scope.cursor.moveLeft();								break;
 							case 38:	/*up arrow*/				scope.cursor.moveUp();									break;
 							case 39:	/*right arrow*/			scope.cursor.moveRight();								break;
@@ -433,6 +435,8 @@
 				 *							`moveUp`									returns none
 				 *							`moveRight`								returns none
 				 *							`moveDown`								returns none
+				 *							`goToExpressionEnd`				returns none
+				 *							`goToStart`								returns none
 				 *							`goToEnd`									returns none
 				 ******************************************************************/
 				scope.cursor = {
@@ -883,15 +887,49 @@
 					},
 					
 					/*******************************************************************
+					 * function:		goToExpressionEnd()
+					 *
+					 * description:	place cursor at end of the current expression
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					goToExpressionEnd: function() {
+						this.position = this.expression.getLength();
+						this.show();
+					},
+					
+					/*******************************************************************
+					 * function:		goToStart()
+					 *
+					 * description:	place cursor at start of the input
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					goToStart: function() {
+						while(this.expression.parentNode !== null)
+							this.expression = this.expression.parentNode;
+						
+						this.position = 0;
+						this.show();
+					},
+					
+					/*******************************************************************
 					 * function:		goToEnd()
 					 *
-					 * description:	place cursor at end of expression
+					 * description:	place cursor at end of the input
 					 *
 					 * arguments:		none
 					 *
 					 * return:			none
 					 ******************************************************************/
 					goToEnd: function() {
+						while(this.expression.parentNode !== null)
+							this.expression = this.expression.parentNode;
+						
 						this.position = this.expression.getLength();
 						this.show();
 					}
