@@ -565,8 +565,8 @@
 						
 						if(this.position === 0)	return;
 
-						this.expression.deleteAt(nodeIndex);
 						this.moveLeft();
+						this.expression.deleteAt(nodeIndex);
 					},
 					
 					/*******************************************************************
