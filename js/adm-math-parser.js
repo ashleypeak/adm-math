@@ -541,14 +541,60 @@
 			//has to run right-to-left or else you get things like sincosx => sin(cos)x instead of => sin(cos(x))
 			for(var i = nodes.length-1; i >= 0; i--) {
 				if(nodes[i].expressionType != "semantic")	continue;
-				if(nodes[i].type != "function")						continue;
-				if(nodes[i].child !== null)								continue; //some functions are parsed by parseNamedFunctions()
+				//if(nodes[i].type != "function")						continue;
+				//if(nodes[i].child !== null)								continue; //some functions are parsed by parseNamedFunctions()
+				
+				//only interested in functions or exponents containing functions
+				if(nodes[i].type == "function") {
+					if(nodes[i].child !== null)
+						continue; //some functions are parsed by parseNamedFunctions()
+			
+					if(i+1 == nodes.length) throw "errMissingArgument";
 
-				if(i+1 == nodes.length) throw "errMissingArgument";
+					nodes[i].child = nodes[i+1];
+					nodes[i].assertHasValidChildren();
+					nodes.splice(i+1, 1);
+				} else if(nodes[i].type == "exponent" && nodes[i].base !== null && nodes[i].base.type == "function") {
+					if(nodes[i].base.child !== null)
+						continue; //some functions are parsed by parseNamedFunctions()
+			
+					if(i+1 == nodes.length) throw "errMissingArgument";
+
+					nodes[i].base.child = nodes[i+1];
+					nodes[i].base.assertHasValidChildren();
+					nodes.splice(i+1, 1);
+				} else {
+					continue;
+				}
+
+				/*if(i+1 == nodes.length) throw "errMissingArgument";
 
 				nodes[i].child = nodes[i+1];
 				nodes[i].assertHasValidChildren();
-				nodes.splice(i+1, 1);
+				nodes.splice(i+1, 1);*/
+				
+				/*//only interested in functions or exponents containing functions
+				if(nodes[i].type == "function") {
+					if(nodes[i].child !== null)
+						continue; //some functions are parsed by parseNamedFunctions()
+			
+					if(i+1 == nodes.length) throw "errMissingArgument";
+
+					nodes[i].child = nodes[i+1];
+					nodes[i].assertHasValidChildren();
+					nodes.splice(i+1, 1);
+				} else if(nodes[i].type == "exponent" && nodes[i].child.type == "function") {
+					if(nodes[i].child.child !== null)
+						continue; //some functions are parsed by parseNamedFunctions()
+			
+					if(i+1 == nodes.length) throw "errMissingArgument";
+
+					nodes[i].child.child = nodes[i+1];
+					nodes[i].child.assertHasValidChildren();
+					nodes.splice(i+1, 1);
+				} else {
+					continue;
+				}*/
 			}
 		}
 		
