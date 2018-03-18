@@ -306,17 +306,14 @@
 				if(i === 0)																	throw "errMissingBase";
 				if(nodes[i-1].expressionType != "semantic")	throw "errInvalidBase";
 				
-				if(nodes[i-1].type != "function") {
+				if(nodes[i-1].type == "function" && nodes[i].exponent.type == "unaryMinus"
+						&& nodes[i].exponent.child.type == "numeral" && nodes[i].exponent.child.value == "1") {
+					nodes[i-1].inverse = true;
+					nodes.splice(i, 1);
+				} else {
 					nodes[i].base = nodes[i-1];
 					nodes[i].assertHasValidChildren();
 					nodes.splice(i-1, 1);
-				} else {
-					if(nodes[i].exponent.type != "unaryMinus")		throw "errInvalidFunctionPower";
-					if(nodes[i].exponent.child.type != "numeral")	throw "errInvalidFunctionPower";
-					if(nodes[i].exponent.child.value != "1")			throw "errInvalidFunctionPower";
-					
-					nodes[i-1].inverse = true;
-					nodes.splice(i, 1);
 				}
 			}
 		}

@@ -441,15 +441,13 @@
 						children[1].getAdmLiteral(parentLiteralNode)
 					];
 					
-					//if operator is *, need to put brackets around children if they are operators + or -
-					if(this.symbol === "*") {
-						this.children.forEach(function(child, index) {
-							if(child.type === "operator" && (child.symbol === "+" || child.symbol === "-")) {
-								literalNodes[index].unshift(admLiteralNode.build(parentLiteralNode, "("));
-								literalNodes[index].push(admLiteralNode.build(parentLiteralNode, ")"));
-							}
-						});
-					}
+					//put brackets around children if they are operators + or -
+					this.children.forEach(function(child, index) {
+						if(child.type === "operator" && (child.symbol === "+" || child.symbol === "-")) {
+							literalNodes[index].unshift(admLiteralNode.build(parentLiteralNode, "("));
+							literalNodes[index].push(admLiteralNode.build(parentLiteralNode, ")"));
+						}
+					});
 
 					return literalNodes[0].concat(symbolNode, literalNodes[1]);
 				},
@@ -471,13 +469,11 @@
 						this.children[1].getLatex()
 					];
 					
-					//if operator is *, need to put brackets around children if they are operators + or -
-					if(this.symbol === "*") {
-						this.children.forEach(function(child, index) {
-							if(child.type === "operator" && (child.symbol === "+" || child.symbol === "-"))
-								childrenLatex[index] = "(" + childrenLatex[index] + ")";
-						});
-					}
+					//put brackets around children if they are operators + or -
+					this.children.forEach(function(child, index) {
+						if(child.type === "operator" && (child.symbol === "+" || child.symbol === "-"))
+							childrenLatex[index] = "(" + childrenLatex[index] + ")";
+					});
 					
 					return childrenLatex[0] + opSymbol + childrenLatex[1];
 				},
@@ -534,6 +530,12 @@
 				getAdmLiteral: function(parentLiteralNode) {
 					var symbolNode = admLiteralNode.build(parentLiteralNode, "-");
 					var childLiteralNodes = this.child.getAdmLiteral(parentLiteralNode);
+					
+					//put brackets around child if it is + or -
+					if(this.child.type === "operator" && (this.child.symbol === "+" || this.child.symbol === "-")) {
+						childLiteralNodes.unshift(admLiteralNode.build(parentLiteralNode, "("));
+						childLiteralNodes.push(admLiteralNode.build(parentLiteralNode, ")"));
+					}
 
 					return [symbolNode].concat(childLiteralNodes);
 				},
@@ -547,6 +549,9 @@
 				},
 
 				getLatex: function() {
+					//put brackets around child if it is + or -
+					if(this.child.type === "operator" && (this.child.symbol === "+" || this.child.symbol === "-"))
+						return "-(" + this.child.getLatex() + ")";
 					return "-" + this.child.getLatex();
 				},
 				
@@ -597,6 +602,12 @@
 					var exponentNode = admLiteralNode.build(parentLiteralNode, "^");
 
 					exponentNode.exponent.nodes = this.exponent.getAdmLiteral(exponentNode.exponent);
+					
+					//put brackets around base if it is + or -
+					if(this.base.type === "operator" && (this.base.symbol === "+" || this.base.symbol === "-")) {
+						baseLiteralNodes.unshift(admLiteralNode.build(parentLiteralNode, "("));
+						baseLiteralNodes.push(admLiteralNode.build(parentLiteralNode, ")"));
+					}
 
 					return baseLiteralNodes.concat(exponentNode);
 				},
@@ -609,6 +620,9 @@
 				},
 
 				getLatex: function() {
+					//put brackets around base if it is + or -
+					if(this.base.type === "operator" && (this.base.symbol === "+" || this.base.symbol === "-"))
+						return "("+this.base.getLatex() + ")^{" + this.exponent.getLatex() + "}";
 					return this.base.getLatex() + "^{" + this.exponent.getLatex() + "}";
 				},
 				
