@@ -1432,18 +1432,19 @@
 		 * description:	takes a LaTeX string `latex`, already confirmed to
 		 *							start with a symbol which is rendered in admLiteral
 		 *							as a single node (a so-called 'simple node'), and
-		 *							extract it to an admLiteralNode. return the new node'
-		 *							and the remaining latex
+		 *							extract it to an admLiteralNode. return the new node
+		 *							(in an array to match standard format) and the
+		 *							remaining latex
 		 *
 		 * arguments:		`parentLiteralNode` admLiteralNode
 		 *							`latex` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [ [admLiteralNodes], STRING ]
 		 ******************************************************************/
 		function collectSimple(parentLiteralNode, latex) {
 			var simpleNode = admLiteralNode.build(parentLiteralNode, latex[0]);
 			
-			return [simpleNode, latex.substr(1)];
+			return [[simpleNode], latex.substr(1)];
 		}
 		
 		/*******************************************************************
@@ -1452,12 +1453,13 @@
 		 * description:	takes a LaTeX string `latex`, already confirmed to
 		 *							start with a '^', and extract the caret and the
 		 *							subsequent exponent string into an admLiteralNode.
-		 *							return the new node and the remaining latex
+		 *							return the new node (in an array to match standard
+		 *							format) and the remaining latex
 		 *
 		 * arguments:		`parentLiteralNode` admLiteralNode
 		 *							`latex` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [ [admLiteralNodes], STRING ]
 		 ******************************************************************/
 		function collectExponent(parentLiteralNode, latex) {
 			latex = latex.substr(1);
@@ -1468,32 +1470,27 @@
 			[exponentExpression, latex] = findExpression(latex);
 			exponentNode.exponent.nodes = collectExpression(exponentNode, exponentExpression);
 			
-			return [exponentNode, latex];
+			return [[exponentNode], latex];
 		}
 		
 		/*******************************************************************
-		 * function:		collectFunction()
+		 * function:		convertString()
 		 *
-		 * description:	takes a LaTeX string `latex`, which has just had a
-		 *							\sin, \cos, etc command removed from the start
-		 *							(identified by `command`), grab its argument and
-		 *							build into an admLiteralNode
-		 *							return that node and the remaining latex
+		 * description:	takes an alphabetic string `str`, renders it as an
+		 *							array of admLiteralNodes, and returns the array
 		 *
 		 * arguments:		`parentLiteralNode` admLiteralNode
-		 *							`latex` STRING
-		 *							`command` STRING
+		 *							`str` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [admLiteralNodes]
 		 ******************************************************************/
-		function collectFunction(parentLiteralNode, latex, command) {
-			var functionNode = admLiteralNode.buildByName(parentLiteralNode, command);
-			var childExpression = null;
+		function convertString(parentLiteralNode, str) {
+			var nodes = new Array();
 			
-			[childExpression, latex] = findExpression(latex);
-			functionNode.child.nodes = collectExpression(functionNode, childExpression);
+			for(var i = 0; i < str.length; i++)
+				nodes.push(admLiteralNode.build(parentLiteralNode, str.substr(i,1)));
 			
-			return [functionNode, latex];
+			return nodes;
 		}
 		
 		/*******************************************************************
@@ -1502,12 +1499,13 @@
 		 * description:	takes a LaTeX string `latex`, which has just had a
 		 *							\sqrt command removed from the start. grab its
 		 *							argument and build into an admLiteralNode, then
-		 *							return that node and the remaining latex
+		 *							return that node (in an array to match standard
+		 *							format) and the remaining latex
 		 *
 		 * arguments:		`parentLiteralNode` admLiteralNode
 		 *							`latex` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [ [admLiteralNodes], STRING ]
 		 ******************************************************************/
 		function collectRoot(parentLiteralNode, latex) {
 			var rootNode = admLiteralNode.buildByName(parentLiteralNode, "root");
@@ -1532,7 +1530,7 @@
 			rootNode.index.nodes = collectExpression(rootNode, indexExpression);
 			rootNode.radicand.nodes = collectExpression(rootNode, radicandExpression);
 			
-			return [rootNode, latex];
+			return [[rootNode], latex];
 		}
 		
 		/*******************************************************************
@@ -1541,12 +1539,13 @@
 		 * description:	takes a LaTeX string `latex`, which has just had a
 		 *							\log command removed from the start. grab its
 		 *							base and argument and build into an admLiteralNode,
-		 *							then return that node and the remaining latex
+		 *							then return that node (in an array to match standard
+		 *							format) and the remaining latex
 		 *
 		 * arguments:		`parentLiteralNode` admLiteralNode
 		 *							`latex` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [ [admLiteralNodes], STRING ]
 		 ******************************************************************/
 		function collectLog(parentLiteralNode, latex) {
 			var logNode = admLiteralNode.buildByName(parentLiteralNode, "log");
@@ -1564,7 +1563,7 @@
 			logNode.base.nodes = collectExpression(logNode, baseExpression);
 			logNode.argument.nodes = collectExpression(logNode, argumentExpression);
 			
-			return [logNode, latex];
+			return [[logNode], latex];
 		}
 		
 		/*******************************************************************
@@ -1573,13 +1572,13 @@
 		 * description:	takes a LaTeX string `latex`, which has just had a
 		 *							\frac command removed from the start. grab its
 		 *							numerator and denominator and build into an
-		 *							admLiteralNode, then return that node and the
-		 *							remaining latex
+		 *							admLiteralNode, then return that node (in an array)
+		 *							to match standard format) and the remaining latex
 		 *
 		 * arguments:		`parentLiteralNode` admLiteralNode
 		 *							`latex` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [ [admLiteralNodes], STRING ]
 		 ******************************************************************/
 		function collectFraction(parentLiteralNode, latex) {
 			var fractionNode = admLiteralNode.build(parentLiteralNode, "/");
@@ -1591,7 +1590,7 @@
 			fractionNode.numerator.nodes = collectExpression(fractionNode, numeratorExpression);
 			fractionNode.denominator.nodes = collectExpression(fractionNode, denominatorExpression);
 			
-			return [fractionNode, latex];
+			return [[fractionNode], latex];
 		}
 		
 		/*******************************************************************
@@ -1606,84 +1605,84 @@
 		 * arguments:		`parentLiteralNode` admLiteralNode
 		 *							`latex` STRING
 		 *
-		 * return:			ARRAY [ admLiteralNode, STRING ]
+		 * return:			ARRAY [ [admLiteralNodes], STRING ]
 		 ******************************************************************/
 		function collectCommand(parentLiteralNode, latex) {
 			var command = "";
-			var commandNode = null;
+			var commandNodes = new Array();
 			
 			[, command, latex] = /^\\([a-zA-Z]+)(.*)$/.exec(latex);
 			
 			switch(command) {
-				case "leq":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "leq");					break;
-				case "geq":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "geq");					break;
-				case "sim":				commandNode = admLiteralNode.build(parentLiteralNode, "~");									break;
-				case "times":			commandNode = admLiteralNode.build(parentLiteralNode, "*");									break;
-				case "pi":				commandNode = admLiteralNode.buildByName(parentLiteralNode, "pi");					break;
-				case "infty":			commandNode = admLiteralNode.buildByName(parentLiteralNode, "infinity");		break;
+				case "leq":				commandNodes[0] = admLiteralNode.buildByName(parentLiteralNode, "leq");					break;
+				case "geq":				commandNodes[0] = admLiteralNode.buildByName(parentLiteralNode, "geq");					break;
+				case "sim":				commandNodes[0] = admLiteralNode.build(parentLiteralNode, "~");									break;
+				case "times":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "*");									break;
+				case "pi":				commandNodes[0] = admLiteralNode.buildByName(parentLiteralNode, "pi");					break;
+				case "infty":			commandNodes[0] = admLiteralNode.buildByName(parentLiteralNode, "infinity");		break;
 				case "sin":
 				case "cos":
 				case "tan":
 				case "arcsin":
 				case "arccos":
 				case "arctan":
-				case "ln":				[commandNode, latex] = collectFunction(parentLiteralNode, latex, command);	break;
-				case "sqrt":			[commandNode, latex] = collectRoot(parentLiteralNode, latex);								break;
-				case "log":				[commandNode, latex] = collectLog(parentLiteralNode, latex);								break;
-				case "frac":			[commandNode, latex] = collectFraction(parentLiteralNode, latex);						break;
+				case "ln":				commandNodes = convertString(parentLiteralNode, command);							break;
+				case "sqrt":			[commandNodes, latex] = collectRoot(parentLiteralNode, latex);				break;
+				case "log":				[commandNodes, latex] = collectLog(parentLiteralNode, latex);					break;
+				case "frac":			[commandNodes, latex] = collectFraction(parentLiteralNode, latex);		break;
 				
-				case "Alpha":		commandNode = admLiteralNode.build(parentLiteralNode, "Α");									break;
-				case "Beta":		commandNode = admLiteralNode.build(parentLiteralNode, "Β");									break;
-				case "Gamma":		commandNode = admLiteralNode.build(parentLiteralNode, "Γ");									break;
-				case "Delta":		commandNode = admLiteralNode.build(parentLiteralNode, "Δ");									break;
-				case "Epsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "Ε");									break;
-				case "Zeta":		commandNode = admLiteralNode.build(parentLiteralNode, "Ζ");									break;
-				case "Eta":			commandNode = admLiteralNode.build(parentLiteralNode, "Η");									break;
-				case "Theta":		commandNode = admLiteralNode.build(parentLiteralNode, "Θ");									break;
-				case "Iota":		commandNode = admLiteralNode.build(parentLiteralNode, "Ι");									break;
-				case "Kappa":		commandNode = admLiteralNode.build(parentLiteralNode, "Κ");									break;
-				case "Lambda":	commandNode = admLiteralNode.build(parentLiteralNode, "Λ");									break;
-				case "Mu":			commandNode = admLiteralNode.build(parentLiteralNode, "Μ");									break;
-				case "Nu":			commandNode = admLiteralNode.build(parentLiteralNode, "Ν");									break;
-				case "Xi":			commandNode = admLiteralNode.build(parentLiteralNode, "Ξ");									break;
-				case "Omicron":	commandNode = admLiteralNode.build(parentLiteralNode, "Ο");									break;
-				case "Pi":			commandNode = admLiteralNode.build(parentLiteralNode, "Π");									break;
-				case "Rho":			commandNode = admLiteralNode.build(parentLiteralNode, "Ρ");									break;
-				case "Sigma":		commandNode = admLiteralNode.build(parentLiteralNode, "Σ");									break;
-				case "Tau":			commandNode = admLiteralNode.build(parentLiteralNode, "Τ");									break;
-				case "Upsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "Υ");									break;
-				case "Phi":			commandNode = admLiteralNode.build(parentLiteralNode, "Φ");									break;
-				case "Chi":			commandNode = admLiteralNode.build(parentLiteralNode, "Χ");									break;
-				case "Psi":			commandNode = admLiteralNode.build(parentLiteralNode, "Ψ");									break;
-				case "Omega":		commandNode = admLiteralNode.build(parentLiteralNode, "Ω");									break;
-				case "alpha":		commandNode = admLiteralNode.build(parentLiteralNode, "α");									break;
-				case "beta":		commandNode = admLiteralNode.build(parentLiteralNode, "β");									break;
-				case "gamma":		commandNode = admLiteralNode.build(parentLiteralNode, "γ");									break;
-				case "delta":		commandNode = admLiteralNode.build(parentLiteralNode, "δ");									break;
-				case "epsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "ε");									break;
-				case "zeta":		commandNode = admLiteralNode.build(parentLiteralNode, "ζ");									break;
-				case "eta":			commandNode = admLiteralNode.build(parentLiteralNode, "η");									break;
-				case "theta":		commandNode = admLiteralNode.build(parentLiteralNode, "θ");									break;
-				case "iota":		commandNode = admLiteralNode.build(parentLiteralNode, "ι");									break;
-				case "kappa":		commandNode = admLiteralNode.build(parentLiteralNode, "κ");									break;
-				case "lambda":	commandNode = admLiteralNode.build(parentLiteralNode, "λ");									break;
-				case "mu":			commandNode = admLiteralNode.build(parentLiteralNode, "μ");									break;
-				case "nu":			commandNode = admLiteralNode.build(parentLiteralNode, "ν");									break;
-				case "xi":			commandNode = admLiteralNode.build(parentLiteralNode, "ξ");									break;
-				case "omicron":	commandNode = admLiteralNode.build(parentLiteralNode, "ο");									break;
-				case "pi":			commandNode = admLiteralNode.build(parentLiteralNode, "π");									break;
-				case "rho":			commandNode = admLiteralNode.build(parentLiteralNode, "ρ");									break;
-				case "sigma":		commandNode = admLiteralNode.build(parentLiteralNode, "σ");									break;
-				case "tau":			commandNode = admLiteralNode.build(parentLiteralNode, "τ");									break;
-				case "upsilon":	commandNode = admLiteralNode.build(parentLiteralNode, "υ");									break;
-				case "phi":			commandNode = admLiteralNode.build(parentLiteralNode, "φ");									break;
-				case "chi":			commandNode = admLiteralNode.build(parentLiteralNode, "χ");									break;
-				case "psi":			commandNode = admLiteralNode.build(parentLiteralNode, "ψ");									break;
-				case "omega":		commandNode = admLiteralNode.build(parentLiteralNode, "ω");									break;
+				case "Alpha":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Α");			break;
+				case "Beta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Β");			break;
+				case "Gamma":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Γ");			break;
+				case "Delta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Δ");			break;
+				case "Epsilon":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ε");			break;
+				case "Zeta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ζ");			break;
+				case "Eta":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Η");			break;
+				case "Theta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Θ");			break;
+				case "Iota":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ι");			break;
+				case "Kappa":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Κ");			break;
+				case "Lambda":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Λ");			break;
+				case "Mu":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Μ");			break;
+				case "Nu":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ν");			break;
+				case "Xi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ξ");			break;
+				case "Omicron":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ο");			break;
+				case "Pi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Π");			break;
+				case "Rho":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ρ");			break;
+				case "Sigma":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Σ");			break;
+				case "Tau":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Τ");			break;
+				case "Upsilon":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Υ");			break;
+				case "Phi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Φ");			break;
+				case "Chi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Χ");			break;
+				case "Psi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ψ");			break;
+				case "Omega":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "Ω");			break;
+				case "alpha":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "α");			break;
+				case "beta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "β");			break;
+				case "gamma":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "γ");			break;
+				case "delta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "δ");			break;
+				case "epsilon":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ε");			break;
+				case "zeta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ζ");			break;
+				case "eta":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "η");			break;
+				case "theta":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "θ");			break;
+				case "iota":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ι");			break;
+				case "kappa":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "κ");			break;
+				case "lambda":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "λ");			break;
+				case "mu":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "μ");			break;
+				case "nu":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ν");			break;
+				case "xi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ξ");			break;
+				case "omicron":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ο");			break;
+				case "pi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "π");			break;
+				case "rho":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ρ");			break;
+				case "sigma":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "σ");			break;
+				case "tau":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "τ");			break;
+				case "upsilon":	commandNodes[0] = admLiteralNode.build(parentLiteralNode, "υ");			break;
+				case "phi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "φ");			break;
+				case "chi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "χ");			break;
+				case "psi":			commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ψ");			break;
+				case "omega":		commandNodes[0] = admLiteralNode.build(parentLiteralNode, "ω");			break;
 			}
 			
-			if(commandNode !== null)
-				return [commandNode, latex];
+			if(commandNodes.length !== 0)
+				return [commandNodes, latex];
 			else
 				throw new Error("Unrecognised command.");
 		}
@@ -1705,15 +1704,15 @@
 			var newNode = null;
 			
 			while(latex.length > 0) {
-				newNode = null;
+				newNodes = new Array();
 				latex = /^\s*(.+)$/.exec(latex)[1]; //trim whitespace
 				
-				if(/^[0-9.a-zA-Z+\-*()\|,='<>]/.test(latex))	{ [newNode, latex] = collectSimple(parentLiteralNode, latex); }
-				else if(/^\^/.test(latex))										{ [newNode, latex] = collectExponent(parentLiteralNode, latex); }
-				else if(/^\\/.test(latex))										{ [newNode, latex] = collectCommand(parentLiteralNode, latex); }
+				if(/^[0-9.a-zA-Z+\-*()\|,='<>]/.test(latex))	{ [newNodes, latex] = collectSimple(parentLiteralNode, latex); }
+				else if(/^\^/.test(latex))										{ [newNodes, latex] = collectExponent(parentLiteralNode, latex); }
+				else if(/^\\/.test(latex))										{ [newNodes, latex] = collectCommand(parentLiteralNode, latex); }
 				
-				if(newNode !== null)
-					literalNodes.push(newNode);
+				if(newNodes.length !== 0)
+					literalNodes = literalNodes.concat(newNodes);
 				else
 					throw new Error("Unrecognised sequence in LaTeX string.");
 			}
