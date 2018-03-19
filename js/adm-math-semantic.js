@@ -620,8 +620,9 @@
 				},
 
 				getLatex: function() {
-					//put brackets around base if it is + or -
-					if(this.base.type === "operator" && (this.base.symbol === "+" || this.base.symbol === "-"))
+					//put brackets around base if it is + or -, or a function (necessary to correctly parse e.g. sin^2(x) from latex->admLiteral)
+					if((this.base.type === "operator" && (this.base.symbol === "+" || this.base.symbol === "-"))
+							|| (this.base.type === "function"))
 						return "("+this.base.getLatex() + ")^{" + this.exponent.getLatex() + "}";
 					return this.base.getLatex() + "^{" + this.exponent.getLatex() + "}";
 				},
