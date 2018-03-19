@@ -195,11 +195,11 @@
 							case "pi":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "pi")];					break;
 							case "e":						nodes = [admLiteralNode.buildByName(scope.cursor.expression, "e")];						break;
 							case "infinity":		nodes = [admLiteralNode.buildByName(scope.cursor.expression, "infinity")];		break;
-							case "sin":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "sin")];					break;
-							case "cos":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "cos")];					break;
-							case "tan":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "tan")];					break;
-							case "absolute":		nodes = [admLiteralNode.buildByName(scope.cursor.expression, "abs")];					break;
-							case "ln":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "ln")];					break;
+							case "sin":					nodes = admLiteralNode.buildString(scope.cursor.expression, "sin()");					break;
+							case "cos":					nodes = admLiteralNode.buildString(scope.cursor.expression, "cos()");					break;
+							case "tan":					nodes = admLiteralNode.buildString(scope.cursor.expression, "tan()");					break;
+							case "ln":					nodes = admLiteralNode.buildString(scope.cursor.expression, "ln()");					break;
+							case "absolute":		nodes = admLiteralNode.buildString(scope.cursor.expression, "||");						break;
 							case "log":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "log")];					break;
 							case "root":				nodes = [admLiteralNode.buildByName(scope.cursor.expression, "root")];				break;
 							case "power":				nodes = [admLiteralNode.build(scope.cursor.expression, "^")];									break;
@@ -230,11 +230,11 @@
 						
 						switch(symbol) {
 							case "squareRoot":	scope.cursor.moveIntoNode(nodes[0].radicand);		break;
-							case "sin":					scope.cursor.moveIntoNode(nodes[0].child);			break;
-							case "cos":					scope.cursor.moveIntoNode(nodes[0].child);			break;
-							case "tan":					scope.cursor.moveIntoNode(nodes[0].child);			break;
-							case "absolute":		scope.cursor.moveIntoNode(nodes[0].child);			break;
-							case "ln":					scope.cursor.moveIntoNode(nodes[0].child);			break;
+							case "sin":
+							case "cos":
+							case "tan":
+							case "ln":
+							case "absolute":		scope.cursor.moveLeft();												break;
 							case "log":					scope.cursor.moveIntoNode(nodes[0].base);				break;
 							case "root":				scope.cursor.moveIntoNode(nodes[0].index);			break;
 							case "power":				scope.cursor.moveIntoNode(nodes[0].exponent);		break;

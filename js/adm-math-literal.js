@@ -255,33 +255,6 @@
 		};
 	});
 
-	module.service("admLiteralFunction", function() {
-		this.build = function(id, parentNode, name, childNode) {
-			return {
-				id: id,
-				parentNode: parentNode,
-				expressionType: "literal",
-				type: "function",
-				name: name,
-				child: childNode,
-				getVal: function() {	return null;	},
-				getDisplay: function() {
-					var start, end;
-					
-					switch(this.name) {
-						case "abs":	start = "|";						end="|";	break;
-						default:		start = this.name+"(";	end=")";	break;
-					}
-
-					return {
-						start: start,
-						end: end
-					};
-				}
-			};
-		};
-	});
-
 	module.service("admLiteralLogarithm", function() {
 		this.build = function(id, parentNode, base, argument) {
 			return {
@@ -299,10 +272,10 @@
 
 	module.factory("admLiteralNode", ["admLiteralExpression", "admLiteralRelation", "admLiteralComma", "admLiteralNumeral", "admLiteralLetter",
 			"admLiteralPrime", "admLiteralPipe", "admLiteralSymbol", "admLiteralParenthesis", "admLiteralOperator", "admLiteralExponent",
-			"admLiteralDivision", "admLiteralSquareRoot", "admLiteralRoot", "admLiteralFunction", "admLiteralLogarithm",
+			"admLiteralDivision", "admLiteralSquareRoot", "admLiteralRoot", "admLiteralLogarithm",
 		 function(admLiteralExpression, admLiteralRelation, admLiteralComma, admLiteralNumeral, admLiteralLetter, admLiteralPrime, admLiteralPipe,
 				admLiteralSymbol, admLiteralParenthesis, admLiteralOperator, admLiteralExponent, admLiteralDivision, admLiteralSquareRoot, admLiteralRoot,
-				admLiteralFunction, admLiteralLogarithm) {
+				admLiteralLogarithm) {
 		var id = 0;
 
 		return {
@@ -346,15 +319,6 @@
 					case "e":
 					case "infinity":
 						return admLiteralSymbol.build(id++, parentNode, nodeName);
-					case "sin":
-					case "cos":
-					case "tan":
-					case "abs":
-					case "ln":
-						var node = admLiteralFunction.build(id++, parentNode, nodeName, null);
-						node.child = admLiteralExpression.build(id++, node);
-
-						return node;
 					case "squareRoot":
 						var node = admLiteralSquareRoot.build(id++, parentNode, null);
 						node.radicand = admLiteralExpression.build(id++, node);
@@ -372,12 +336,16 @@
 						node.argument = admLiteralExpression.build(id++, node);
 
 						return node;
-					default: //handle f, g, f', g', etc
-						var node = admLiteralFunction.build(id++, parentNode, nodeName, null);
-						node.child = admLiteralExpression.build(id++, node);
-
-						return node;
+					default:
+						alert("Node '" + nodeName + "' not supported") //this is an internal function, so should never really happen.
 				}
+			},
+			buildString: function(parentNode, str) {
+				var nodes = new Array();
+				for(var i = 0; i < str.length; i++)
+					nodes.push(this.build(parentNode, str.substr(i, 1)));
+				
+				return nodes;
 			}
 		};
 	}]);
