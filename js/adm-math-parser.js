@@ -1179,15 +1179,15 @@
 			if(invNode.childNodes.length != 2)	throw new Error("Inverse: expected two children.");
 			
 			var omsNode = invNode.childNodes[0];
-			var varNode = invNode.childNodes[1];
+			var fnNode = invNode.childNodes[1];
 			
-			if(omsNode.nodeName != "OMS")												throw new Error("Inverse: expected OMS, got "+omsNode.nodeName);
-			if(omsNode.attributes.cd.nodeValue != "arith2")			throw new Error("Inverse: expected CD arith2, got "+omsNode.attributes.cd.nodeValue);
-			if(omsNode.attributes.name.nodeValue != "inverse")	throw new Error("Inverse: expected name inverse, got "+omsNode.attributes.name.nodeValue);
-			if(varNode.nodeName != "OMV")												throw new Error("Inverse: expected OMV, got "+varNode.nodeName);
+			if(omsNode.nodeName != "OMS")															throw new Error("Inverse: expected OMS, got "+omsNode.nodeName);
+			if(omsNode.attributes.cd.nodeValue != "arith2")						throw new Error("Inverse: expected CD arith2, got "+omsNode.attributes.cd.nodeValue);
+			if(omsNode.attributes.name.nodeValue != "inverse")				throw new Error("Inverse: expected name inverse, got "+omsNode.attributes.name.nodeValue);
+			if(fnNode.nodeName != "OMV" && fnNode.nodeName != "OMS")	throw new Error("Inverse: unexpected child type to arith2.inverse: "+fnNode.nodeName);
 			
 			
-			var fnName = varNode.attributes.name.nodeValue;
+			var fnName = fnNode.attributes.name.nodeValue;
 			
 			var semanticNode = admSemanticNode.build("function", fnName, childNode);
 			semanticNode.inverse = true;
