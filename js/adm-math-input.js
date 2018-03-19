@@ -195,10 +195,13 @@
 							case "pi":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "pi")];					break;
 							case "e":						nodes = [admLiteralNode.buildByName(scope.cursor.expression, "e")];						break;
 							case "infinity":		nodes = [admLiteralNode.buildByName(scope.cursor.expression, "infinity")];		break;
-							case "sin":					nodes = admLiteralNode.buildString(scope.cursor.expression, "sin()");					break;
-							case "cos":					nodes = admLiteralNode.buildString(scope.cursor.expression, "cos()");					break;
-							case "tan":					nodes = admLiteralNode.buildString(scope.cursor.expression, "tan()");					break;
-							case "ln":					nodes = admLiteralNode.buildString(scope.cursor.expression, "ln()");					break;
+							case "sin":
+							case "cos":
+							case "tan":
+							case "arcsin":
+							case "arccos":
+							case "arctan":
+							case "ln":					nodes = admLiteralNode.buildString(scope.cursor.expression, symbol+"()");			break;
 							case "absolute":		nodes = admLiteralNode.buildString(scope.cursor.expression, "||");						break;
 							case "log":					nodes = [admLiteralNode.buildByName(scope.cursor.expression, "log")];					break;
 							case "root":				nodes = [admLiteralNode.buildByName(scope.cursor.expression, "root")];				break;
@@ -233,6 +236,9 @@
 							case "sin":
 							case "cos":
 							case "tan":
+							case "arcsin":
+							case "arccos":
+							case "arctan":
 							case "ln":
 							case "absolute":		scope.cursor.moveLeft();												break;
 							case "log":					scope.cursor.moveIntoNode(nodes[0].base);				break;
