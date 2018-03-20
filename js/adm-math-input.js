@@ -4,6 +4,10 @@
 	var module = angular.module("admMathInput", ["ngSanitize", "admMathLiteral", "admMathSemantic", "admMathParser"]);
 
 	module.run(["$templateCache", function($templateCache) {
+		var globalClasses = "";
+		globalClasses += "'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
+		globalClasses += "'highlight': (cursor.expression == expression && cursor.hasSelection && cursor.selectionRange.start <= $index+1 && cursor.selectionRange.end >= $index+1)";
+		
 		var expressionTemplate = "";
 		expressionTemplate += "<span ng-class=\"{'empty-expression': (expression.nodes.length === 0),";
 		expressionTemplate += " 'cursor-inside': (cursor.expression == expression)}\">";
@@ -17,7 +21,7 @@
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"exponent\"";
 		expressionTemplate += " class=\"superscript\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
+		expressionTemplate += " ng-class=\"{" + globalClasses + "}\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
 		expressionTemplate += " expression=\"node.exponent\"";
@@ -27,7 +31,7 @@
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"division\"";
 		expressionTemplate += " class=\"division\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
+		expressionTemplate += " ng-class=\"{" + globalClasses + "}\">";
 		expressionTemplate += "<span class=\"numerator\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
@@ -45,7 +49,7 @@
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"squareRoot\"";
 		expressionTemplate += " class=\"root\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
+		expressionTemplate += " ng-class=\"{" + globalClasses + "}\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
 		expressionTemplate += " expression=\"node.radicand\"";
@@ -54,7 +58,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"root\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
+		expressionTemplate += " ng-class=\"{" + globalClasses + "}\">";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " class=\"superscript\"";
 		expressionTemplate += " cursor=\"cursor\"";
@@ -71,7 +75,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"function\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
+		expressionTemplate += " ng-class=\"{" + globalClasses + "}\">";
 		expressionTemplate += "{{node.getDisplay().start}}";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " cursor=\"cursor\"";
@@ -82,7 +86,7 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-when=\"logarithm\"";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible)}\">";
+		expressionTemplate += " ng-class=\"{" + globalClasses + "}\">";
 		expressionTemplate += "log";
 		expressionTemplate += "<adm-math-expression";
 		expressionTemplate += " class=\"subscript\"";
@@ -99,9 +103,12 @@
 
 		expressionTemplate += "<span";
 		expressionTemplate += " ng-switch-default";
-		expressionTemplate += " ng-class=\"{'cursor': (cursor.expression == expression && cursor.position === $index+1 && cursor.visible),";
-		expressionTemplate += "  'exponent': node.type == 'exponent'}\"";
-		expressionTemplate += " ng-click=\"control.nodeClick(expression, $index)\" ng-bind-html=\"node.getDisplay()\"></span>";
+		expressionTemplate += " ng-class=\"{" + globalClasses + ", 'exponent': node.type == 'exponent'}\"";
+		//expressionTemplate += " ng-click=\"control.nodeClick(expression, $index)\" ng-bind-html=\"node.getDisplay()\"></span>";
+		expressionTemplate += " ng-mousedown=\"control.nodeMousedown($event, expression, $index)\"";
+		expressionTemplate += " ng-mouseup=\"control.nodeMouseup()\"";
+		expressionTemplate += " ng-mouseenter=\"control.nodeMouseenter($event, 	expression, $index)\"";
+		expressionTemplate += " ng-bind-html=\"node.getDisplay()\"></span>";
 
 		expressionTemplate += "</span>";
 		expressionTemplate += "</span>";
@@ -282,15 +289,20 @@
 				 * description:	contains all functions used to handle user input
 				 *							and interaction with the math input field
 				 *
-				 * variables:		none
+				 * variables:		`selecting`				BOOLEAN
 				 * 
-				 * functions:		`focus`			returns none
-				 *							`blur`			returns none
-				 *							`keypress`	returns none
-				 *							`keydown`		returns BOOLEAN | none
-				 *							`nodeClick`	returns none
+				 * functions:		`focus`						returns none
+				 *							`blur`						returns none
+				 *							`keypress`				returns none
+				 *							`keydown`					returns BOOLEAN | none
+				 *							`nodeClick`				returns none
+				 *							`nodeMousedown`		returns none
+				 *							`nodeMouseup`			returns none
+				 *							`nodeMouseenter`	returns none
 				 ******************************************************************/
 				scope.control = {
+					selecting: false,	//is the left mouse button held down, should moving the mouse select nodes?
+					
 					/*******************************************************************
 					 * function:		focus()
 					 *
@@ -410,6 +422,66 @@
 					nodeClick: function(node, nodeIndex) {
 						//due to differing indices, position must be 1 higher than nodeIndex
 						scope.cursor.moveIntoNode(node, nodeIndex+1);
+					},
+
+					/*******************************************************************
+					 * function:		nodeMousedown()
+					 *
+					 * description:	run when an individual node element is mousedowned.
+					 *							begins selection of nodes, starting at `nodeIndex`
+					 *
+					 * arguments:		node admLiteralNode
+					 *							nodeIndex	INT
+					 *
+					 * return:			none
+					 ******************************************************************/
+					nodeMousedown: function(event, node, nodeIndex) {
+						event.preventDefault();
+						
+						this.selecting = true;
+						
+						//due to differing indices, position must be 1 higher than nodeIndex
+						scope.cursor.selectionStart(node, nodeIndex+1);
+					},
+
+					/*******************************************************************
+					 * function:		nodeMouseup()
+					 *
+					 * description:	run when an individual node element is mouseupped.
+					 *							ends the selecting of nodes.
+					 *
+					 * arguments:		NONE
+					 *
+					 * return:			none
+					 ******************************************************************/
+					nodeMouseup: function() {
+						this.selecting = false;
+						
+						scope.cursor.selectionEnd();
+					},
+
+					/*******************************************************************
+					 * function:		nodeMouseenter()
+					 *
+					 * description:	run when the mouse moves over a node. if selection
+					 *							is occurring (left mouse button is held down)
+					 *							extends the selection to include the node at
+					 *							`nodeIndex`
+					 *							NOTE: `node` is the parent node, not the node being
+					 *							selected
+					 *
+					 * arguments:		node admLiteralNode
+					 *							nodeIndex	INT
+					 *
+					 * return:			none
+					 ******************************************************************/
+					nodeMouseenter: function(event, node, nodeIndex) {
+						event.preventDefault();
+						
+						if(this.selecting) {
+							//due to differing indices, position must be 1 higher than nodeIndex
+							scope.cursor.selectionExtend(node, nodeIndex+1);
+						}
 					}
 				};
 
@@ -420,10 +492,12 @@
 				 *							around the math input field, and relevant state
 				 *							variables
 				 *
-				 * variables:		`expression`		scope.literal.nodeTypes.Expression
-				 *							`position`			INT
-				 *							`visible`				BOOLEAN
-				 *							`flashInterval`	Angular `promise`
+				 * variables:		`expression`					scope.literal.nodeTypes.Expression
+				 *							`position`						INT
+				 *							`selectionStartedAt`	OBJECT {`expression`: admLiteralNode, `position`: INT}
+				 *							`selectionRange`			OBJECT {`start`: INT, `end`: INT}
+				 *							`visible`							BOOLEAN
+				 *							`flashInterval`				Angular `promise`
 				 * 
 				 * functions:		`show`										returns none
 				 *							`hide`										returns none
@@ -441,15 +515,21 @@
 				 *							`moveUp`									returns none
 				 *							`moveRight`								returns none
 				 *							`moveDown`								returns none
+				 *							`moveIntoNode`						returns none
 				 *							`goToExpressionEnd`				returns none
 				 *							`goToStart`								returns none
 				 *							`goToEnd`									returns none
+				 *							`selectionStart`					returns none
+				 *							`selectionExtend`					returns none
 				 ******************************************************************/
 				scope.cursor = {
-					expression: null,			//the admLiteralExpression which the cursor is currently in
-					position: null,				//the position of the cursor within `expression`
-					visible: false,				//flag for whether the cursor should be visible (alternates for cursor flash)
-					flashInterval: null,	//handler for cursor flashing interval
+					expression: null,																			//the admLiteralExpression which the cursor is currently in
+					position: null,																				//the position of the cursor within `expression`
+					hasSelection: false,																	//is a section currently highlighted
+					selectionStartedAt: {expression: null, position: 0},	//the expression and position where the selection started
+					selectionRange: {start: 0, end: 0},										//the range of positions, inclusive, in cursor.expression which are highlighted
+					visible: false,																				//flag for whether the cursor should be visible (alternates for cursor flash)
+					flashInterval: null,																	//handle for cursor flashing interval
 
 					/*******************************************************************
 					 * function:		show()
@@ -937,6 +1017,81 @@
 							this.expression = this.expression.parentNode;
 						
 						this.position = this.expression.getLength();
+						this.show();
+					},
+
+					/*******************************************************************
+					 * function:		selectionStart()
+					 *
+					 * description:	begins selecting a range of nodes in `expression`,
+					 *							starting at `position`
+					 *							doesn't set this.hasSelection=true until
+					 *							this.selectionExtend runs to avoid a flashing
+					 *							highlight when a node is simply clicked
+					 *
+					 * arguments:		`expression` AdmLiteralNode
+					 *							`position` INT
+					 *
+					 * return:			none
+					 ******************************************************************/
+					selectionStart: function(expression, position) {
+						this.selectionStartedAt.expression	= this.expression	= expression;
+						this.selectionStartedAt.position		= this.position		= position;
+						
+						this.selectionRange.start = position;
+						this.selectionRange.end = position;
+						
+						this.show();
+					},
+
+					/*******************************************************************
+					 * function:		selectionExtend()
+					 *
+					 * description:	extends the range of the selection to include the
+					 *							at `position` in `expression`
+					 *
+					 * arguments:		`expression` AdmLiteralNode
+					 *							`position` INT
+					 *
+					 * return:			none
+					 ******************************************************************/
+					selectionExtend: function(expression, position) {
+						this.hasSelection = true;
+						
+						if(expression = this.selectionStartedAt.expression) {
+							if(position < this.selectionStartedAt.position) {
+								this.selectionRange.start = position;
+								this.selectionRange.end = this.selectionStartedAt.position;
+							} else {
+								this.selectionRange.start = this.selectionStartedAt.position;
+								this.selectionRange.end = position;
+							}
+						} else {
+							//find nearest ancestor etc etc.
+							//do you ever need ancestors of both, as opposed to just climbing one or the other?
+							//probably assume so.
+							//maybe need a nearest common ancestor function somewhere
+						}
+						
+						this.position = this.selectionRange.end;
+						this.show();
+					},
+
+					/*******************************************************************
+					 * function:		selectionEnd()
+					 *
+					 * description:	ends the selection of a range. if only one element
+					 *							is selected, cancels selection.
+					 *
+					 * arguments:		NONE
+					 *
+					 * return:			none
+					 ******************************************************************/
+					selectionEnd: function() {
+						if(this.selectionRange.start == this.selectionRange.end) {
+							this.hasSelection = false;
+						}
+						
 						this.show();
 					}
 				};
