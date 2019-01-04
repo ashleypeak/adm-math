@@ -139,7 +139,8 @@
 				xMax: "@admXMax",
 				yMin: "@admYMin",
 				yMax: "@admYMax",
-				noGridlines: "@admNoGridlines"
+				noGridlines: "@admNoGridlines",
+				piGridlines: "@admPiGridlines"
 			},
 			controller: function($scope, $element, $attrs) {
 				var controller = this;
@@ -149,6 +150,7 @@
 				this.yMin = typeof $scope.yMin !== "undefined" ? parseFloat($scope.yMin) : -10;
 				this.yMax = typeof $scope.xMax !== "undefined" ? parseFloat($scope.yMax) : 10;
 				this.noGridlines = typeof $scope.noGridlines !== "undefined";
+				this.piGridlines = typeof $scope.piGridlines !== "undefined";
 
 				this.context	= $element[0].getContext('2d');
 				this.width		= parseInt($attrs.width);
@@ -180,8 +182,17 @@
 					this.context.stroke();
 				
 					if(!this.noGridlines) {
-						var firstLine = Math.ceil(this.xMin);
-						for(var i = firstLine; i <= this.xMax; i++) {
+						var firstLine = null;
+						var step = null;
+						if(this.piGridlines) {
+							firstLine = Math.ceil(this.xMin/Math.PI)*Math.PI;
+							step = Math.PI;
+						} else {
+							firstLine = Math.ceil(this.xMin);
+							step = 1;
+						}
+						
+						for(var i = firstLine; i <= this.xMax; i += step) {
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
@@ -235,16 +246,34 @@
 
 					//draw labels
 					if(!this.noGridlines) {
-						var firstLine = Math.ceil(this.xMin);
-						for(var i = firstLine; i <= this.xMax; i++) {
+						var firstLine = null;
+						var step = null;
+						if(this.piGridlines) {
+							firstLine = Math.ceil(this.xMin/Math.PI)*Math.PI;
+							step = Math.PI;
+						} else {
+							firstLine = Math.ceil(this.xMin);
+							step = 1;
+						}
+						
+						for(var i = firstLine; i <= this.xMax; i += step) {
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
-							if(this.xMax-this.xMin > 10) //if there are more than ten markings
+							if(this.xMax-this.xMin > 10*step) //if there are more than ten markings
 								if((i-firstLine)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
-							this.context.fillText(Math.round(i*100)/100, this.scale.x*(i-this.xMin)-4, this.centre.y-7-5);
+							var label = null;
+							if(this.piGridlines) {
+								var multiple = Math.round(i/Math.PI);
+								
+								label = (multiple != 1 ? multiple : "")+"π";
+							} else {
+								label = Math.round(i*100)/100;
+							}
+							
+							this.context.fillText(label, this.scale.x*(i-this.xMin)-4, this.centre.y-7-5);
 						}
 
 						var firstLine = Math.ceil(this.yMin);

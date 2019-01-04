@@ -120,15 +120,16 @@ And wherever you want a plot, add
 
 #### Attributes
 
-| Attribute      | Description             | Type         | Required | Default |
-| -------------- | ----------------------- | ------------ | -------- | ------- |
-| width          | width of canvas         | INT          | yes      |         |
-| height         | height of canvas        | INT          | yes      |         |
-| admXMin        | leftmost x value        | FLOAT        | no       | -10     |
-| admXMax        | rightmost x value       | FLOAT        | no       | 10      |
-| admYMin        | bottommost y value      | FLOAT        | no       | -10     |
-| admYMax        | topmost y value         | FLOAT        | no       | 10      |
-| admNoGridlines | don't plot axes or grid | BOOLEAN      | no       | false   |
+| Attribute      | Description                    | Type         | Required | Default |
+| -------------- | ------------------------------ | ------------ | -------- | ------- |
+| width          | width of canvas                | INT          | yes      |         |
+| height         | height of canvas               | INT          | yes      |         |
+| admXMin        | leftmost x value               | FLOAT        | no       | -10     |
+| admXMax        | rightmost x value              | FLOAT        | no       | 10      |
+| admYMin        | bottommost y value             | FLOAT        | no       | -10     |
+| admYMax        | topmost y value                | FLOAT        | no       | 10      |
+| admNoGridlines | don't plot axes or grid        | BOOLEAN      | no       | false   |
+| admPiGridlines | mark x axis in multiples of pi | BOOLEAN      | no       | false   |
 
 #### Subdirectives
 
