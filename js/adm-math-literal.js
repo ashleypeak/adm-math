@@ -346,6 +346,36 @@
 					nodes.push(this.build(parentNode, str.substr(i, 1)));
 				
 				return nodes;
+			},
+			
+			nearestCommonAncestor: function(node1, node2) {
+				var nodeAncestors = new Array();
+				
+				[node1, node2].forEach(function(node, index) {
+					nodeAncestors[index] = new Array();
+					
+					nodeAncestors[index].unshift(node);
+					while(node.parentNode !== null) {
+						node = node.parentNode;
+						nodeAncestors[index].unshift(node);
+					}
+				});
+				
+				while(nodeAncestors[0][1] == nodeAncestors[1][1]) { //while both trees are the same at least two levels deep (first level assumed)
+					nodeAncestors[0].shift();
+					nodeAncestors[1].shift();
+				}
+				
+				return nodeAncestors[0][0];
+			},
+			
+			findInNode: function(node, ancestor) {
+				while(node.parentNode.id != ancestor.id)
+					node = node.parentNode;
+				
+				for(var i = 0; i < ancestor.nodes.length; i++)
+					if(node.id == ancestor.nodes[i].id)
+						return i;
 			}
 		};
 	}]);

@@ -617,6 +617,9 @@
 					 ******************************************************************/
 					insert: function(character) {
 						if(character == "/") return this.insertDivision();
+						
+						if(this.hasSelection)
+							this.selectionDelete();
 
 						var node = admLiteralNode.build(this.expression, character);
 
@@ -636,6 +639,9 @@
 					 * return:			none
 					 ******************************************************************/
 					insertNode: function(node) {
+						if(this.hasSelection)
+							this.selectionDelete();
+						
 						this.expression.insert(this.position, node);
 						this.moveRight();
 					},
@@ -650,14 +656,18 @@
 					 * return:			none
 					 ******************************************************************/
 					backspace: function() {
-						//due to differing indices, this.position-1 is the node under the cursor
-						var nodeIndex = this.position - 1;
-						
-						if(this.position === 0)	return;
+						if(this.hasSelection) {
+							this.selectionDelete();
+						} else {
+							//due to differing indices, this.position-1 is the node under the cursor
+							var nodeIndex = this.position - 1;
+							
+							if(this.position === 0)	return;
 
-						this.expression.deleteAt(nodeIndex);
-						this.position--; //can't use this.moveLeft(), as this will run tryMoveIntoChild(), which can result in unexpected behaviour
-						this.show();
+							this.expression.deleteAt(nodeIndex);
+							this.position--; //can't use this.moveLeft(), as this will run tryMoveIntoChild(), which can result in unexpected behaviour
+							this.show();
+						}
 					},
 					
 					/*******************************************************************
@@ -894,6 +904,8 @@
 					 * return:			none
 					 ******************************************************************/
 					moveLeft: function() {
+						this.hasSelection = false;
+						
 						if(this.position === 0)
 							return this.tryMoveIntoLogBase("end") || this.tryMoveIntoRootIndex("end") || this.tryMoveIntoParent("before");
 
@@ -914,6 +926,8 @@
 					 * return:			none
 					 ******************************************************************/
 					moveUp: function() {
+						this.hasSelection = false;
+						
 						this.tryMoveIntoNumerator("end");
 						this.show();
 					},
@@ -929,6 +943,8 @@
 					 * return:			none
 					 ******************************************************************/
 					moveRight: function() {
+						this.hasSelection = false;
+						
 						if(this.position == this.expression.getLength())
 							return this.tryMoveIntoLogArgument("start") || this.tryMoveIntoRootRadicand("start") || this.tryMoveIntoParent("after");
 						
@@ -949,6 +965,8 @@
 					 * return:			none
 					 ******************************************************************/
 					moveDown: function() {
+						this.hasSelection = false;
+						
 						this.tryMoveIntoDenominator("end");
 						this.show();
 					},
@@ -1035,6 +1053,8 @@
 					 * return:			none
 					 ******************************************************************/
 					selectionStart: function(expression, position) {
+						this.hasSelection = false; //so that, if something is already highlighted, this doesn't show the first thing you click on as highlighted
+						
 						this.selectionStartedAt.expression	= this.expression	= expression;
 						this.selectionStartedAt.position		= this.position		= position;
 						
@@ -1058,7 +1078,9 @@
 					selectionExtend: function(expression, position) {
 						this.hasSelection = true;
 						
-						if(expression = this.selectionStartedAt.expression) {
+						if(expression == this.selectionStartedAt.expression) {
+							this.expression = expression;
+							
 							if(position < this.selectionStartedAt.position) {
 								this.selectionRange.start = position;
 								this.selectionRange.end = this.selectionStartedAt.position;
@@ -1067,10 +1089,37 @@
 								this.selectionRange.end = position;
 							}
 						} else {
-							//find nearest ancestor etc etc.
-							//do you ever need ancestors of both, as opposed to just climbing one or the other?
-							//probably assume so.
-							//maybe need a nearest common ancestor function somewhere
+							var ancestorNode = admLiteralNode.nearestCommonAncestor(expression, this.selectionStartedAt.expression);
+							
+							if(ancestorNode.type == "expression") {
+								this.expression = ancestorNode;
+								
+								var startPos = null;
+								if(ancestorNode.id == this.selectionStartedAt.expression.id)
+									startPos = this.selectionStartedAt.position;
+								else
+									startPos = admLiteralNode.findInNode(this.selectionStartedAt.expression, ancestorNode) + 1; //selectionRange index is off by one from node index
+								
+								var endPos = null;
+								if(ancestorNode.id == expression.id)
+									endPos = position;
+								else
+									endPos = admLiteralNode.findInNode(expression, ancestorNode) + 1;
+								
+								if(startPos <= endPos) {
+									this.selectionRange.start = startPos;
+									this.selectionRange.end = endPos;
+								} else {
+									this.selectionRange.start = endPos;
+									this.selectionRange.end = startPos;
+								}
+							} else {
+								this.expression = ancestorNode.parentNode;
+								
+								var nodePosition = ancestorNode.parentNode.findNode(ancestorNode);
+								
+								this.selectionRange.start = this.selectionRange.end = nodePosition+1;
+							}
 						}
 						
 						this.position = this.selectionRange.end;
@@ -1092,6 +1141,29 @@
 							this.hasSelection = false;
 						}
 						
+						this.show();
+					},
+					
+					/*******************************************************************
+					 * function:		selectionDelete()
+					 *
+					 * description:	deletes the selected part of the expression.
+					 *
+					 * arguments:		NONE
+					 *
+					 * return:			none
+					 ******************************************************************/
+					selectionDelete: function() {
+						if(!this.hasSelection)
+							return;
+						
+						while(this.selectionRange.start <= this.selectionRange.end) {
+							this.expression.deleteAt(this.selectionRange.start-1); //selectionRange index is off by one from node index
+							this.selectionRange.end--;
+							this.position--;
+						}
+						
+						this.hasSelection = false;
 						this.show();
 					}
 				};
