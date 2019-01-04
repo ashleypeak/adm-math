@@ -196,8 +196,8 @@
 							if(i == 0) //don't draw in x=0 if it's on the centre line
 								continue;
 
-							if(this.xMax-this.xMin > 10) //if there are more than ten markings
-								if((i-firstLine)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
+							if(this.xMax-this.xMin > 10*step) //if there are more than ten markings
+								if(Math.round((i-firstLine)/step)%(Math.round((this.xMax-this.xMin)/(10*step))) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
 							this.context.strokeStyle = "#f0f0f0";
@@ -261,7 +261,7 @@
 								continue;
 
 							if(this.xMax-this.xMin > 10*step) //if there are more than ten markings
-								if((i-firstLine)%(Math.round((this.xMax-this.xMin)/10)) != 0) //if there are thirty markings, only show every third etc.
+								if(Math.round((i-firstLine)/step)%(Math.round((this.xMax-this.xMin)/(10*step))) != 0) //if there are thirty markings, only show every third etc.
 									continue;
 
 							var label = null;
