@@ -122,7 +122,8 @@
 		inputTemplate += " ng-keydown=\"control.keydown($event)\"";
 		inputTemplate += " ng-focus=\"control.focus()\"";
 		inputTemplate += " ng-blur=\"control.blur()\"";
-		inputTemplate += " ng-copy=\"control.copy()\">";
+		inputTemplate += " ng-copy=\"control.copy()\"";
+		inputTemplate += " ng-paste=\"control.paste($event)\">";
 		inputTemplate += "<adm-math-expression";
 		inputTemplate += " cursor=\"cursor\"";
 		inputTemplate += " expression=\"literalTree\"";
@@ -296,6 +297,7 @@
 				 *							`keypress`				returns none
 				 *							`keydown`					returns BOOLEAN | none
 				 *							`copy`						returns none
+				 *							`paste`						returns none
 				 *							`nodeClick`				returns none
 				 *							`nodeMousedown`		returns none
 				 *							`nodeMouseup`			returns none
@@ -436,6 +438,7 @@
 						var semantic = admLiteralParser.getAdmSemantic(copyLiteral, registeredFunctions);
 						var om = semantic.getOpenMath();
 						
+						//text can only be copied to the clipboard from an element, so create one
 						var el = document.createElement('textarea');
 						el.value = om;
 						el.setAttribute('readonly', '');
@@ -445,6 +448,36 @@
 						el.select();
 						document.execCommand('copy');
 						document.body.removeChild(el);
+						
+						element[0].focus();
+					},
+
+					/*******************************************************************
+					 * function:		paste()
+					 *
+					 * description:	run on ngCopy of math input field
+					 *							copy selected content in a format which will allow
+					 *							pasting in control.paste().
+					 *							copying in a useful format for other pasting
+					 *							elsewhere is a secondary priority
+					 *
+					 * arguments:		e:	Event
+					 *
+					 * return:			none
+					 ******************************************************************/
+					paste: function(e) {
+						var om = e.clipboardData.getData('text');
+						
+						var literalExpression = null;
+						try {
+							literalExpression = admOpenmathParser.getAdmSemantic(om, registeredFunctions).getAdmLiteral();
+						} catch {
+							return; //if it's not correctly formatted, it can't go in, nothing more to it
+						}
+						console.log(literalExpression);
+						
+						for(var i = 0; i < literalExpression.getLength(); i++)
+							scope.cursor.insertNode(literalExpression.getNode(i));
 					},
 
 					/*******************************************************************
