@@ -123,6 +123,7 @@
 		inputTemplate += " ng-focus=\"control.focus()\"";
 		inputTemplate += " ng-blur=\"control.blur()\"";
 		inputTemplate += " ng-copy=\"control.copy()\"";
+		inputTemplate += " ng-cut=\"control.cut()\"";
 		inputTemplate += " ng-paste=\"control.paste($event)\">";
 		inputTemplate += "<adm-math-expression";
 		inputTemplate += " cursor=\"cursor\"";
@@ -297,6 +298,7 @@
 				 *							`keypress`				returns none
 				 *							`keydown`					returns BOOLEAN | none
 				 *							`copy`						returns none
+				 *							`cut`							returns none
 				 *							`paste`						returns none
 				 *							`nodeClick`				returns none
 				 *							`nodeMousedown`		returns none
@@ -417,10 +419,10 @@
 					 * function:		copy()
 					 *
 					 * description:	run on ngCopy of math input field
-					 *							copy selected content in a format which will allow
-					 *							pasting in control.paste().
-					 *							copying in a useful format for other pasting
-					 *							elsewhere is a secondary priority
+					 *							copy selected content into OpenMath format. format
+					 *							isn't ideal for pasting elsewhere but anything
+					 *							readable would need a new converter build and would
+					 *							likely be ambiguous anyway.
 					 *
 					 * arguments:		none
 					 *
@@ -451,15 +453,33 @@
 						
 						element[0].focus();
 					},
+					
+					/*******************************************************************
+					 * function:		cut()
+					 *
+					 * description:	run on ngCut of math input field
+					 *							cuts, stores result in clipboard in OpenMath format
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					cut: function() {
+						if(!scope.cursor.hasSelection)
+							return;
+						
+						scope.control.copy();
+						scope.cursor.selectionDelete();
+						
+						scope.output.write();
+					},
 
 					/*******************************************************************
 					 * function:		paste()
 					 *
-					 * description:	run on ngCopy of math input field
-					 *							copy selected content in a format which will allow
-					 *							pasting in control.paste().
-					 *							copying in a useful format for other pasting
-					 *							elsewhere is a secondary priority
+					 * description:	run on ngPaste of math input field
+					 *							if contents of clipboard are valid OpenMath, paste
+					 *							those contents at cursor position
 					 *
 					 * arguments:		e:	Event
 					 *
@@ -474,10 +494,11 @@
 						} catch {
 							return; //if it's not correctly formatted, it can't go in, nothing more to it
 						}
-						console.log(literalExpression);
 						
 						for(var i = 0; i < literalExpression.getLength(); i++)
 							scope.cursor.insertNode(literalExpression.getNode(i));
+						
+						scope.output.write();
 					},
 
 					/*******************************************************************
