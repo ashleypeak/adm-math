@@ -121,12 +121,16 @@
 		inputTemplate += " ng-keypress=\"control.keypress($event)\"";
 		inputTemplate += " ng-keydown=\"control.keydown($event)\"";
 		inputTemplate += " ng-focus=\"control.focus()\"";
-		inputTemplate += " ng-blur=\"control.blur()\">";
+		inputTemplate += " ng-blur=\"control.blur()\"";
+		inputTemplate += " ng-copy=\"control.copy()\"";
+		inputTemplate += " ng-cut=\"control.cut()\"";
+		inputTemplate += " ng-paste=\"control.paste($event)\">";
 		inputTemplate += "<adm-math-expression";
 		inputTemplate += " cursor=\"cursor\"";
 		inputTemplate += " expression=\"literalTree\"";
 		inputTemplate += " control=\"control\"></adm-math-expression>";
 		inputTemplate += "<input type=\"hidden\" name=\"{{name}}\" value=\"{{model}}\" />";
+		inputTemplate += "<input type=\"hidden\" class=\"clipboard\" />";
 		inputTemplate += "</div>";
 		
 		$templateCache.put("adm-math-expression.htm", expressionTemplate);
@@ -174,9 +178,7 @@
 				modelOm: "=?admModelOm",
 				modelLatex: "=?admModelLatex",
 				functions: "@?admFunctions",
-				hook: "=?admHook",
-				onFocus: "&?admFocus",
-				onBlur: "&?admBlur"
+				hook: "=?admHook"
 			},
 			templateUrl: "adm-math-input.htm",
 			link: function(scope, element, attrs) {
@@ -295,6 +297,9 @@
 				 *							`blur`						returns none
 				 *							`keypress`				returns none
 				 *							`keydown`					returns BOOLEAN | none
+				 *							`copy`						returns none
+				 *							`cut`							returns none
+				 *							`paste`						returns none
 				 *							`nodeClick`				returns none
 				 *							`nodeMousedown`		returns none
 				 *							`nodeMouseup`			returns none
@@ -363,6 +368,9 @@
 					 * return:			none
 					 ******************************************************************/
 					keypress: function(e) {
+						if(e.ctrlKey)	//don't capture control combinations
+							return;
+						
 						var character = String.fromCharCode(e.which);
 						if(/[a-zA-Z0-9.+\-*()\^|,='<>~]/.test(character)) {
 							scope.cursor.insert(character);
@@ -408,6 +416,92 @@
 					},
 
 					/*******************************************************************
+					 * function:		copy()
+					 *
+					 * description:	run on ngCopy of math input field
+					 *							copy selected content into OpenMath format. format
+					 *							isn't ideal for pasting elsewhere but anything
+					 *							readable would need a new converter build and would
+					 *							likely be ambiguous anyway.
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					copy: function() {
+						if(!scope.cursor.hasSelection)
+							return;
+						
+						var copyLiteral = admLiteralNode.buildBlankExpression(null);
+						
+						for(var i = scope.cursor.selectionRange.start; i <= scope.cursor.selectionRange.end; i++)
+							copyLiteral.insert(i-scope.cursor.selectionRange.start, scope.cursor.expression.getNode(i-1));
+						
+						var semantic = admLiteralParser.getAdmSemantic(copyLiteral, registeredFunctions);
+						var om = semantic.getOpenMath();
+						
+						//text can only be copied to the clipboard from an element, so create one
+						var el = document.createElement('textarea');
+						el.value = om;
+						el.setAttribute('readonly', '');
+						el.style = {position: 'absolute', left: '-9999px'};
+						
+						document.body.appendChild(el);
+						el.select();
+						document.execCommand('copy');
+						document.body.removeChild(el);
+						
+						element[0].focus();
+					},
+					
+					/*******************************************************************
+					 * function:		cut()
+					 *
+					 * description:	run on ngCut of math input field
+					 *							cuts, stores result in clipboard in OpenMath format
+					 *
+					 * arguments:		none
+					 *
+					 * return:			none
+					 ******************************************************************/
+					cut: function() {
+						if(!scope.cursor.hasSelection)
+							return;
+						
+						scope.control.copy();
+						scope.cursor.selectionDelete();
+						
+						scope.output.write();
+					},
+
+					/*******************************************************************
+					 * function:		paste()
+					 *
+					 * description:	run on ngPaste of math input field
+					 *							if contents of clipboard are valid OpenMath, paste
+					 *							those contents at cursor position
+					 *
+					 * arguments:		e:	Event
+					 *
+					 * return:			none
+					 ******************************************************************/
+					paste: function(e) {
+						var om = e.clipboardData.getData('text');
+						
+						var literalExpression = null;
+						try {
+							literalExpression = admOpenmathParser.getAdmSemantic(om, registeredFunctions).getAdmLiteral();
+						} catch {
+							return; //if it's not correctly formatted, it can't go in, nothing more to it
+						}
+						
+						for(var i = 0; i < literalExpression.getLength(); i++)
+							scope.cursor.insertNode(literalExpression.getNode(i));
+						
+						scope.output.write();
+					},
+
+					/*******************************************************************
 					 * function:		nodeClick()
 					 *
 					 * description:	run when an individual node element is clicked
@@ -437,6 +531,7 @@
 					 ******************************************************************/
 					nodeMousedown: function(event, node, nodeIndex) {
 						event.preventDefault();
+						element[0].focus(); //need to focus explicitly since bubbling prevented, otherwise input can lack focus even after selecting
 						
 						this.selecting = true;
 						
