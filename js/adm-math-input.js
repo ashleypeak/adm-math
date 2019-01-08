@@ -178,7 +178,9 @@
 				modelOm: "=?admModelOm",
 				modelLatex: "=?admModelLatex",
 				functions: "@?admFunctions",
-				hook: "=?admHook"
+				hook: "=?admHook",
+				onFocus: "=?admFocus",
+				onBlur: "=?admBlur"
 			},
 			templateUrl: "adm-math-input.htm",
 			link: function(scope, element, attrs) {
@@ -332,9 +334,13 @@
 							scope.cursor.goToExpressionEnd();
 						else
 							scope.cursor.show();
-
-						if(typeof scope.onFocus != "undefined") {
-							scope.onFocus();
+						
+						switch(typeof scope.onFocus) {
+							case "function":
+								scope.onFocus();
+								break;
+							case "object":
+								scope.onFocus[0].apply(null, scope.onFocus.slice(1));
 						}
 					},
 
@@ -350,9 +356,13 @@
 					 ******************************************************************/
 					blur: function() {
 						scope.cursor.hide();
-
-						if(typeof scope.onBlur != "undefined") {
-							scope.onBlur();
+						
+						switch(typeof scope.onBlur) {
+							case "function":
+								scope.onBlur();
+								break;
+							case "object":
+								scope.onBlur[0].apply(null, scope.onBlur.slice(1));
 						}
 					},
 

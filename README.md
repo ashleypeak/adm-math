@@ -54,13 +54,22 @@ And wherever you want a math input, add
 | admModelOm    | a read-only variable containing an OpenMath representation of the mathematical expression              | VAR    | no       |        |
 | admModelLatex | a read-only variable containing an LaTeX representation of the mathematical expression                 | VAR    | no       |        |
 | admFunctions  | an array (see format below) which will be parsed as functions rather than variables                    | STRING | no       | ""     |
-| admFocus      | a function (local to parent controller scope) which is called the the input field gains focus          | VAR    | no       |        |
-| admBlur       | a function (local to parent controller scope) which is called the the input field loses focus          | VAR    | no       |        |
+| admFocus      | a function (see below) which is called the the input field gains focus                                 | VAR    | no       |        |
+| admBlur       | a function (see below) which is called the the input field loses focus                                 | VAR    | no       |        |
 | admHook       | a label used by and `admInputControl` to programmatically insert characters                            | VAR    | no       |        |
 
 **Note:** Using the format "adm" gives you an admSemanticNode object (verbose object literal, not for storage)
 
 **Note:** The format for `admFunctions` is `[f,g,df,...]` - using this will interpret e.g. "f(x)" as a function, not as "f*x"
+
+**Note:** `admFocus` and `admBlur` take either a function or an array where element 0 is the function, and the rest are arguments. E.g.:
+
+| Type                    | Example                                                           |
+| ----------------------- | ----------------------------------------------------------------- |
+| lone function           | `adm-focus="focusFunction"`                                       |
+| function with arguments | `adm-focus="[focusFunction, variableArgument, 'stringArgument']"` |
+
+Functions and arguments are local to the parent controller's scope.
 
 ##### admHook usage
 
