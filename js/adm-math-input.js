@@ -501,7 +501,7 @@
 						var literalExpression = null;
 						try {
 							literalExpression = admOpenmathParser.getAdmSemantic(om, registeredFunctions).getAdmLiteral();
-						} catch {
+						} catch(e) {
 							return; //if it's not correctly formatted, it can't go in, nothing more to it
 						}
 						
