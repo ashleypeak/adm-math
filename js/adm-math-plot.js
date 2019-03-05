@@ -161,14 +161,9 @@
 				this.scale		= {x: this.width / this.range.x,
 													y: this.height / this.range.y};
 				this.step			= this.range.x / this.width;
-
-				if(this.xMin > 0)				this.centre.x = 0;
-				else if(this.xMax < 0)	this.centre.x = this.width;
-				else										this.centre.x = this.width * ((0 - this.xMin) / this.range.x);
-
-				if(this.yMin > 0)				this.centre.y = this.height;
-				else if(this.yMax < 0)	this.centre.y = 0;
-				else										this.centre.y = this.height - (this.height * ((0 - this.yMin) / this.range.y));
+				
+				this.centre.x = this.width * ((0 - this.xMin) / this.range.x);
+				this.centre.y = this.height - (this.height * ((0 - this.yMin) / this.range.y));
 
 				this.drawAxes = function() {
 					this.context.strokeStyle = "#b0b0b0";
